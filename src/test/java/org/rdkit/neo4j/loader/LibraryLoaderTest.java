@@ -1,4 +1,4 @@
-package org.rdkit.neo4j.utils;
+package org.rdkit.neo4j.loader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -50,5 +50,10 @@ public class LibraryLoaderTest {
 
     String os = LibraryLoader.getOsFormatted(linuxOs);
     assertEquals(expectedOs, os);
+  }
+
+  @Test
+  public void testLoadLibraries() {
+    LibraryLoader.loadLibraries();
   }
 }
