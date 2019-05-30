@@ -62,23 +62,36 @@ public class LibraryLoader {
     }
   }
 
-  /**
-   * Method returns architecture of the computer
-   * @return formatted architecture
-   */
-  static String getArch() {
+  private static String getArch() {
     String arch = System.getProperty("os.arch");
     if (arch == null)
       throw new LoaderException("Can not identify os.arch property");
 
+    return getArchFormatted(arch);
+  }
+
+  /**
+   * Method returns formatted architecture of the computer
+   * @return formatted architecture
+   * @param arch
+   */
+  static String getArchFormatted(String arch) {
     return arch.toLowerCase().endsWith("64") ? ARCH_X86_64 : ARCH_X86;
   }
 
-  static String getOs() {
+  private static String getOs() {
     String osname = System.getProperty("os.name");
     if (osname == null)
       throw new LoaderException("Can not identify os.name property");
 
+    return getOsFormatted(osname);
+  }
+
+  /**
+   * Method returns formatted OS name of the computer
+   * @return formatted OS name
+   */
+  static String getOsFormatted(String osname) {
     osname = osname.toLowerCase();
 
     String formattedOs;
