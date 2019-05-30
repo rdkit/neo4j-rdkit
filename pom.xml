@@ -12,12 +12,9 @@
 
 
   <properties>
-    <!-- java compiler properties are already defined in parent -->
-
     <mockito.version>2.27.0</mockito.version>
-    <neo4j.version>3.5.5</neo4j.version>
+    <neo4j.version>3.5.6</neo4j.version>
     <slf4j.version>1.7.25</slf4j.version>
-    <!-- todo: why parent pom does not use version as a const for slf4j? -->
   </properties>
 
   <parent>
@@ -26,19 +23,21 @@
     <version>3.5.5</version>
   </parent>
 
-  <dependencies>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.neo4j</groupId>
+        <artifactId>neo4j</artifactId>
+        <version>${neo4j.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
+  <dependencies>
     <!-- CORE NEO4J-->
     <dependency>
       <groupId>org.neo4j</groupId>
-      <artifactId>neo4j-kernel</artifactId>
-      <version>${neo4j.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.neo4j</groupId>
-      <artifactId>neo4j-io</artifactId>
-      <version>${neo4j.version}</version>
+      <artifactId>neo4j</artifactId>
     </dependency>
 
     <!-- Logger -->
@@ -46,6 +45,13 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
       <version>${slf4j.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.8</version>
+      <scope>provided</scope>
     </dependency>
 
 
@@ -75,6 +81,4 @@
       </plugin>
     </plugins>
   </build>
-
-
 </project>
