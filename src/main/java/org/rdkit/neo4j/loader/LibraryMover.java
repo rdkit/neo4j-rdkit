@@ -8,11 +8,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -22,30 +24,47 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+
+import org.rdkit.neo4j.exceptions.LoaderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LibraryMover {
   private static final Logger logger = LoggerFactory.getLogger(LibraryMover.class);
 
-  public static void moveMissingLibraries(List<String> missingLibraries, String folder) {
+  public static void moveMissingLibraries(List<String> missingLibraries, String folder) throws LoaderException {
     // Make new java.library.path
-    File temporaryDir = createTempLibraryPath();
+    File temporaryDir = null;
+    try {
+      temporaryDir = createTempLibraryPath();
+    } catch (Exception e) {
+      throw new LoaderException("Exception during temp folder initialization", e);
+    }
 
     final File jarFile = new File(LibraryLoader.class.getProtectionDomain().getCodeSource().getLocation().getPath());
     Map<String, InputStream> libraries;
 
     if(jarFile.isFile()) {  // Run with JAR file
       logger.info("Loading libraries from JAR");
-      final JarFile jar = new JarFile(jarFile);
-      libraries = getJarStreams(jar, folder);
-      moveLibraries(libraries, temporaryDir);
-      jar.close();
+      try (final JarFile jar = new JarFile(jarFile)) {
+        libraries = getJarStreams(jar, missingLibraries, folder);
+        moveLibraries(libraries, temporaryDir);
+      } catch (IOException e) {
+        logger.error("Exception occured during native libraries extraction from JAR");
+        //todo: think about what exception to forward
+        throw new LoaderException("Exception during extraction from JAR", e);
+      }
     } else { // Run with IDE
-      logger.info("Loading libraries from IDE level");
-      String realPath = getResourcePath(folder).toString();
-      libraries = getIdeStreams(realPath);
-      moveLibraries(libraries, temporaryDir);
+      try {
+        logger.info("Loading libraries from IDE level");
+        String realPath = getResourcePath(folder).toString();
+        libraries = getIdeStreams(missingLibraries, realPath);
+        moveLibraries(libraries, temporaryDir);
+      } catch (IOException | URISyntaxException e) {
+        logger.info("Exception occured during native libraries extraction from folders");
+        //todo: think about what exception to forward
+        throw new LoaderException("Exception during extraction from folders", e);
+      }
     }
   }
 
@@ -95,27 +114,28 @@ public class LibraryMover {
   /**
    * Method loads files inside jar from specified folder
    * @param jar - JarFile object
+   * @param missingLibraries
    * @param folder - appropriate resource folder
    * @return map of Filenames & InputStreams
    * @throws IOException if jarFile was specified wrong
    */
-  private static Map<String,InputStream> getJarStreams(JarFile jar, String folder) throws IOException {
+  private static Map<String,InputStream> getJarStreams(JarFile jar,
+      List<String> missingLibraries, String folder) throws IOException {
     TreeMap<String, InputStream> jarStreams = new TreeMap<>();
     Set<JarEntry> entriesSet = new HashSet<>();
 
-    String name;
     JarEntry entry;
 
     /* Get ALL entries in .jar file */
     final Enumeration<JarEntry> entries = jar.entries();
-    int items = 0;
     while(entries.hasMoreElements()) {
       entry = entries.nextElement();
-      name = entry.getName();
+      final String name = entry.getName();
       /* Find the folder with required pattern  */
       if (name.contains(folder)) {
         /* Process ONLY found directory and ignore other entries*/
-        if (!entry.isDirectory()) {
+        if (!entry.isDirectory() && missingLibraries.stream().anyMatch(name::contains)) {
+          // todo: check
           entriesSet.add(entry);
         }
       }
@@ -135,17 +155,22 @@ public class LibraryMover {
 
   /**
    * Method loads files from specified folder
+   *
+   * @param missingLibraries
    * @param folder - folder with native libraries
    * @return map of Filenames & InputStreams
    * @throws FileNotFoundException - if any
    */
-  private static Map<String,InputStream> getIdeStreams(String folder) throws FileNotFoundException {
+  private static Map<String,InputStream> getIdeStreams(
+      List<String> missingLibraries, String folder) throws FileNotFoundException {
     Map<String, InputStream> ideStreams = new TreeMap<>();
     File files[] = (new File(folder)).listFiles();
     for (File lib: files) {
       String libName = lib.getName();
-      InputStream iStream = new FileInputStream(lib);
-      ideStreams.put(libName, iStream);
+      if (missingLibraries.stream().anyMatch(libName::equals)) {
+        InputStream iStream = new FileInputStream(lib);
+        ideStreams.put(libName, iStream);
+      }
     }
 
     return ideStreams;

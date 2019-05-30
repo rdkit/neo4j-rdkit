@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.val;
+import org.rdkit.neo4j.exceptions.LoaderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +52,7 @@ public class LibraryLoader {
         new String[]{"GraphMolWrap"});
   }
 
-  public static void loadLibraries() {
+  public static void loadLibraries() throws LoaderException {
     final String platform = getPlatform();
     final String folder = getFolder(platform);
     final String[] libraries = listLibraries(platform);
@@ -99,7 +100,8 @@ public class LibraryLoader {
     for (Entry<String, Long> item : counted) {
       if (item.getValue() >= 2) {
         logger.warn("Library {} exists {} times", item.getKey(), item.getValue());
-      } else {
+      } else if (item.getValue() == 0) {
+        logger.warn("Library missing={}", item.getKey());
         missingLibraries.add(item.getKey());
       }
     }

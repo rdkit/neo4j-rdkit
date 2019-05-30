@@ -29,7 +29,7 @@ public class LibraryLoaderTest {
     final String expectedOs = "macosx";
     final String expectedArch = "x86_64";
 
-    // todo: add test for mac os x arch
+    // todo: add test for mac os x arch ???
     String os = LibraryLoader.getOsFormatted("Mac OS X");
 
     assertEquals(expectedOs, os);
@@ -55,5 +55,6 @@ public class LibraryLoaderTest {
   @Test
   public void testLoadLibraries() {
     LibraryLoader.loadLibraries();
+    // todo: call to jni method
   }
 }
