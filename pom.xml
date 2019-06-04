@@ -34,6 +34,22 @@
   </dependencyManagement>
 
   <dependencies>
+    <!-- Local dependencies on rdkit -->
+    <dependency>
+      <groupId>org.rdkit</groupId>
+      <artifactId>rdkit</artifactId>
+      <version>1.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/org.RDKit.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>org.rdkit</groupId>
+      <artifactId>rdkit-doc</artifactId>
+      <version>1.0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/org.RDKitDoc.jar</systemPath>
+    </dependency>
+
     <!-- CORE NEO4J-->
     <dependency>
       <groupId>org.neo4j</groupId>
