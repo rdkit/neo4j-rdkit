@@ -67,7 +67,7 @@ public class LibraryLoader {
     final List<String> missingLibraries = findLibraries(libraryNames);
 
     if (missingLibraries.size() > 0) {
-      logger.warn("Missinge libraries: {}", missingLibraries);
+      logger.info("Missing libraries: {}", missingLibraries);
       LibraryMover.resolveMissingLibraries(missingLibraries, platform);
     }
 

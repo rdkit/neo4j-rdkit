@@ -47,6 +47,7 @@ public class LibraryMover {
     }
 
     val tempFolderLibs = LibraryLoader.getLibrariesInFolder(temporaryDir.getAbsolutePath(), missingLibraries);
+    logger.warn("Libraries present in temp folder: {}", tempFolderLibs);
     missingLibraries = missingLibraries.stream()
         .filter(x -> !tempFolderLibs.contains(x))
         .collect(Collectors.toList());
@@ -151,7 +152,6 @@ public class LibraryMover {
       if (name.contains(folder)) {
         /* Process ONLY found directory and ignore other entries*/
         if (!entry.isDirectory() && missingLibraries.stream().anyMatch(name::contains)) {
-          // todo: check
           entriesSet.add(entry);
         }
       }

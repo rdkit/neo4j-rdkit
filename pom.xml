@@ -6,8 +6,8 @@
 
   <groupId>org.rdkit</groupId>
   <artifactId>neo4j</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <name>RDKit extension for Neo4j</name>
+  <version>0.0.1</version>
+  <name>RDKit-Neo4j</name>
   <packaging>jar</packaging>
 
 
@@ -15,13 +15,12 @@
     <mockito.version>2.27.0</mockito.version>
     <neo4j.version>3.5.6</neo4j.version>
     <slf4j.version>1.7.25</slf4j.version>
+    <junit.version>5.2.0</junit.version>
+    <lombok.version>1.18.8</lombok.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
   </properties>
-
-  <parent>
-    <groupId>org.neo4j</groupId>
-    <artifactId>parent</artifactId>
-    <version>3.5.5</version>
-  </parent>
 
   <dependencyManagement>
     <dependencies>
@@ -66,7 +65,7 @@
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.18.8</version>
+      <version>${lombok.version}</version>
       <scope>provided</scope>
     </dependency>
 
@@ -86,13 +85,67 @@
     </dependency>
   </dependencies>
 
+
+
   <build>
+    <resources>
+      <resource>
+        <directory>native</directory>
+        <includes>
+          <include>**/*</include>
+        </includes>
+        <targetPath>native</targetPath>
+      </resource>
+      <resource>
+        <directory>lib</directory>
+        <includes>
+          <include>*</include>
+        </includes>
+        <targetPath>lib</targetPath>
+      </resource>
+    </resources>
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <argLine>-Xmx1024m</argLine>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/${project.build.finalName}.lib</outputDirectory>
+              <overWriteReleases>false</overWriteReleases>
+              <overWriteSnapshots>false</overWriteSnapshots>
+              <overWriteIfNewer>true</overWriteIfNewer>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <!-- Build an executable JAR -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.1.0</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <addClasspath>true</addClasspath>
+              <classpathPrefix>${project.build.finalName}.lib/</classpathPrefix>
+              <mainClass>org.rdkit.neo4j.Main</mainClass>
+            </manifest>
+          </archive>
         </configuration>
       </plugin>
     </plugins>
