@@ -42,7 +42,6 @@ public class LibraryLoader {
             "GraphMolWrap"});
     LIBRARIES.put(OS_WIN32 + "." + ARCH_X86_64,
         new String[]{
-            "boost_system-vc140-mt-x64-1_67",
             "boost_serialization-vc140-mt-x64-1_67",
             "boost_zlib-vc140-mt-x64-1_67",
             "boost_bzip2-vc140-mt-x64-1_67",
@@ -61,11 +60,15 @@ public class LibraryLoader {
     final String platform = getPlatform();
     final String extension = getExtension(getOs());
     final String[] libraries = listLibraries(platform);
-    final List<String> missingLibraries = findLibraries(libraries, extension);
+    final List<String> libraryNames = Arrays.stream(libraries)
+        .map(x -> String.format("%s.%s", x, extension))
+        .collect(Collectors.toList());
+    // Contains filename + extension
+    final List<String> missingLibraries = findLibraries(libraryNames);
+
     if (missingLibraries.size() > 0) {
-//      final String subfolder = platform.replaceAll("\\.", "/");
-      LibraryMover.moveMissingLibraries(missingLibraries, platform, extension);
-      // todo: why move into temp folder if I work from IDE?
+      logger.warn("Missinge libraries: {}", missingLibraries);
+      LibraryMover.resolveMissingLibraries(missingLibraries, platform);
     }
 
     loadLibraries(libraries);
@@ -80,28 +83,42 @@ public class LibraryLoader {
     }
   }
 
+  /**
+   * Method returns all libraries found in `path`
+   * @param path to investigate
+   * @param fileNames to detect
+   * @return list of detected libraries
+   */
+  public static List<String> getLibrariesInFolder(String path, List<String> fileNames) {
+    final List<String> existingLibraries = new ArrayList<>();
+    for (final String library : fileNames) {
+      final File fileDir = new File(path);
+      if (fileDir.isDirectory()) {
+        final File fileLib = new File(fileDir, library);
+        try {
+          if (fileLib.isFile() && fileLib.canRead()) {
+            logger.debug("Library {} found in folder: {}", library, path);
+            existingLibraries.add(library);
+          }
+        } catch (final SecurityException exc) {
+          logger.debug("Library {} access denied in folder: {}", library, path);
+          // Thrown, if we do not have read access at all - ignore this
+        }
+      }
+    }
 
-  private static List<String> findLibraries(String[] libraries, String extension) {
+    return existingLibraries;
+  }
+
+
+  private static List<String> findLibraries(List<String> libraryNames) {
     final List<String> existingLibraries = new ArrayList<>();
 
     // Check file in existing java.library.path(s)
     final String[] libraryPaths = getLibraryPaths();
     for (final String strPath : libraryPaths) {
-      for (final String library : libraries) {
-        final File fileDir = new File(strPath);
-        if (fileDir.isDirectory()) {
-          final String fname = String.format("%s.%s", library, extension);
-          final File fileLib = new File(fileDir, fname);
-          try {
-            if (fileLib.isFile() && fileLib.canRead()) {
-              existingLibraries.add(library);
-            }
-          } catch (final SecurityException exc) {
-            // Thrown, if we do not have read access at all - ignore
-            // this
-          }
-        }
-      }
+      val found = getLibrariesInFolder(strPath, libraryNames);
+      existingLibraries.addAll(found);
     }
 
     val counted = existingLibraries.stream()
@@ -116,7 +133,7 @@ public class LibraryLoader {
       }
     }
 
-    return Arrays.stream(libraries)
+    return libraryNames.stream()
         .filter(x -> !existingLibraries.contains(x))
         .collect(Collectors.toList());
   }
@@ -133,8 +150,7 @@ public class LibraryLoader {
   private static String getPlatform() {
     final String arch = getArch();
     final String os = getOs();
-    String platform = os + "." + arch;
-    return platform;
+    return String.format("%s.%s", os, arch);
   }
 
   /**
@@ -145,10 +161,6 @@ public class LibraryLoader {
   private static void loadLibraries(String[] libraries) {
     // todo: what about optional path to load files from?
     for (String lib : libraries) {
-//      System.loadLibrary(lib);
-//      File f = new File("native/win32.x86_64/" + lib + ".dll");
-//      String path = "C:\\cygwin64\\home\\evger\\JavaProjects\\knime-rdkit\\org.rdkit.knime.bin.win32.x86_64\\os\\win32\\x86_64\\" + lib + ".dll";
-//      System.load(path);
       System.loadLibrary(lib);
       logger.info("Successfully loaded library={}", lib);
     }

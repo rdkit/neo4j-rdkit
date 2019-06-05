@@ -60,7 +60,9 @@ public class LibraryLoaderTest {
   @Test
   public void testLoadLibraries() throws LoaderException {
     LibraryLoader.loadLibraries();
-    String s = RDKFuncs.getComputedPropName();
-    System.out.println(s);
+    String propName = RDKFuncs.getComputedPropName();
+
+    final String expected = "__computedProps";
+    assertEquals(expected, propName);
   }
 }

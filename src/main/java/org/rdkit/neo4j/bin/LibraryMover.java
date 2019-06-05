@@ -21,6 +21,8 @@ import java.util.TreeMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import java.util.stream.Collectors;
+import lombok.val;
 import org.rdkit.neo4j.exceptions.LoaderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,37 +30,52 @@ import org.slf4j.LoggerFactory;
 public class LibraryMover {
   private static final Logger logger = LoggerFactory.getLogger(LibraryMover.class);
 
-  public static void moveMissingLibraries(List<String> missingLibraries, String folder,
-      String extension) throws LoaderException {
+  /**
+   * Method resolves missing libraries: initializes temp dir, filters already present and moves the rest
+   * @param missingLibraries to detect/move
+   * @param folder where to take libraries from
+   * @throws LoaderException if unable to initialize temp dir or unable to move libraries
+   */
+  public static void resolveMissingLibraries(List<String> missingLibraries, String folder) throws LoaderException {
     // Make new java.library.path
     File temporaryDir;
     try {
-      temporaryDir = createTempLibraryPath();
+      temporaryDir = LibraryMover.createTempLibraryPath();
     } catch (Exception e) {
-      throw new LoaderException("Exception during temp folder initialization", e);
+      logger.error("Unable to initilize temp folder");
+      throw new LoaderException("Unable to initialize temp folder", e);
     }
 
+    val tempFolderLibs = LibraryLoader.getLibrariesInFolder(temporaryDir.getAbsolutePath(), missingLibraries);
+    missingLibraries = missingLibraries.stream()
+        .filter(x -> !tempFolderLibs.contains(x))
+        .collect(Collectors.toList());
+
+    if (missingLibraries.size() > 0) {
+      LibraryMover.moveMissingLibraries(missingLibraries, folder, temporaryDir);
+    }
+  }
+
+  public static void moveMissingLibraries(List<String> missingLibraries, String fromFolder, File temporaryDir) throws LoaderException {
     final File jarFile = new File(LibraryLoader.class.getProtectionDomain().getCodeSource().getLocation().getPath());
-    Map<String, InputStream> libraries;
+    final Map<String, InputStream> libStreams;
 
     if(jarFile.isFile()) {  // Run with JAR file
       logger.info("Loading libraries from JAR");
       try (final JarFile jar = new JarFile(jarFile)) {
-        libraries = getJarStreams(jar, missingLibraries, folder);
-        moveLibraries(libraries, temporaryDir);
+        libStreams = getJarStreams(jar, missingLibraries, fromFolder);
+        moveLibraries(libStreams, temporaryDir);
       } catch (IOException e) {
         logger.error("Exception occured during native libraries extraction from JAR");
-
         throw new LoaderException("Exception during extraction from JAR", e);
       }
     } else { // Run with IDE
       try {
         logger.info("Loading libraries from IDE level");
-        libraries = getIdeStreams(missingLibraries, folder, extension);
-        moveLibraries(libraries, temporaryDir);
+        libStreams = getIdeStreams(missingLibraries, fromFolder);
+        moveLibraries(libStreams, temporaryDir);
       } catch (IOException e) {
         logger.info("Exception occured during native libraries extraction from folders");
-
         throw new LoaderException("Exception during extraction from folders", e);
       }
     }
@@ -155,19 +172,16 @@ public class LibraryMover {
   /**
    * Method loads files from specified folder
    *
-   * @param missingLibraries
+   * @param missingLibraries list of filenames+extension to be streamed
    * @param folder - folder with native libraries
-   * @param extension
    * @return map of Filenames & InputStreams
-   * @throws FileNotFoundException - if any
    */
   private static Map<String,InputStream> getIdeStreams(List<String> missingLibraries,
-      String folder, String extension) {
+      String folder) {
     Map<String, InputStream> ideStreams = new TreeMap<>();
-    for (String lib: missingLibraries) {
-      final String libraryName = String.format("%s.%s", lib, extension);
+    for (String libraryName: missingLibraries) {
       final String path = String.format("%s/%s", folder, libraryName);
-      InputStream iStream = getNativeAsStream(path);
+      final InputStream iStream = getNativeAsStream(path);
       ideStreams.put(libraryName, iStream);
     }
 
@@ -183,8 +197,19 @@ public class LibraryMover {
    * @return temporary folder file
    */
   private static File createTempLibraryPath() throws NoSuchFieldException, IllegalAccessException, IOException {
-    File tempDir = Files.createTempDirectory("rdkit-binaries").toFile();
-    tempDir.deleteOnExit();
+    File tempDir;
+    String osName = System.getProperty("os.name");
+    if (osName.toLowerCase().startsWith("windows")) {
+      tempDir = new File(System.getenv("USERPROFILE") + "\\AppData\\Local\\rdkit\\native");
+      tempDir.mkdirs();
+    } else {
+      // todo: analogue solution for *nix systems (I do not want to add dependency on guava only for this)
+      tempDir = Files.createTempDirectory("rdkit-binaries").toFile();
+      tempDir.deleteOnExit();
+    }
+
+    logger.info("Using temp dir: {}", tempDir.getPath());
+    System.setProperty("java.io.tmpdir", tempDir.getPath());
 
     String absPath = tempDir.toString();
     addLibraryPath(absPath);
@@ -219,5 +244,4 @@ public class LibraryMover {
     newPaths[newPaths.length - 1] = pathToAdd;
     usrPathsField.set(null, newPaths);
   }
-
 }
