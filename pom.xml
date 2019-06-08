@@ -4,8 +4,8 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.rdkit</groupId>
-  <artifactId>neo4j</artifactId>
+  <groupId>org.neo4j</groupId>
+  <artifactId>rdkit-index</artifactId>
   <version>0.0.1</version>
   <name>RDKit-Neo4j</name>
   <packaging>jar</packaging>
@@ -37,16 +37,12 @@
     <dependency>
       <groupId>org.rdkit</groupId>
       <artifactId>rdkit</artifactId>
-      <version>1.0</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/lib/org.RDKit.jar</systemPath>
+      <version>1.0.0</version>
     </dependency>
     <dependency>
       <groupId>org.rdkit</groupId>
       <artifactId>rdkit-doc</artifactId>
-      <version>1.0</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/lib/org.RDKitDoc.jar</systemPath>
+      <version>1.0.0</version>
     </dependency>
 
     <!-- CORE NEO4J-->
@@ -85,8 +81,6 @@
     </dependency>
   </dependencies>
 
-
-
   <build>
     <resources>
       <resource>
@@ -96,57 +90,53 @@
         </includes>
         <targetPath>native</targetPath>
       </resource>
-      <resource>
-        <directory>lib</directory>
-        <includes>
-          <include>*</include>
-        </includes>
-        <targetPath>lib</targetPath>
-      </resource>
     </resources>
 
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.0.0-M3</version>
         <configuration>
           <argLine>-Xmx1024m</argLine>
         </configuration>
       </plugin>
+      <!-- todo: add building jar and running tests as a phase execution -->
 
+      <!-- Assembly plugin for all dependencies, looks too heave, but could not solve with other tools -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.1.1</version>
         <executions>
           <execution>
-            <id>copy-dependencies</id>
-            <phase>prepare-package</phase>
+            <phase>package</phase>
             <goals>
-              <goal>copy-dependencies</goal>
+              <goal>single</goal>
             </goals>
             <configuration>
-              <outputDirectory>${project.build.directory}/${project.build.finalName}.lib</outputDirectory>
-              <overWriteReleases>false</overWriteReleases>
-              <overWriteSnapshots>false</overWriteSnapshots>
-              <overWriteIfNewer>true</overWriteIfNewer>
+              <archive>
+                <manifest>
+                  <addClasspath>true</addClasspath>
+                  <classpathPrefix>${project.build.finalName}/lib</classpathPrefix>
+                  <mainClass>org.rdkit.neo4j.Main</mainClass>
+                </manifest>
+                <manifestEntries>
+                  <Build-Jdk>${maven.compiler.target}</Build-Jdk>
+                  <Implementation-Title>${project.name}</Implementation-Title>
+                  <Implementation-Version>${project.version}</Implementation-Version>
+                  <Specification-Title>${project.name} Library</Specification-Title>
+                  <Specification-Version>${project.version}</Specification-Version>
+                  <Class-Path>lib/org.RDKit.jar</Class-Path>
+                </manifestEntries>
+              </archive>
+              <descriptorRefs>
+                <descriptorRef>jar-with-dependencies</descriptorRef>
+              </descriptorRefs>
+              <finalName>${project.build.finalName}</finalName>
             </configuration>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <!-- Build an executable JAR -->
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>3.1.0</version>
-        <configuration>
-          <archive>
-            <manifest>
-              <addClasspath>true</addClasspath>
-              <classpathPrefix>${project.build.finalName}.lib/</classpathPrefix>
-              <mainClass>org.rdkit.neo4j.Main</mainClass>
-            </manifest>
-          </archive>
-        </configuration>
       </plugin>
     </plugins>
   </build>

@@ -2,12 +2,9 @@ package org.rdkit.neo4j.bin;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
-import org.RDKit.Atom;
 import org.RDKit.RDKFuncs;
-import org.RDKit.RDKFuncsJNI;
 import org.junit.jupiter.api.Test;
 import org.rdkit.neo4j.exceptions.LoaderException;
 

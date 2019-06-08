@@ -6,7 +6,8 @@ public class LibraryMoverTest {
 
   @Test
   public void testMoveLibrariesWin() {
-    // todo
+    // todo: me
   }
 
+  // todo: how to test code as it runs from .jar file? mockito?
 }
