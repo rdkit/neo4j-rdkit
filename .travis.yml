@@ -5,12 +5,15 @@ cache:
 matrix:
   include:
   - os: windows
-    language: shell
+    language: bash
     before_install:
-    - git clone https://github.com/portapps/portapps ${TRAVIS_BUILD_DIR}/../portapps
-    - source ${TRAVIS_BUILD_DIR}/../portapps/.travis/prepare.sh
-    - bash ${TRAVIS_BUILD_DIR}/../portapps/.travis/java.sh
-    - bash ${TRAVIS_BUILD_DIR}/.travis/install-maven.sh ${TRAVIS_BUILD_DIR}
+#    - git clone https://github.com/portapps/portapps ${TRAVIS_BUILD_DIR}/../portapps
+#    - source ${TRAVIS_BUILD_DIR}/../portapps/.travis/prepare.sh
+#    - bash ${TRAVIS_BUILD_DIR}/../portapps/.travis/java.sh
+    - choco install jdk8
+    - export JAVA_HOME="c/Program\ Files/Java/jdk1.8.0_211"
+    - export PATH=$PATH:$JAVA_HOME/bin
+    - choco install maven
   - os: linux
     language: java
     dist: trusty
