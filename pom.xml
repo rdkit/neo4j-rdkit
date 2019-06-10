@@ -116,24 +116,37 @@
             </goals>
             <configuration>
               <archive>
-                <manifest>
-                  <addClasspath>true</addClasspath>
-                  <classpathPrefix>${project.build.finalName}/lib</classpathPrefix>
-                  <mainClass>org.rdkit.neo4j.Main</mainClass>
-                </manifest>
+                <!--<manifest>-->
+                  <!--<addClasspath>true</addClasspath>-->
+                  <!--<mainClass>org.rdkit.neo4j.Main</mainClass>-->
+                <!--</manifest>-->
                 <manifestEntries>
                   <Build-Jdk>${maven.compiler.target}</Build-Jdk>
                   <Implementation-Title>${project.name}</Implementation-Title>
                   <Implementation-Version>${project.version}</Implementation-Version>
-                  <Specification-Title>${project.name} Library</Specification-Title>
+                  <Specification-Title>${project.name} extension</Specification-Title>
                   <Specification-Version>${project.version}</Specification-Version>
-                  <Class-Path>lib/org.RDKit.jar</Class-Path>
                 </manifestEntries>
               </archive>
               <descriptorRefs>
                 <descriptorRef>jar-with-dependencies</descriptorRef>
               </descriptorRefs>
-              <finalName>${project.build.finalName}</finalName>
+              <appendAssemblyId>false</appendAssemblyId>
+              <finalName>${project.artifactId}-${project.version}</finalName>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <phase>none</phase>
+            <configuration>
+              <finalName>unwanted</finalName>
+              <classifier>unwanted</classifier>
             </configuration>
           </execution>
         </executions>
