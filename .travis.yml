@@ -4,6 +4,13 @@ cache:
 
 matrix:
   include:
+  - os: windows
+    language: shell
+    before_install:
+    - git clone https://github.com/portapps/portapps ${TRAVIS_BUILD_DIR}/../portapps
+    - source ${TRAVIS_BUILD_DIR}/../portapps/.travis/prepare.sh
+    - bash ${TRAVIS_BUILD_DIR}/../portapps/.travis/java.sh
+    - bash ${TRAVIS_BUILD_DIR}/.travis/install-maven.sh ${TRAVIS_BUILD_DIR}
   - os: linux
     language: java
     dist: trusty
@@ -18,15 +25,12 @@ matrix:
   - os: osx
     language: java
     osx_image: xcode10
-  - os: windows
-    language: shell
-    install:
-    - git clone https://github.com/portapps/portapps ${TRAVIS_BUILD_DIR}/../portapps
-    - source ${TRAVIS_BUILD_DIR}/../portapps/.travis/prepare.sh
-    - bash ${TRAVIS_BUILD_DIR}/../portapps/.travis/java.sh
 
-before_install:
-- mvn org.apache.maven.plugins:maven-install-plugin:2.3.1:install-file -Dfile=lib/org.RDKit.jar -DgroupId=org.rdkit -DartifactId=rdkit -Dversion=1.0.0 -Dpackaging=jar
-- mvn org.apache.maven.plugins:maven-install-plugin:2.3.1:install-file -Dfile=lib/org.RDKitDoc.jar -DgroupId=org.rdkit -DartifactId=rdkit-doc -Dversion=1.0.0 -Dpackaging=jar
+install:
+- mvn org.apache.maven.plugins:maven-install-plugin:2.3.1:install-file -Dfile=${TRAVIS_BUILD_DIR}/lib/org.RDKit.jar -DgroupId=org.rdkit -DartifactId=rdkit -Dversion=1.0.0 -Dpackaging=jar
+- mvn org.apache.maven.plugins:maven-install-plugin:2.3.1:install-file -Dfile=${TRAVIS_BUILD_DIR}/lib/org.RDKitDoc.jar -DgroupId=org.rdkit -DartifactId=rdkit-doc -Dversion=1.0.0 -Dpackaging=jar
 
 script: mvn -e test
+
+notifications:
+  email: false
