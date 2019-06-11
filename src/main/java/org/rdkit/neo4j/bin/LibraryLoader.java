@@ -57,11 +57,16 @@ public class LibraryLoader {
   }
 
   public static void loadLibraries() throws LoaderException {
+    final String os = getOs();
     final String platform = getPlatform();
-    final String extension = getExtension(getOs());
+    final String extension = getExtension(os);
     final String[] libraries = listLibraries(platform);
     final List<String> libraryNames = Arrays.stream(libraries)
-        .map(x -> String.format("%s.%s", x, extension))
+        .map(x -> {
+          if (!os.equals(OS_WIN32))
+            x = String.format("lib%s", x);
+          return String.format("%s.%s", x, extension);
+        })
         .collect(Collectors.toList());
     // Contains filename + extension
     final List<String> missingLibraries = findLibraries(libraryNames);
@@ -148,8 +153,8 @@ public class LibraryLoader {
   }
 
   private static String getPlatform() {
-    final String arch = getArch();
     final String os = getOs();
+    final String arch = getArch();
     return String.format("%s.%s", os, arch);
   }
 

@@ -33,10 +33,10 @@ public class LibraryMover {
   /**
    * Method resolves missing libraries: initializes temp dir, filters already present and moves the rest
    * @param missingLibraries to detect/move
-   * @param folder where to take libraries from
+   * @param platform where to take libraries from
    * @throws LoaderException if unable to initialize temp dir or unable to move libraries
    */
-  public static void resolveMissingLibraries(List<String> missingLibraries, String folder) throws LoaderException {
+  public static void resolveMissingLibraries(List<String> missingLibraries, String platform) throws LoaderException {
     // Make new java.library.path
     File temporaryDir;
     try {
@@ -53,7 +53,7 @@ public class LibraryMover {
         .collect(Collectors.toList());
 
     if (missingLibraries.size() > 0) {
-      LibraryMover.moveMissingLibraries(missingLibraries, folder, temporaryDir);
+      LibraryMover.moveMissingLibraries(missingLibraries, platform, temporaryDir);
     }
   }
 
