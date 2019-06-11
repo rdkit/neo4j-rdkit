@@ -5,3 +5,4 @@ target/
 CHANGELOG.md
 *.sdf
 out/
+neo4j-temp/
