@@ -2,6 +2,23 @@
  `Open Chemistry`, `RDKit & Neo4j` GSoC 2019 project  
 
 ***
+
+## Build
+
+1) Install `lib/org.RDKit.jar` and `lib/org.RDKitDoc.jar` into your local maven repository  
+```
+mvn org.apache.maven.plugins:maven-install-plugin:2.3.1:install-file \
+                         -Dfile=lib/org.RDKit.jar -DgroupId=org.rdkit \ 
+                         -DartifactId=rdkit -Dversion=1.0.0 \
+                         -Dpackaging=jar
+                         
+mvn org.apache.maven.plugins:maven-install-plugin:2.3.1:install-file \
+                         -Dfile=lib/org.RDKitDoc.jar -DgroupId=org.rdkit \ 
+                         -DartifactId=rdkit-doc -Dversion=1.0.0 \
+                         -Dpackaging=jar
+  ```
+2) Generate .jar file with `mvn clean package`  
+
 __Abstract:__
 > The project will be focused on development of extension for neo4j graph database for querying knowledge graphs storing molecular and chemical information. That would be implemented on top of neo4j-java-driver.
 
