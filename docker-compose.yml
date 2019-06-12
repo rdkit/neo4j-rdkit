@@ -8,14 +8,14 @@ services:
       - "7473:7473" # https
       - "7687:7687" # bolt
     volumes:
-#      - "./neo4j/data:/data"
-#      - "./neo4j/logs:/logs"
-#      - "./neo4j/import:/var/lib/neo4j/import"
-#      - "./neo4j/plugins:/plugins"
+#      - "./neo4j-temp/data:/data"
+#      - "./neo4j-temp/logs:/logs"
+#      - "./neo4j-temp/import:/var/lib/neo4j/import"
+      - "./neo4j-temp/plugins:/plugins"
       - data:/data
       - logs:/logs
       - import:/var/lib/neo4j/import
-      - plugins:/plugins
+#      - plugins:/plugins
     environment:
       NEO4J_AUTH: "neo4j/test"
 
