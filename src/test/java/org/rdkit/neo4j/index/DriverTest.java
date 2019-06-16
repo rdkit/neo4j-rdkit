@@ -23,10 +23,10 @@ import org.rdkit.neo4j.index.utils.GraphUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Disabled
 public class DriverTest {
   private static final Logger logger = LoggerFactory.getLogger(DriverTest.class);
 
+  @Disabled
   @Test
   public void testHello() {
     try (final Driver driver = GraphUtils.getDriver()) {
@@ -51,6 +51,7 @@ public class DriverTest {
 
 //  https://github.com/neo4j/neo4j/issues/7228
 
+  @Disabled
   @Test
   public void insertChemicalStructures() {
     List<String> rows = ChemicalStructureParser.readTestData();
