@@ -1,20 +1,25 @@
 package org.rdkit.neo4j.index;
 
-import apoc.refactor.GraphRefactoring;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.Map;
+import java.util.Map.Entry;
 import lombok.val;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.RelationshipType;
+import org.neo4j.graphdb.Result.ResultRow;
+import org.neo4j.graphdb.Result.ResultVisitor;
 import org.neo4j.test.TestGraphDatabaseFactory;
 
 import org.rdkit.neo4j.index.model.ChemblRow;
@@ -42,7 +47,7 @@ public class EmbeddedTest {
   }
 
   @Test
-  public void createTestDb() throws Exception {
+  public void createTestDb() {
     // Do not use neo4j-temp as it starts to load /plugins folder
     // todo: why plugin folder fails?
 //   graphDb = GraphUtils.getEmbeddedDatabase(new File("neo4j-temp/data/test.db"));
@@ -61,24 +66,6 @@ public class EmbeddedTest {
       tx.success();
     }
 
-//    val result = graphDb.execute("START n=node(*) MATCH (n)-[r]->(m) RETURN n,r,m;");
-//    result.stream().forEach(x -> {
-//      logger.info("Entry: {}", x);
-//      for (val t: x.entrySet()) {
-//        logger.info("\tInner object: key={}, value={}", t.getKey(), t.getValue());
-//        if (t.getValue() instanceof Node) {
-//          Node node = (Node) t.getValue();
-//          try {
-//            for (val prop : node.getAllProperties().entrySet()) {
-//              logger.info("\t\tNode property: key={}, value={}", prop.getKey(), prop.getValue());
-//            }
-//          } catch (Exception e) {
-//            logger.error("\t\t Something went wrong: {}", e.getMessage());
-//          }
-//        }
-//      }
-//    });
-
     try (val tx = graphDb.beginTx()) {
       Node foundN = graphDb.getNodeById( n.getId() );
       Node foundM = graphDb.getNodeById( m.getId() );
@@ -91,7 +78,8 @@ public class EmbeddedTest {
   }
 
   @Test
-  public void insertDataTest() {
+  @Disabled
+  public void callProcedure() {
     new TestGraphDatabaseFactory().newImpermanentDatabase();
 //    final GraphDatabaseService graphDb = GraphUtils.getEmbeddedDatabase(new File("neo4j-temp/data/test.db"));
     final List<String> rows = ChemicalStructureParser.readTestData();
@@ -140,5 +128,62 @@ public class EmbeddedTest {
 
 //    GraphRefactoring gr = new GraphRefactoring();
 //    gr.mergeNodes()
+  }
+
+
+  @Test
+  public void insertDataTest() {
+    final List<String> rows = ChemicalStructureParser.readTestData();
+
+    Map<String, Object> parameters = new HashMap<>();
+    List<Map<String, Object>> structures = new ArrayList<>();
+
+    for (final String row: rows) {
+      structures.add(ChemicalStructureParser.mapChemicalRow(row));
+    }
+    parameters.put("rows", structures);
+
+    // Insert objects
+    try (val tx = graphDb.beginTx()) {
+      val r = graphDb.execute(
+          "UNWIND {rows} as row "
+              + "MERGE (from:Chemical{smiles: row.smiles, mol_id: row.mol_id}) "
+              + "MERGE (to:Doc{doc_id: row.doc_id}) "
+              + "MERGE (from) -[:PUBLISHED]-> (to)", parameters);
+
+      logger.info("{}", r.resultAsString());
+      tx.success();
+    }
+
+    try (val tx = graphDb.beginTx()) {
+      val result1 = graphDb.execute("MATCH (c:Doc) RETURN count(*) as docs");
+
+      result1.accept(rowVisited -> {
+        Number docs = rowVisited.getNumber("docs");
+        Assertions.assertEquals(57L, docs);
+
+        return false;
+      });
+
+      val result2 = graphDb.execute("MATCH (a:Chemical) RETURN count(*) as chemicals");
+
+      result2.accept(rowVisited -> {
+        Number chemicals = rowVisited.getNumber("chemicals");
+        Assertions.assertEquals(941L, chemicals);
+
+        return false;
+      });
+
+      val result3 = graphDb.execute("MATCH (a:Chemical) -[b:PUBLISHED]-> (c:Doc) RETURN count(*) as relations");
+
+      result3.accept(rowVisited -> {
+        Number relationsCount = rowVisited.getNumber("relations");
+        Assertions.assertEquals(1112L, relationsCount);
+
+        return false;
+      });
+
+      tx.success();
+    }
   }
 }

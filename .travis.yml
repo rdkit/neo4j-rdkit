@@ -33,8 +33,3 @@ script: mvn -e test
 
 notifications:
   email: false
-
-branches:
-  only:
-  - master
-  - dev
