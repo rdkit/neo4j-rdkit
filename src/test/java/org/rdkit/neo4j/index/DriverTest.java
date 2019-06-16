@@ -53,7 +53,7 @@ public class DriverTest {
 
   @Disabled
   @Test
-  public void insertChemicalStructures() {
+  public void insertChemicalStructures() throws Exception {
     List<String> rows = ChemicalStructureParser.readTestData();
     Map<String, Object> parameters = new HashMap<>();
     List<Map<String, Object>> structures = new ArrayList<>();

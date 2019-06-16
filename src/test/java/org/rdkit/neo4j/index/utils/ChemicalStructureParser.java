@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 public class ChemicalStructureParser {
   private static final Logger logger = LoggerFactory.getLogger(ChemicalStructureParser.class);
 
-  public static List<String> readTestData() {
+  public static List<String> readTestData() throws IOException {
     final List<String> lines = new LinkedList<>();
     final URL url = ChemicalStructureParser.class.getClassLoader().getResource("chembl_test_data.txt");
 
@@ -30,7 +30,7 @@ public class ChemicalStructureParser {
       return lines;
     } catch (IOException e) {
       logger.error("IOException during file read");
-      return null;
+      throw e;
     }
   }
 

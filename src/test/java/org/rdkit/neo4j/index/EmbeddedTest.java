@@ -1,11 +1,9 @@
 package org.rdkit.neo4j.index;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import lombok.val;
 
 import org.junit.jupiter.api.AfterEach;
@@ -18,9 +16,6 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.RelationshipType;
-import org.neo4j.graphdb.Result.ResultRow;
-import org.neo4j.graphdb.Result.ResultVisitor;
-import org.neo4j.test.TestGraphDatabaseFactory;
 
 import org.rdkit.neo4j.index.model.ChemblRow;
 import org.rdkit.neo4j.index.utils.ChemicalStructureParser;
@@ -50,7 +45,6 @@ public class EmbeddedTest {
   public void createTestDb() {
     // Do not use neo4j-temp as it starts to load /plugins folder
     // todo: why plugin folder fails?
-//   graphDb = GraphUtils.getEmbeddedDatabase(new File("neo4j-temp/data/test.db"));
 
     Node n, m;
     try (val tx = graphDb.beginTx()) {
@@ -79,9 +73,7 @@ public class EmbeddedTest {
 
   @Test
   @Disabled
-  public void callProcedure() {
-    new TestGraphDatabaseFactory().newImpermanentDatabase();
-//    final GraphDatabaseService graphDb = GraphUtils.getEmbeddedDatabase(new File("neo4j-temp/data/test.db"));
+  public void callProcedure() throws Exception {
     final List<String> rows = ChemicalStructureParser.readTestData();
 
     // Insert objects
@@ -132,7 +124,7 @@ public class EmbeddedTest {
 
 
   @Test
-  public void insertDataTest() {
+  public void insertDataTest() throws Exception {
     final List<String> rows = ChemicalStructureParser.readTestData();
 
     Map<String, Object> parameters = new HashMap<>();
