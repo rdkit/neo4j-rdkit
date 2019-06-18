@@ -7,3 +7,4 @@ CHANGELOG.md
 out/
 neo4j-temp/
 docker-compose.yml
+dependency-reduced-pom.xml

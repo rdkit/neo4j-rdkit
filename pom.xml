@@ -29,6 +29,7 @@
         <groupId>org.neo4j</groupId>
         <artifactId>neo4j</artifactId>
         <version>${neo4j.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.neo4j.driver</groupId>
@@ -46,7 +47,6 @@
   </dependencyManagement>
 
   <dependencies>
-    <!-- Local dependencies on rdkit -->
     <dependency>
       <groupId>org.rdkit</groupId>
       <artifactId>rdkit</artifactId>
@@ -147,53 +147,16 @@
           </dependency>
         </dependencies>
       </plugin>
-      <!-- todo: add building jar and running tests as a phase execution -->
 
-      <!-- Assembly plugin for all dependencies, looks too heave, but could not solve with other tools -->
+      <!-- todo: add building jar and running tests as a phase execution -->
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>3.1.1</version>
+        <artifactId>maven-shade-plugin</artifactId>
         <executions>
           <execution>
             <phase>package</phase>
             <goals>
-              <goal>single</goal>
+              <goal>shade</goal>
             </goals>
-            <configuration>
-              <archive>
-                <!--<manifest>-->
-                  <!--<addClasspath>true</addClasspath>-->
-                  <!--<mainClass>org.rdkit.neo4j.Main</mainClass>-->
-                <!--</manifest>-->
-                <manifestEntries>
-                  <Build-Jdk>${maven.compiler.target}</Build-Jdk>
-                  <Implementation-Title>${project.name}</Implementation-Title>
-                  <Implementation-Version>${project.version}</Implementation-Version>
-                  <Specification-Title>${project.name} extension</Specification-Title>
-                  <Specification-Version>${project.version}</Specification-Version>
-                </manifestEntries>
-              </archive>
-              <descriptorRefs>
-                <descriptorRef>jar-with-dependencies</descriptorRef>
-              </descriptorRefs>
-              <appendAssemblyId>false</appendAssemblyId>
-              <finalName>${project.artifactId}-${project.version}</finalName>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>default-jar</id>
-            <phase>none</phase>
-            <configuration>
-              <finalName>unwanted</finalName>
-              <classifier>unwanted</classifier>
-            </configuration>
           </execution>
         </executions>
       </plugin>
