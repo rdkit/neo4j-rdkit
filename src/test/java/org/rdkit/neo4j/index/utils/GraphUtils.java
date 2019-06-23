@@ -27,6 +27,10 @@ public class GraphUtils {
     return new TestGraphDatabaseFactory().newImpermanentDatabase();
   }
 
+  public static GraphDatabaseService getTestDatabase(File storeDir) {
+    return new TestGraphDatabaseFactory().newImpermanentDatabase(storeDir);
+  }
+
   public static GraphDatabaseService getEmbeddedDatabase(File db) {
     GraphDatabaseFactory graphDbFactory = new GraphDatabaseFactory();
     return graphDbFactory.newEmbeddedDatabase(db);

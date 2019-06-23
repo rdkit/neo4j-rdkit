@@ -43,6 +43,12 @@
         <version>${neo4j.version}</version>
         <scope>test</scope>
       </dependency>
+      <dependency>
+        <groupId>org.neo4j.test</groupId>
+        <artifactId>neo4j-harness</artifactId>
+        <version>${neo4j.version}</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -67,22 +73,17 @@
     <dependency>
       <groupId>org.neo4j.driver</groupId>
       <artifactId>neo4j-java-driver</artifactId>
-      <scope>test</scope>
     </dependency>
 
     <dependency>
-      <groupId>org.neo4j.procedure</groupId>
-      <artifactId>apoc</artifactId>
-      <version>${apoc.version}</version>
-      <scope>test</scope>
+      <groupId>org.neo4j.test</groupId>
+      <artifactId>neo4j-harness</artifactId>
     </dependency>
 
     <dependency>
       <groupId>org.neo4j.community</groupId>
       <artifactId>it-test-support</artifactId>
-      <scope>test</scope>
     </dependency>
-
 
     <!-- Logger -->
     <dependency>

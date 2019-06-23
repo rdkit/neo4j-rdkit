@@ -1,5 +1,6 @@
 package org.rdkit.neo4j.index;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.RelationshipType;
 
+import org.neo4j.graphdb.Result;
 import org.rdkit.neo4j.index.model.ChemblRow;
 import org.rdkit.neo4j.index.utils.ChemicalStructureParser;
 import org.rdkit.neo4j.index.utils.GraphUtils;
@@ -25,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class EmbeddedTest {
+
   private static final Logger logger = LoggerFactory.getLogger(EmbeddedTest.class);
 
   private GraphDatabaseService graphDb;
@@ -61,13 +64,13 @@ public class EmbeddedTest {
     }
 
     try (val tx = graphDb.beginTx()) {
-      Node foundN = graphDb.getNodeById( n.getId() );
-      Node foundM = graphDb.getNodeById( m.getId() );
+      Node foundN = graphDb.getNodeById(n.getId());
+      Node foundM = graphDb.getNodeById(m.getId());
 
       Assertions.assertEquals(0, foundN.getId());
       Assertions.assertEquals(1, foundM.getId());
-      Assertions.assertEquals("Lucene", foundN.getProperty( "name" ));
-      Assertions.assertEquals("Engine", foundM.getProperty( "name" ));
+      Assertions.assertEquals("Lucene", foundN.getProperty("name"));
+      Assertions.assertEquals("Engine", foundM.getProperty("name"));
     }
   }
 
@@ -78,7 +81,7 @@ public class EmbeddedTest {
 
     // Insert objects
     try (val tx = graphDb.beginTx()) {
-      for (final String row: rows) {
+      for (final String row : rows) {
         ChemblRow chemblRow = ChemicalStructureParser.convertChemicalRow(row);
         Node chemical = graphDb.createNode(Label.label("Chemical"));
         Node doc = graphDb.createNode(Label.label("Doc"));
@@ -130,7 +133,7 @@ public class EmbeddedTest {
     Map<String, Object> parameters = new HashMap<>();
     List<Map<String, Object>> structures = new ArrayList<>();
 
-    for (final String row: rows) {
+    for (final String row : rows) {
       structures.add(ChemicalStructureParser.mapChemicalRow(row));
     }
     parameters.put("rows", structures);
@@ -166,7 +169,8 @@ public class EmbeddedTest {
         return false;
       });
 
-      val result3 = graphDb.execute("MATCH (a:Chemical) -[b:PUBLISHED]-> (c:Doc) RETURN count(*) as relations");
+      val result3 = graphDb
+          .execute("MATCH (a:Chemical) -[b:PUBLISHED]-> (c:Doc) RETURN count(*) as relations");
 
       result3.accept(rowVisited -> {
         Number relationsCount = rowVisited.getNumber("relations");
@@ -177,5 +181,38 @@ public class EmbeddedTest {
 
       tx.success();
     }
+  }
+
+  @Test
+  public void loadIndexTest() {
+//    try (ServerControls server = TestServerBuilders.newInProcessBuilder()
+//        .withExtension("rdkit", RDKit.class)
+//        .newServer()) {
+    graphDb = GraphUtils.getTestDatabase(new File("neo4j-temp/test"));
+
+    val result = graphDb.execute("CALL db.index.fulltext.listAvailableAnalyzers() "
+        + "YIELD analyzer "
+        + "WHERE analyzer = \"rdkit\" RETURN analyzer");
+
+    Map<String, Object> analyzersList = getFirstRow(result);
+    Assertions.assertEquals("rdkit", analyzersList.get("analyzer"));
+    logger.info("Analyzer found");
+
+    String chemical = "create (:Chemical {mol_id: \"CHEMBL77517\", smiles: \"NS(=O)(=O)c1ccc(S(=O)(=O)Nc2cccc3c(Cl)c[nH]c32)cc1\"})";
+    graphDb.execute(chemical);
+
+    String createIndex = "CALL db.index.fulltext.createNodeIndex(\"rdkit\", [\"Chemical\"], [\"mol_id\"], {analyzer: \"rdkit\"})";
+    graphDb.execute(createIndex);
+
+    val indexExists = graphDb.execute("CALL db.indexes()");
+
+    Map<String, Object> columns = getFirstRow(indexExists);
+    Assertions.assertEquals("rdkit", columns.get("indexName"));
+    Assertions.assertEquals("node_fulltext", columns.get("type"));
+    logger.info("Node Index created");
+  }
+
+  private Map<String, Object> getFirstRow(Result result) {
+    return result.next();
   }
 }
