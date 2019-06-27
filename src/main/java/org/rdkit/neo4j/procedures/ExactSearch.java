@@ -44,7 +44,7 @@ public class ExactSearch {
     parameters.put("smiles", smiles);
 
     log.info("Create stream");
-    String query = String.format("MATCH (a:%s { smiles: %s }) RETURN a", label, smiles);
+    String query = String.format("MATCH (node:%s { smiles: '%s' }) RETURN node", label, smiles);
     return db.execute(query)
         .stream()
         .map(ExampleObject::new);
@@ -69,8 +69,7 @@ public class ExactSearch {
     }
 
     public ExampleObject(Map<String, Object> map) {
-      this.nodeId = (Long) map.get("id");
-      this.map = map;
+      this((Node) map.get("node"));
     }
   }
 }

@@ -1,6 +1,9 @@
 package org.rdkit.neo4j.procedures;
 
 
+import static org.junit.Assert.assertEquals;
+import static org.neo4j.graphdb.DependencyResolver.SelectionStrategy.FIRST;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +23,8 @@ import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.harness.junit.Neo4jRule;
+import org.neo4j.kernel.impl.proc.Procedures;
+import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.rdkit.neo4j.index.EmbeddedTest;
 import org.rdkit.neo4j.index.utils.ChemicalStructureParser;
 
@@ -50,6 +55,7 @@ public class ExactSearchTest {
 //  // todo: there is no custom index (which I created in previous tests)
 
   @Test
+  @Ignore
   public void searchTest() throws Exception {
     try (Driver driver = GraphDatabase
         .driver(neo4j.boltURI(), Config.build().withoutEncryption().toConfig())) {
@@ -92,7 +98,6 @@ public class ExactSearchTest {
   }
 
   @Test
-  @Ignore
   public void callExactSmilesTest() throws Throwable {
     try (org.neo4j.graphdb.Transaction tx = graphDb.beginTx()) {
       final List<String> rows = ChemicalStructureParser.readTestData();
@@ -115,8 +120,16 @@ public class ExactSearchTest {
     String createIndex = "CALL db.index.fulltext.createNodeIndex(\"rdkit\", [\"Chemical\"], [\"mol_id\"], {analyzer: \"rdkit\"})";
     graphDb.execute(createIndex);
 
+    Procedures proceduresService = ((GraphDatabaseAPI) graphDb).getDependencyResolver().resolveDependency(Procedures.class, FIRST);
+    proceduresService.registerProcedure(ExactSearch.class, true);
+
     val result = graphDb.execute("CALL org.rdkit.search.exact.smiles(\"Chemical\", \"COc1cc2c(cc1Br)C(C)CNCC2\")");
-    logger.info("{}", result.resultAsString());
+//    logger.info("{}", result.resultAsString());
+    final long[] ids = new long[]{914L, 922L, 932L};
+    for (int i = 0; i < ids.length; i++) {
+      long id = (Long) result.next().get("nodeId");
+      assertEquals(ids[i], id);
+    }
   }
 
 }
