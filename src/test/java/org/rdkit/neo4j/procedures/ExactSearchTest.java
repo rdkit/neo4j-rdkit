@@ -68,7 +68,7 @@ public class ExactSearchTest {
         for (final String row : rows) {
           structures.add(ChemicalStructureParser.mapChemicalRow(row));
         }
-        
+
         parameters.put("rows", structures);
 
         // Insert objects
@@ -85,12 +85,9 @@ public class ExactSearchTest {
       }
       session.close();
 
-//      Thread.sleep(3000); // todo: disabled
       session = driver.session();
 
-      val res = session
-          .run("CALL org.rdkit.search.exact.smiles(\"Chemical\", \"COc1cc2c(cc1Br)C(C)CNCC2\")");
-      res.forEachRemaining(x -> logger.info("{}", x));
+      val res = session.run("CALL org.rdkit.search.exact.smiles(Chemical, 'COc1cc2c(cc1Br)C(C)CNCC2')");
     }
   }
 
