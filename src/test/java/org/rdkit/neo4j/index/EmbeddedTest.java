@@ -1,5 +1,7 @@
 package org.rdkit.neo4j.index;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,11 +9,10 @@ import java.util.List;
 import java.util.Map;
 import lombok.val;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Label;
@@ -32,14 +33,14 @@ public class EmbeddedTest {
 
   private GraphDatabaseService graphDb;
 
-  @BeforeEach
+  @Before
   public void prepareTestDatabase() {
     graphDb = GraphUtils.getTestDatabase();
   }
 
   // todo: remove unnecessary tests later, they were used only to get familiar with neo4j
 
-  @AfterEach
+  @After
   public void destroyTestDatabase() {
     graphDb.shutdown();
   }
@@ -67,15 +68,15 @@ public class EmbeddedTest {
       Node foundN = graphDb.getNodeById(n.getId());
       Node foundM = graphDb.getNodeById(m.getId());
 
-      Assertions.assertEquals(0, foundN.getId());
-      Assertions.assertEquals(1, foundM.getId());
-      Assertions.assertEquals("Lucene", foundN.getProperty("name"));
-      Assertions.assertEquals("Engine", foundM.getProperty("name"));
+      assertEquals(0, foundN.getId());
+      assertEquals(1, foundM.getId());
+      assertEquals("Lucene", foundN.getProperty("name"));
+      assertEquals("Engine", foundM.getProperty("name"));
     }
   }
 
   @Test
-  @Disabled
+  @Ignore
   public void callProcedure() throws Exception {
     final List<String> rows = ChemicalStructureParser.readTestData();
 
@@ -155,7 +156,7 @@ public class EmbeddedTest {
 
       result1.accept(rowVisited -> {
         Number docs = rowVisited.getNumber("docs");
-        Assertions.assertEquals(57L, docs);
+        assertEquals(57L, docs);
 
         return false;
       });
@@ -164,7 +165,7 @@ public class EmbeddedTest {
 
       result2.accept(rowVisited -> {
         Number chemicals = rowVisited.getNumber("chemicals");
-        Assertions.assertEquals(941L, chemicals);
+        assertEquals(941L, chemicals);
 
         return false;
       });
@@ -174,7 +175,7 @@ public class EmbeddedTest {
 
       result3.accept(rowVisited -> {
         Number relationsCount = rowVisited.getNumber("relations");
-        Assertions.assertEquals(1112L, relationsCount);
+        assertEquals(1112L, relationsCount);
 
         return false;
       });
@@ -185,9 +186,6 @@ public class EmbeddedTest {
 
   @Test
   public void loadIndexTest() {
-//    try (ServerControls server = TestServerBuilders.newInProcessBuilder()
-//        .withExtension("rdkit", RDKit.class)
-//        .newServer()) {
     graphDb = GraphUtils.getTestDatabase(new File("neo4j-temp/test"));
 
     val result = graphDb.execute("CALL db.index.fulltext.listAvailableAnalyzers() "
@@ -195,7 +193,7 @@ public class EmbeddedTest {
         + "WHERE analyzer = \"rdkit\" RETURN analyzer");
 
     Map<String, Object> analyzersList = getFirstRow(result);
-    Assertions.assertEquals("rdkit", analyzersList.get("analyzer"));
+    assertEquals("rdkit", analyzersList.get("analyzer"));
     logger.info("Analyzer found");
 
     String chemical = "create (:Chemical {mol_id: \"CHEMBL77517\", smiles: \"NS(=O)(=O)c1ccc(S(=O)(=O)Nc2cccc3c(Cl)c[nH]c32)cc1\"})";
@@ -207,8 +205,8 @@ public class EmbeddedTest {
     val indexExists = graphDb.execute("CALL db.indexes()");
 
     Map<String, Object> columns = getFirstRow(indexExists);
-    Assertions.assertEquals("rdkit", columns.get("indexName"));
-    Assertions.assertEquals("node_fulltext", columns.get("type"));
+    assertEquals("rdkit", columns.get("indexName"));
+    assertEquals("node_fulltext", columns.get("type"));
     logger.info("Node Index created");
   }
 

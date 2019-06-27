@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.Map;
 
 import lombok.val;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 
+import org.junit.Ignore;
+import org.junit.Test;
 import org.neo4j.driver.v1.Driver;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.StatementResult;
@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 public class DriverTest {
   private static final Logger logger = LoggerFactory.getLogger(DriverTest.class);
 
-  @Disabled
+  @Ignore
   @Test
   public void testHello() {
     try (final Driver driver = GraphUtils.getDriver()) {
@@ -51,7 +51,7 @@ public class DriverTest {
 
 //  https://github.com/neo4j/neo4j/issues/7228
 
-  @Disabled
+  @Ignore
   @Test
   public void insertChemicalStructures() throws Exception {
     List<String> rows = ChemicalStructureParser.readTestData();
