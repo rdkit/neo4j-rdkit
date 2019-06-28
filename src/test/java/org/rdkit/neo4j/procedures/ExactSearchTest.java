@@ -42,8 +42,6 @@ public class ExactSearchTest {
     graphDb = GraphUtils.getTestDatabase();
   }
 
-  // todo: remove unnecessary tests later, they were used only to get familiar with neo4j
-
   @After
   public void destroyTestDatabase() {
     graphDb.shutdown();
@@ -55,7 +53,6 @@ public class ExactSearchTest {
 //  // todo: there is no custom index (which I created in previous tests)
 
   @Test
-  @Ignore
   public void searchTest() throws Exception {
     try (Driver driver = GraphDatabase
         .driver(neo4j.boltURI(), Config.build().withoutEncryption().toConfig())) {
@@ -84,7 +81,7 @@ public class ExactSearchTest {
                 + "MERGE (to:Doc{doc_id: row.doc_id}) "
                 + "MERGE (from) -[:PUBLISHED]-> (to)", parameters);
 
-        logger.info("{}", r.summary().toString());
+//        logger.info("{}", r.summary().toString());
         tx.success();
         String createIndex = "CALL db.index.fulltext.createNodeIndex(\"rdkit\", [\"Chemical\"], [\"mol_id\"], {analyzer: \"rdkit\"})";
         session.run(createIndex);
@@ -93,7 +90,8 @@ public class ExactSearchTest {
 
       session = driver.session();
 
-      val res = session.run("CALL org.rdkit.search.exact.smiles(Chemical, 'COc1cc2c(cc1Br)C(C)CNCC2')");
+      val res = session.run("CALL org.rdkit.search.exact.smiles('Chemical', 'COc1cc2c(cc1Br)C(C)CNCC2')");
+      logger.info("{}", res.next());
     }
   }
 

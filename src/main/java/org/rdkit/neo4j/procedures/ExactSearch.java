@@ -1,19 +1,20 @@
 package org.rdkit.neo4j.procedures;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.schema.IndexDefinition;
 import org.neo4j.logging.Log;
-
 import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.Context;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.Procedure;
+
+import org.rdkit.neo4j.utils.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,22 +46,18 @@ public class ExactSearch {
       return Stream.empty();
     }
 
-    String query = String.format("MATCH (node:%s { smiles: '%s' }) RETURN node", labelName, smiles);
+    // todo: does it cover complex cases (?)
+    final String rdkitSmiles = Converter.getRDKitSmiles(smiles);
+    String query = String.format("MATCH (node:%s { smiles: '%s' }) RETURN node", labelName, rdkitSmiles);
 //    String query = "MATCH (node:$label { smiles: '$smiles' }) RETURN node";
 
     return db.execute(query)
         .stream()
         .map(ExampleObject::new);
-//    return db.index()
-//        .forNodes(label)
-//        .query("MATCH (a:$label { smiles: $smiles } ) RETURN a", parameters)
-//        .stream()
-//        .map(ExampleObject::new);
   }
 
   private String indexName(String label) {
     return "rdkit";
-//    return db.schema().getIndexes(Label.label(label)).iterator().next().getName();
   }
 
   public static class ExampleObject {
