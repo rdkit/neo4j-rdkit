@@ -113,22 +113,28 @@ public class ExactSearchTest {
           "UNWIND {rows} as row "
               + "MERGE (from:Chemical{smiles: row.smiles, mol_id: row.mol_id})", parameters);
 
-      logger.info("{}", r.resultAsString());
       tx.success();
     }
 
-    String createIndex = "CALL db.index.fulltext.createNodeIndex(\"rdkit\", [\"Chemical\"], [\"mol_id\"], {analyzer: \"rdkit\"})";
+    String createIndex = "CALL db.index.fulltext.createNodeIndex(\"rdkit\", [\"Chemical\"], [\"smiles\"], {analyzer: \"rdkit\"})";
     graphDb.execute(createIndex);
 
     Procedures proceduresService = ((GraphDatabaseAPI) graphDb).getDependencyResolver().resolveDependency(Procedures.class, FIRST);
     proceduresService.registerProcedure(ExactSearch.class, true);
 
-    val result = graphDb.execute("CALL org.rdkit.search.exact.smiles(\"Chemical\", \"COc1cc2c(cc1Br)C(C)CNCC2\")");
-//    logger.info("{}", result.resultAsString());
-    final long[] ids = new long[]{914L, 922L, 932L};
-    for (int i = 0; i < ids.length; i++) {
-      long id = (Long) result.next().get("nodeId");
-      assertEquals(ids[i], id);
+    final String expeectedSmiles = "COc1cc2c(cc1Br)C(C)CNCC2";
+    final String label = "Chemical";
+    final String query = String.format("CALL org.rdkit.search.exact.smiles(\"%s\", \"%s\")", label, expeectedSmiles);
+    val result = graphDb.execute(query);
+
+    final String[] chembls = new String[]{"CHEMBL180815", "CHEMBL182184", "CHEMBL180867"};
+
+    for (int i = 0; i < chembls.length; i++) {
+      val item = result.next();
+      String chembl = (String) item.get("mol_id");
+      String smiles = (String) item.get("smiles");
+      assertEquals(chembls[i], chembl);
+      assertEquals(expeectedSmiles, smiles);
     }
   }
 
