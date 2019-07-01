@@ -1,11 +1,12 @@
 package org.rdkit.neo4j.bin;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
 import org.RDKit.RDKFuncs;
-import org.junit.jupiter.api.Test;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.rdkit.neo4j.exceptions.LoaderException;
 
 public class LibraryLoaderTest {

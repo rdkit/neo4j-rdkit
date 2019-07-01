@@ -1,5 +1,5 @@
 # RDKit-Neo4j project
- `Open Chemistry`, `RDKit & Neo4j` GSoC 2019 project  
+[![Build Status](https://travis-ci.com/rdkit/neo4j-rdkit.svg?branch=master)](https://travis-ci.com/rdkit/neo4j-rdkit) `Open Chemistry`, `RDKit & Neo4j` GSoC 2019 project  
 
 ***
 ## Abstract
