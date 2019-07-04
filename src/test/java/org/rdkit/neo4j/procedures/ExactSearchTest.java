@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Map;
 
 import lombok.val;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
 
 import org.neo4j.driver.v1.Config;
@@ -21,17 +17,12 @@ import org.neo4j.driver.v1.Driver;
 import org.neo4j.driver.v1.GraphDatabase;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
-import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.harness.junit.Neo4jRule;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
-import org.rdkit.neo4j.index.EmbeddedTest;
 import org.rdkit.neo4j.index.utils.BaseTest;
 import org.rdkit.neo4j.index.utils.ChemicalStructureParser;
 
-import org.rdkit.neo4j.index.utils.GraphUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ExactSearchTest extends BaseTest {
 
@@ -39,6 +30,7 @@ public class ExactSearchTest extends BaseTest {
       .withProcedure(ExactSearch.class);
 
   @Test
+//  @Ignore // todo: java.lang.IllegalStateException: Cannot access instance URI before or after the test runs
   public void searchTest() throws Exception {
     try (Driver driver = GraphDatabase
         .driver(neo4j.boltURI(), Config.build().withoutEncryption().toConfig())) {

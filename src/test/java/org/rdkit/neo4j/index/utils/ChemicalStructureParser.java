@@ -23,6 +23,10 @@ public class ChemicalStructureParser {
     try (InputStream is = url.openStream()) {
       BufferedReader reader = new BufferedReader(new InputStreamReader(is));
       String line;
+
+      // skip first line
+      reader.readLine();
+
       while ((line = reader.readLine()) != null) {
         lines.add(line);
       }

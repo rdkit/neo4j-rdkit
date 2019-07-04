@@ -9,103 +9,15 @@ import java.util.List;
 import java.util.Map;
 import lombok.val;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
-import org.neo4j.graphdb.Label;
-import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.RelationshipType;
-
 import org.neo4j.graphdb.Result;
-import org.rdkit.neo4j.index.model.ChemblRow;
 import org.rdkit.neo4j.index.utils.BaseTest;
 import org.rdkit.neo4j.index.utils.ChemicalStructureParser;
 import org.rdkit.neo4j.index.utils.GraphUtils;
 
 
 public class EmbeddedTest extends BaseTest {
-
-  @Test
-  public void createTestDb() {
-    // Do not use neo4j-temp as it starts to load /plugins folder
-    // todo: why plugin folder fails?
-
-    Node n, m;
-    try (val tx = graphDb.beginTx()) {
-      n = graphDb.createNode(Label.label("HellNode"));
-      n.setProperty("name", "Lucene");
-      n.setProperty("time", -100500L);
-
-      m = graphDb.createNode();
-      m.setProperty("name", "Engine");
-      m.setProperty("time", 100500L);
-
-      m.createRelationshipTo(n, RelationshipType.withName("connected"));
-      tx.success();
-    }
-
-    try (val tx = graphDb.beginTx()) {
-      Node foundN = graphDb.getNodeById(n.getId());
-      Node foundM = graphDb.getNodeById(m.getId());
-
-      assertEquals(0, foundN.getId());
-      assertEquals(1, foundM.getId());
-      assertEquals("Lucene", foundN.getProperty("name"));
-      assertEquals("Engine", foundM.getProperty("name"));
-    }
-  }
-
-  @Test
-  @Ignore
-  public void callProcedure() throws Exception {
-    final List<String> rows = ChemicalStructureParser.readTestData();
-
-    // Insert objects
-    try (val tx = graphDb.beginTx()) {
-      for (final String row : rows) {
-        ChemblRow chemblRow = ChemicalStructureParser.convertChemicalRow(row);
-        Node chemical = graphDb.createNode(Label.label("Chemical"));
-        Node doc = graphDb.createNode(Label.label("Doc"));
-
-        doc.setProperty("doc_id", chemblRow.getDocId());
-        chemical.setProperty("mol_id", chemblRow.getMolId());
-        chemical.setProperty("smiles", chemblRow.getSmiles());
-
-        chemical.createRelationshipTo(doc, RelationshipType.withName("occured"));
-      }
-
-      tx.success();
-    }
-
-    // Remove duplicates
-    // https://github.com/neo4j-contrib/neo4j-apoc-procedures/blob/3.5/src/test/java/apoc/refactor/GraphRefactoringTest.java
-//    MATCH (n:Tag)
-//    WITH n.name AS name, COLLECT(n) AS nodelist, COUNT(*) AS count
-//    WHERE count > 1
-//    CALL apoc.refactor.mergeNodes(nodelist) YIELD node
-//    RETURN node
-    // todo: add apoc plugin or use library method
-    String mergeChemical = "MATCH (o:Chemical) " +
-        "WITH o.smiles AS smiles, COLLECT(o) AS nodelist, COUNT(*) AS count " +
-        "WHERE count > 1 " +
-        "CALL apoc.refactor.mergeNodes(nodelist) YIELD node " +
-        "RETURN node";
-
-    String mergeDoc = "MATCH (d:Doc) " +
-        "WITH d.doc_id AS smiles, COLLECT(d) AS nodelist, COUNT(*) AS count " +
-        "WHERE count > 1 " +
-        "CALL apoc.refactor.mergeNodes(nodelist) YIELD node " +
-        "RETURN node";
-
-    val mc = graphDb.execute(mergeChemical);
-    val md = graphDb.execute(mergeDoc);
-    logger.info("MergeChemical: {}", mc);
-    logger.info("MergeDoc: {}", md);
-
-//    GraphRefactoring gr = new GraphRefactoring();
-//    gr.mergeNodes()
-  }
-
 
   @Test
   public void insertDataTest() throws Exception {
@@ -136,7 +48,7 @@ public class EmbeddedTest extends BaseTest {
 
       result1.accept(rowVisited -> {
         Number docs = rowVisited.getNumber("docs");
-        assertEquals(57L, docs);
+        assertEquals(56L, docs);
 
         return false;
       });
@@ -145,7 +57,7 @@ public class EmbeddedTest extends BaseTest {
 
       result2.accept(rowVisited -> {
         Number chemicals = rowVisited.getNumber("chemicals");
-        assertEquals(941L, chemicals);
+        assertEquals(940L, chemicals);
 
         return false;
       });
@@ -155,7 +67,7 @@ public class EmbeddedTest extends BaseTest {
 
       result3.accept(rowVisited -> {
         Number relationsCount = rowVisited.getNumber("relations");
-        assertEquals(1112L, relationsCount);
+        assertEquals(1111L, relationsCount);
 
         return false;
       });
