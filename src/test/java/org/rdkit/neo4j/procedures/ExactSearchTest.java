@@ -26,31 +26,17 @@ import org.neo4j.harness.junit.Neo4jRule;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.rdkit.neo4j.index.EmbeddedTest;
+import org.rdkit.neo4j.index.utils.BaseTest;
 import org.rdkit.neo4j.index.utils.ChemicalStructureParser;
 
 import org.rdkit.neo4j.index.utils.GraphUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ExactSearchTest {
-  private static final Logger logger = LoggerFactory.getLogger(EmbeddedTest.class);
+public class ExactSearchTest extends BaseTest {
 
-  private GraphDatabaseService graphDb;
-
-  @Before
-  public void prepareTestDatabase() {
-    graphDb = GraphUtils.getTestDatabase();
-  }
-
-  @After
-  public void destroyTestDatabase() {
-    graphDb.shutdown();
-  }
-
-  @Rule
   public Neo4jRule neo4j = new Neo4jRule()
       .withProcedure(ExactSearch.class);
-//  // todo: there is no custom index (which I created in previous tests)
 
   @Test
   public void searchTest() throws Exception {
@@ -135,5 +121,4 @@ public class ExactSearchTest {
       assertEquals(expeectedSmiles, smiles);
     }
   }
-
 }

@@ -1,4 +1,4 @@
-package org.rdkit.neo4j.eventhandlers;
+package org.rdkit.neo4j.handlers;
 
 import java.util.Map;
 import java.util.Set;
@@ -13,9 +13,12 @@ import org.neo4j.graphdb.event.LabelEntry;
 import org.neo4j.graphdb.event.TransactionData;
 import org.neo4j.graphdb.event.TransactionEventHandler;
 import org.rdkit.neo4j.utils.Converter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class CanonicalSmilesEventHandler implements TransactionEventHandler {
+public class CanonicalSmilesEventHandler implements TransactionEventHandler<Object> {
 
+  private static final Logger logger = LoggerFactory.getLogger(CanonicalSmilesEventHandler.class);
 
   public static GraphDatabaseService db;
   private static ExecutorService ex;
@@ -25,7 +28,7 @@ public class CanonicalSmilesEventHandler implements TransactionEventHandler {
       ExecutorService executor) {
     db = graphDatabaseService;
     ex = executor;
-    this.label = Label.label("smiles"); // todo: think about constant ???
+    this.label = Label.label("Chemical"); // todo: think about constant ???
   }
 
   /* todo: remove comment below
@@ -45,8 +48,7 @@ public class CanonicalSmilesEventHandler implements TransactionEventHandler {
     val nodes = getNodes(label, data);
 
     for (Node node : nodes) {
-      final Map<String, Object> properties = node.getAllProperties();
-      final String smiles = (String) properties.get("smiles"); // todo: may throw exception
+      final String smiles = (String) node.getProperty("smiles");
       final String canonicalSmiles = Converter.getRDKitSmiles(smiles);
       node.setProperty("canonical_smiles", canonicalSmiles);
     }

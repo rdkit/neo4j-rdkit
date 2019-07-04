@@ -9,41 +9,21 @@ import java.util.List;
 import java.util.Map;
 import lombok.val;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.RelationshipType;
 
 import org.neo4j.graphdb.Result;
 import org.rdkit.neo4j.index.model.ChemblRow;
+import org.rdkit.neo4j.index.utils.BaseTest;
 import org.rdkit.neo4j.index.utils.ChemicalStructureParser;
 import org.rdkit.neo4j.index.utils.GraphUtils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class EmbeddedTest {
-
-  private static final Logger logger = LoggerFactory.getLogger(EmbeddedTest.class);
-
-  private GraphDatabaseService graphDb;
-
-  @Before
-  public void prepareTestDatabase() {
-    graphDb = GraphUtils.getTestDatabase();
-  }
-
-  // todo: remove unnecessary tests later, they were used only to get familiar with neo4j
-
-  @After
-  public void destroyTestDatabase() {
-    graphDb.shutdown();
-  }
+public class EmbeddedTest extends BaseTest {
 
   @Test
   public void createTestDb() {

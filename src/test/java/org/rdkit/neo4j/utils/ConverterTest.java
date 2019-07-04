@@ -2,8 +2,6 @@ package org.rdkit.neo4j.utils;
 
 import static org.junit.Assert.*;
 
-import org.RDKit.RWMol;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.rdkit.neo4j.bin.LibraryLoader;

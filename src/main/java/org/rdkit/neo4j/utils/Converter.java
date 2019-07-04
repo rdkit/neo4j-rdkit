@@ -22,6 +22,11 @@ public class Converter {
     final String rdkitSmiles = RDKFuncs.MolToSmiles(rwmol);
     rwmol.delete();
 
+    if (rdkitSmiles.isEmpty()) {
+      logger.error("Empty canonical smiles obtained from smiles=`{}`", smiles);
+      throw new IllegalArgumentException("Empty canonical smiles obtained");
+    }
+
     return rdkitSmiles;
   }
 }
