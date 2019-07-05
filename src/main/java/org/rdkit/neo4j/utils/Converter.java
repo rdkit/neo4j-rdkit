@@ -8,25 +8,36 @@ import org.slf4j.LoggerFactory;
 public class Converter {
   private static final Logger logger = LoggerFactory.getLogger(Converter.class);
 
-  // todo: create Closeable wrapper around RWMol (and other RDKit objects)
-
   public static String getRDKitSmiles(final String smiles) {
-    // todo: And a `null` return from `MolFromSmiles()` means either an invalid SMILES or an invalid molecule
-    // todo: always delete rdkit objects
-    RWMol rwmol = RWMol.MolFromSmiles(smiles);
-    if (rwmol == null) {
-      logger.error("Unable to obtain RWMol from smiles={}", smiles);
-      throw new IllegalArgumentException("Unable to obtain RWMol from smiles");
+    try (RWMolCloseable rwmol = RWMolCloseable.from(RWMol.MolFromSmiles(smiles))) {
+      final String rdkitSmiles = RDKFuncs.MolToSmiles(rwmol);
+
+      if (rdkitSmiles.isEmpty()) {
+        logger.error("Empty canonical smiles obtained from smiles=`{}`", smiles);
+        throw new IllegalArgumentException("Empty canonical smiles obtained");
+      }
+
+      return rdkitSmiles;
     }
+  }
 
-    final String rdkitSmiles = RDKFuncs.MolToSmiles(rwmol);
-    rwmol.delete();
+  public static MolBlock getRDKitMolBlock(final String molBlock) {
+    // todo: may be add more constructors and differentiate log errors?
+    try (RWMolCloseable rwmol = RWMolCloseable.from(RWMol.MolFromMolBlock(molBlock))) {
+      final String rdkitSmiles = RDKFuncs.MolToSmiles(rwmol);
+      final String formula = RDKFuncs.calcMolFormula(rwmol);
+      final double molecularWeight =  RDKFuncs.calcExactMW(rwmol);
+      final String inchi = RDKFuncs.MolToInchiKey(rwmol);
 
-    if (rdkitSmiles.isEmpty()) {
-      logger.error("Empty canonical smiles obtained from smiles=`{}`", smiles);
-      throw new IllegalArgumentException("Empty canonical smiles obtained");
+      return new MolBlock(molBlock, rdkitSmiles, formula, molecularWeight, inchi);
+//      Attributes:
+  //      luri - unique uuid
+  //      tag - for display only
+  //      preferred_name - molecule name as in original toxcast database
+  //      molecular_formula
+  //      mdlmol - MOL file as in toxcast
+  //      smiles - canonical smiles (produced in Knime with RDKit)
+  //      molecular_weight_value
     }
-
-    return rdkitSmiles;
   }
 }

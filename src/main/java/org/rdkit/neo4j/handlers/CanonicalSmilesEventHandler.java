@@ -42,8 +42,10 @@ public class CanonicalSmilesEventHandler implements TransactionEventHandler<Obje
   public Object beforeCommit(TransactionData data) throws Exception {
     val nodes = getNodes(label, data);
 
+    // todo: catch new nodes with `mol` property and instatiate other properties
+
     for (Node node : nodes) {
-      final String smiles = (String) node.getProperty("smiles");
+      final String smiles = (String) node.getProperty("smiles"); // todo: will there appear nodes created only by smiles (not mol file)?
       final String canonicalSmiles = Converter.getRDKitSmiles(smiles);
       node.setProperty("canonical_smiles", canonicalSmiles);
       logger.debug("Converted smiles={} into canonical={}", smiles, canonicalSmiles);

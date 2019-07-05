@@ -18,7 +18,7 @@ public class SmilesEventHandlerExtensionFactory extends KernelExtensionFactory<D
   @Override
   public Lifecycle newInstance(KernelContext kernelContext, final Dependencies dependencies) {
     return new LifecycleAdapter() {
-      LogService log = dependencies.log();
+//      LogService log = dependencies.log();
 
       private CanonicalSmilesEventHandler handler;
 

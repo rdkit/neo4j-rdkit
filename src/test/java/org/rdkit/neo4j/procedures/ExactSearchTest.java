@@ -100,9 +100,9 @@ public class ExactSearchTest extends BaseTest {
     Procedures proceduresService = ((GraphDatabaseAPI) graphDb).getDependencyResolver().resolveDependency(Procedures.class, FIRST);
     proceduresService.registerProcedure(ExactSearch.class, true);
 
-    final String expeectedSmiles = "COc1cc2c(cc1Br)C(C)CNCC2";
+    final String expectedSmiles = "COc1cc2c(cc1Br)C(C)CNCC2";
     final String label = "Chemical";
-    final String query = String.format("CALL org.rdkit.search.exact.smiles(\"%s\", \"%s\")", label, expeectedSmiles);
+    final String query = String.format("CALL org.rdkit.search.exact.smiles(\"%s\", \"%s\")", label, expectedSmiles);
     val result = graphDb.execute(query);
 
     final String[] chembls = new String[]{"CHEMBL180815", "CHEMBL182184", "CHEMBL180867"};
@@ -112,7 +112,7 @@ public class ExactSearchTest extends BaseTest {
       String chembl = (String) item.get("mol_id");
       String smiles = (String) item.get("smiles");
       assertEquals(chembls[i], chembl);
-      assertEquals(expeectedSmiles, smiles);
+      assertEquals(expectedSmiles, smiles);
     }
   }
 }
