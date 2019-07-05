@@ -1,8 +1,6 @@
 package org.rdkit.neo4j.handlers;
 
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.val;
@@ -21,13 +19,10 @@ public class CanonicalSmilesEventHandler implements TransactionEventHandler<Obje
   private static final Logger logger = LoggerFactory.getLogger(CanonicalSmilesEventHandler.class);
 
   public static GraphDatabaseService db;
-  private static ExecutorService ex;
   private final Label label;
 
-  public CanonicalSmilesEventHandler(GraphDatabaseService graphDatabaseService,
-      ExecutorService executor) {
+  public CanonicalSmilesEventHandler(GraphDatabaseService graphDatabaseService) {
     db = graphDatabaseService;
-    ex = executor;
     this.label = Label.label("Chemical"); // todo: think about constant ???
   }
 
@@ -51,6 +46,7 @@ public class CanonicalSmilesEventHandler implements TransactionEventHandler<Obje
       final String smiles = (String) node.getProperty("smiles");
       final String canonicalSmiles = Converter.getRDKitSmiles(smiles);
       node.setProperty("canonical_smiles", canonicalSmiles);
+      logger.debug("Converted smiles={} into canonical={}", smiles, canonicalSmiles);
     }
 
     return data;

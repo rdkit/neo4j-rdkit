@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import lombok.val;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.neo4j.driver.v1.Config;
@@ -30,7 +31,8 @@ public class ExactSearchTest extends BaseTest {
       .withProcedure(ExactSearch.class);
 
   @Test
-//  @Ignore // todo: java.lang.IllegalStateException: Cannot access instance URI before or after the test runs
+  @Ignore
+  // todo: java.lang.IllegalStateException: Cannot access instance URI before or after the test runs
   public void searchTest() throws Exception {
     try (Driver driver = GraphDatabase
         .driver(neo4j.boltURI(), Config.build().withoutEncryption().toConfig())) {

@@ -4,12 +4,22 @@ import org.apache.lucene.analysis.Analyzer;
 import org.neo4j.graphdb.index.fulltext.AnalyzerProvider;
 import org.neo4j.helpers.Service;
 import org.rdkit.neo4j.analyzer.RDKitAnalyzer;
+import org.rdkit.neo4j.bin.LibraryLoader;
+import org.rdkit.neo4j.exceptions.LoaderException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service.Implementation( AnalyzerProvider.class )
 public class RDKit extends AnalyzerProvider {
+  private static final Logger logger = LoggerFactory.getLogger(RDKitAnalyzer.class);
 
-//  todo: * The {@code jar} that includes this implementation must also contain a {@code META-INF/services/org.neo4j.graphdb.index.fulltext.AnalyzerProvider} file,
-//  todo: * that contains the fully-qualified class names of all of the {@code AnalyzerProvider} implementations it contains.
+  static {
+    try {
+      LibraryLoader.loadLibraries();
+    } catch (LoaderException e) {
+      logger.error("Unable to load native libraries");
+    }
+  }
 
   public RDKit() {
     super("rdkit");
