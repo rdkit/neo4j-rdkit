@@ -25,7 +25,6 @@ public class SmilesEventHandlerExtensionFactory extends KernelExtensionFactory<D
       @Override
       public void start() {
         logger.debug("Starting canonical smiles trigger watcher");
-        System.out.println("STARTING trigger watcher");
         handler = new CanonicalSmilesEventHandler(dependencies.getGraphDatabaseService());
         dependencies.getGraphDatabaseService().registerTransactionEventHandler(handler);
       }

@@ -47,6 +47,7 @@ public class ExactSearch {
     }
 
     // todo: does it cover complex cases (?)
+
     final String rdkitSmiles = Converter.getRDKitSmiles(smiles);
     String query = String.format("MATCH (node:%s { smiles: '%s' }) RETURN node", labelName, rdkitSmiles);
 //    String query = "MATCH (node:$label { smiles: '$smiles' }) RETURN node";

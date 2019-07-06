@@ -21,8 +21,11 @@ public class ConverterTest {
     final String smiles1 = "O=S(=O)(Cc1ccccc1)CS(=O)(=O)Cc1ccccc1";
     final String smiles2 = "O=S(=O)(CC1=CC=CC=C1)CS(=O)(=O)CC1=CC=CC=C1";
 
-    String rdkitSmiles1 = Converter.getRDKitSmiles(smiles1);
-    String rdkitSmiles2 = Converter.getRDKitSmiles(smiles2);
+    MolBlock block1 = Converter.convertSmiles(smiles1);
+    MolBlock block2 = Converter.convertSmiles(smiles2);
+
+    String rdkitSmiles1 = block1.getCanonicalSmiles();
+    String rdkitSmiles2 = block2.getCanonicalSmiles();
 
     logger.info("{} -> {}", smiles1, rdkitSmiles1);
     logger.info("{} -> {}", smiles2, rdkitSmiles2);
@@ -33,34 +36,14 @@ public class ConverterTest {
   @Test(expected = IllegalArgumentException.class)
   public void smilesFailureTest() {
     final String smiles = "nonvalid";
-    String rdkitSmiles = Converter.getRDKitSmiles(smiles);
+    MolBlock block = Converter.convertSmiles(smiles);
+    String rdkitSmiles = block.getCanonicalSmiles();
 
     logger.error(rdkitSmiles);
   }
 
   @Test
   public void molBlockTest() {
-//    final String molBlock = "\n"
-//            + "Absolutely any text\n"
-//            + "  8  8  0  0  0  0            999 V2000\n"
-//            + "   -4.4436   -2.5359    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
-//            + "   -5.1581   -2.9484    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
-//            + "   -5.1581   -3.7734    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
-//            + "   -4.4436   -4.1859    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
-//            + "   -3.7291   -3.7734    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
-//            + "   -3.7291   -2.9484    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
-//            + "   -3.0147   -2.5359    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0\n"
-//            + "   -3.0147   -1.7109    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
-//            + "  1  2  1  0  0  0  0\n"
-//            + "  2  3  2  0  0  0  0\n"
-//            + "  3  4  1  0  0  0  0\n"
-//            + "  4  5  2  0  0  0  0\n"
-//            + "  5  6  1  0  0  0  0\n"
-//            + "  1  6  2  0  0  0  0\n"
-//            + "  6  7  1  0  0  0  0\n"
-//            + "  7  8  1  0  0  0  0\n"
-//            + "M  END";
-
     final String molBlock = "\n"
             + "Actelion Java MolfileCreator 1.0\n"
             + "\n"
@@ -112,9 +95,15 @@ public class ConverterTest {
 
     final String smiles = "O=S(=O)(Cc1ccccc1)CS(=O)(=O)Cc1ccccc1";
     final String formula = "C15H16O4S2";
+    final String inchi = "DKXNMYFLQWZCGD-UHFFFAOYSA-N";
+    final double molecularWeight = 324.049000992;
 
-    MolBlock block = Converter.getRDKitMolBlock(molBlock);
-    assertEquals(smiles, block.getRdkitSmiles());
+    MolBlock block = Converter.convertMolBlock(molBlock);
+    logger.info("{}", block);
+
+    assertEquals(smiles, block.getCanonicalSmiles());
     assertEquals(formula, block.getFormula());
+    assertEquals(inchi, block.getInchi());
+    assertEquals(molecularWeight, block.getMolecularWeight(), 1e-4);
   }
 }

@@ -8,28 +8,30 @@ import org.slf4j.LoggerFactory;
 public class Converter {
   private static final Logger logger = LoggerFactory.getLogger(Converter.class);
 
-  public static String getRDKitSmiles(final String smiles) {
+  public static MolBlock convertSmiles(final String smiles) {
     try (RWMolCloseable rwmol = RWMolCloseable.from(RWMol.MolFromSmiles(smiles))) {
-      final String rdkitSmiles = RDKFuncs.MolToSmiles(rwmol);
+      final MolBlock block = createMolBlock(rwmol);
+
+      final String rdkitSmiles = block.getCanonicalSmiles();
 
       if (rdkitSmiles.isEmpty()) {
         logger.error("Empty canonical smiles obtained from smiles=`{}`", smiles);
         throw new IllegalArgumentException("Empty canonical smiles obtained");
       }
 
-      return rdkitSmiles;
+      block.setSmiles(smiles);
+      block.setMolBlock(RDKFuncs.MolToMolBlock(rwmol));
+
+      return block;
     }
   }
 
-  public static MolBlock getRDKitMolBlock(final String molBlock) {
-    // todo: may be add more constructors and differentiate log errors?
+  public static MolBlock convertMolBlock(final String molBlock) {
     try (RWMolCloseable rwmol = RWMolCloseable.from(RWMol.MolFromMolBlock(molBlock))) {
-      final String rdkitSmiles = RDKFuncs.MolToSmiles(rwmol);
-      final String formula = RDKFuncs.calcMolFormula(rwmol);
-      final double molecularWeight =  RDKFuncs.calcExactMW(rwmol);
-      final String inchi = RDKFuncs.MolToInchiKey(rwmol);
+      MolBlock block = createMolBlock(rwmol);
+      block.setMolBlock(molBlock);
 
-      return new MolBlock(molBlock, rdkitSmiles, formula, molecularWeight, inchi);
+      return block;
 //      Attributes:
   //      luri - unique uuid
   //      tag - for display only
@@ -39,5 +41,20 @@ public class Converter {
   //      smiles - canonical smiles (produced in Knime with RDKit)
   //      molecular_weight_value
     }
+  }
+
+  public static String getRDKitSmiles(String smiles) {
+    try (RWMolCloseable rwmol = RWMolCloseable.from(RWMol.MolFromSmiles(smiles))) {
+      return RDKFuncs.MolToSmiles(rwmol);
+    }
+  }
+
+  private static MolBlock createMolBlock(final RWMol rwmol) {
+    final String rdkitSmiles = RDKFuncs.MolToSmiles(rwmol);
+    final String formula = RDKFuncs.calcMolFormula(rwmol);
+    final double molecularWeight =  RDKFuncs.calcExactMW(rwmol);
+    final String inchi = RDKFuncs.MolToInchiKey(rwmol);
+
+    return new MolBlock(rdkitSmiles, formula, molecularWeight, inchi);
   }
 }

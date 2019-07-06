@@ -11,6 +11,7 @@ import org.neo4j.graphdb.event.LabelEntry;
 import org.neo4j.graphdb.event.TransactionData;
 import org.neo4j.graphdb.event.TransactionEventHandler;
 import org.rdkit.neo4j.utils.Converter;
+import org.rdkit.neo4j.utils.MolBlock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,15 +41,26 @@ public class CanonicalSmilesEventHandler implements TransactionEventHandler<Obje
    */
   @Override
   public Object beforeCommit(TransactionData data) throws Exception {
-    val nodes = getNodes(label, data);
+    val nodesMol = getNodes(data, label, "mdlmol");
 
     // todo: catch new nodes with `mol` property and instatiate other properties
 
-    for (Node node : nodes) {
+    for (Node node: nodesMol) {
+      final String mol = (String) node.getProperty("mdlmol");
+      final MolBlock block = Converter.convertMolBlock(mol);
+
+      addProperties(node, block);
+    }
+
+
+    val nodesSmiles = getNodes(data, label, "smiles");
+    nodesSmiles.removeAll(nodesMol);
+
+    for (Node node: nodesSmiles) {
       final String smiles = (String) node.getProperty("smiles"); // todo: will there appear nodes created only by smiles (not mol file)?
-      final String canonicalSmiles = Converter.getRDKitSmiles(smiles);
-      node.setProperty("canonical_smiles", canonicalSmiles);
-      logger.debug("Converted smiles={} into canonical={}", smiles, canonicalSmiles);
+      final MolBlock block = Converter.convertSmiles(smiles);
+
+      addProperties(node, block);
     }
 
     return data;
@@ -66,14 +78,30 @@ public class CanonicalSmilesEventHandler implements TransactionEventHandler<Obje
 
   }
 
-  private Set<Node> getNodes(Label label, TransactionData data) {
+  private void addProperties(final Node node, final MolBlock block) {
+    logger.debug("Node={} adding properties: {}", node, block);
+    node.setProperty("canonical_smiles", block.getCanonicalSmiles());
+    node.setProperty("inchi", block.getInchi());
+    node.setProperty("formula", block.getFormula());
+    node.setProperty("molecular_weight", block.getMolecularWeight());
+
+    if (!node.hasProperty("mdlmol")) // When molblock is created from smiles
+      node.setProperty("mdlmol", block.getMolBlock());
+  }
+
+  private Set<Node> getNodes(final TransactionData data, Label label, String property) {
+    // todo: logic here needs improvement
     Set<Node> nodes = StreamSupport.stream(data.createdNodes().spliterator(), false)
-        .filter(node -> node.hasLabel(label))
+        .filter(node -> node.hasLabel(label) && node.hasProperty(property))
         .collect(Collectors.toSet());
 
     val labelAssigned = StreamSupport.stream(data.assignedLabels().spliterator(), false)
         .filter(
-            labelEntry -> labelEntry.label().equals(label) && !nodes.contains(labelEntry.node()))
+            labelEntry -> {
+              Node n = labelEntry.node();
+              Label l = labelEntry.label();
+              return l.equals(label) && !nodes.contains(n) && n.hasProperty(property);
+            })
         .map(LabelEntry::node)
         .collect(Collectors.toSet());
     nodes.addAll(labelAssigned);
