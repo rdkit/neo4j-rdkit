@@ -8,24 +8,24 @@ import org.neo4j.kernel.lifecycle.Lifecycle;
 import org.neo4j.kernel.lifecycle.LifecycleAdapter;
 import org.neo4j.logging.internal.LogService;
 
-import org.rdkit.neo4j.handlers.SmilesEventHandlerExtensionFactory.Dependencies;
+import org.rdkit.neo4j.handlers.RDKitEventHandlerExtensionFactory.Dependencies;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SmilesEventHandlerExtensionFactory extends KernelExtensionFactory<Dependencies> {
-  private static final Logger logger = LoggerFactory.getLogger(SmilesEventHandlerExtensionFactory.class);
+public class RDKitEventHandlerExtensionFactory extends KernelExtensionFactory<Dependencies> {
+  private static final Logger logger = LoggerFactory.getLogger(RDKitEventHandlerExtensionFactory.class);
 
   @Override
   public Lifecycle newInstance(KernelContext kernelContext, final Dependencies dependencies) {
     return new LifecycleAdapter() {
 //      LogService log = dependencies.log();
 
-      private CanonicalSmilesEventHandler handler;
+      private RDKitEventHandler handler;
 
       @Override
       public void start() {
         logger.debug("Starting canonical smiles trigger watcher");
-        handler = new CanonicalSmilesEventHandler(dependencies.getGraphDatabaseService());
+        handler = new RDKitEventHandler(dependencies.getGraphDatabaseService());
         dependencies.getGraphDatabaseService().registerTransactionEventHandler(handler);
       }
 
@@ -42,7 +42,7 @@ public class SmilesEventHandlerExtensionFactory extends KernelExtensionFactory<D
     LogService log();
   }
 
-  public SmilesEventHandlerExtensionFactory() {
+  public RDKitEventHandlerExtensionFactory() {
     super(ExtensionType.DATABASE, "canonicalSmilesEventHandler");
   }
 }

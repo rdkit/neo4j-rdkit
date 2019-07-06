@@ -1,1 +1,1 @@
-org.rdkit.neo4j.handlers.SmilesEventHandlerExtensionFactory
+org.rdkit.neo4j.handlers.RDKitEventHandlerExtensionFactory

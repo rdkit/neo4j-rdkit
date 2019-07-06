@@ -1,4 +1,4 @@
-package org.rdkit.neo4j.utils;
+package org.rdkit.neo4j.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

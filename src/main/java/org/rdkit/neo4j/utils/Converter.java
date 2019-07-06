@@ -2,6 +2,7 @@ package org.rdkit.neo4j.utils;
 
 import org.RDKit.RDKFuncs;
 import org.RDKit.RWMol;
+import org.rdkit.neo4j.models.MolBlock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

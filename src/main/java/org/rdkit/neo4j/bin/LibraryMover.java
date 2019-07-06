@@ -97,7 +97,7 @@ public class LibraryMover {
   }
 
   /**
-   * * <p>Method moves library from .jar to temporary folder and loads it</p>
+   * Method moves library from .jar to temporary folder and loads it
    * Temp folder previously should be added to java.library.path
    *
    * @param fileStreams - map of <filename, inputStream> pairs, used for interoperability between loading from JAR and loading from IDE

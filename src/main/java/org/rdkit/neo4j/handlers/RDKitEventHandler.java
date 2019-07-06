@@ -10,21 +10,22 @@ import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.event.LabelEntry;
 import org.neo4j.graphdb.event.TransactionData;
 import org.neo4j.graphdb.event.TransactionEventHandler;
+import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.utils.Converter;
-import org.rdkit.neo4j.utils.MolBlock;
+import org.rdkit.neo4j.models.MolBlock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CanonicalSmilesEventHandler implements TransactionEventHandler<Object> {
+public class RDKitEventHandler implements TransactionEventHandler<Object> {
 
-  private static final Logger logger = LoggerFactory.getLogger(CanonicalSmilesEventHandler.class);
+  private static final Logger logger = LoggerFactory.getLogger(RDKitEventHandler.class);
 
   public static GraphDatabaseService db;
   private final Label label;
 
-  public CanonicalSmilesEventHandler(GraphDatabaseService graphDatabaseService) {
+  public RDKitEventHandler(GraphDatabaseService graphDatabaseService) {
     db = graphDatabaseService;
-    this.label = Label.label("Chemical"); // todo: think about constant ???
+    this.label = Label.label(NodeFields.Label.getValue());
   }
 
   /* todo: remove comment below
@@ -41,23 +42,24 @@ public class CanonicalSmilesEventHandler implements TransactionEventHandler<Obje
    */
   @Override
   public Object beforeCommit(TransactionData data) throws Exception {
-    val nodesMol = getNodes(data, label, "mdlmol");
+    val nodesMol = getNodes(data, label, NodeFields.MdlMol.getValue());
 
     // todo: catch new nodes with `mol` property and instatiate other properties
 
     for (Node node: nodesMol) {
-      final String mol = (String) node.getProperty("mdlmol");
+      final String mol = (String) node.getProperty(NodeFields.MdlMol.getValue());
       final MolBlock block = Converter.convertMolBlock(mol);
 
       addProperties(node, block);
     }
 
 
-    val nodesSmiles = getNodes(data, label, "smiles");
+    val nodesSmiles = getNodes(data, label, NodeFields.Smiles.getValue());
     nodesSmiles.removeAll(nodesMol);
 
+    // todo: will there appear nodes created only by smiles (not mol file)?
     for (Node node: nodesSmiles) {
-      final String smiles = (String) node.getProperty("smiles"); // todo: will there appear nodes created only by smiles (not mol file)?
+      final String smiles = (String) node.getProperty(NodeFields.Smiles.getValue());
       final MolBlock block = Converter.convertSmiles(smiles);
 
       addProperties(node, block);
@@ -80,13 +82,14 @@ public class CanonicalSmilesEventHandler implements TransactionEventHandler<Obje
 
   private void addProperties(final Node node, final MolBlock block) {
     logger.debug("Node={} adding properties: {}", node, block);
-    node.setProperty("canonical_smiles", block.getCanonicalSmiles());
-    node.setProperty("inchi", block.getInchi());
-    node.setProperty("formula", block.getFormula());
-    node.setProperty("molecular_weight", block.getMolecularWeight());
+    node.setProperty(NodeFields.CanonicalSmiles.getValue(), block.getCanonicalSmiles());
+    node.setProperty(NodeFields.Inchi.getValue(), block.getInchi());
+    node.setProperty(NodeFields.Formula.getValue(), block.getFormula());
+    node.setProperty(NodeFields.MolecularWeight.getValue(), block.getMolecularWeight());
 
-    if (!node.hasProperty("mdlmol")) // When molblock is created from smiles
-      node.setProperty("mdlmol", block.getMolBlock());
+    // When molblock is created from smiles
+    if (!node.hasProperty(NodeFields.MdlMol.getValue()))
+      node.setProperty(NodeFields.MdlMol.getValue(), block.getMolBlock());
   }
 
   private Set<Node> getNodes(final TransactionData data, Label label, String property) {

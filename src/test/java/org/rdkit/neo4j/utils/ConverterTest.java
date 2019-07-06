@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.rdkit.neo4j.bin.LibraryLoader;
+import org.rdkit.neo4j.models.MolBlock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
