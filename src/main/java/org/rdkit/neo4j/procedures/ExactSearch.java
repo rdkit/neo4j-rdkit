@@ -7,13 +7,16 @@ import java.util.stream.StreamSupport;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.ResourceIterator;
 import org.neo4j.graphdb.schema.IndexDefinition;
 import org.neo4j.logging.Log;
+import org.neo4j.procedure.Description;
 import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.Context;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.Procedure;
 
+import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.utils.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +25,8 @@ public class ExactSearch {
 
   private static final Logger logger = LoggerFactory.getLogger(ExactSearch.class);
 
+  private static final String query = "MATCH (node:%s { %s: '%s' }) RETURN node";
+
   @Context
   public GraphDatabaseService db;
 
@@ -29,13 +34,39 @@ public class ExactSearch {
   public Log log;
 
   @Procedure(name = "org.rdkit.search.exact.smiles", mode = Mode.READ)
-  public Stream<ExampleObject> exactSearchSmiles(@Name("label") String labelName,
-      @Name("smiles") String smiles) {
-    logger.info("label={}, smiles={}", labelName, smiles);
+  @Description("RDKit exact search on `smiles` property")
+  public Stream<NodeWrapper> exactSearchSmiles(@Name("label") String labelName, @Name("smiles") String smiles) {
+    logger.info("Exact search smiles :: label={}, smiles={}", labelName, smiles);
 
     // todo: validate smiles is correct (possible)
 
-    // todo: is it even necessary to have index for it ?
+    final String rdkitSmiles = Converter.getRDKitSmiles(smiles);
+    ResourceIterator<Node> nodes = db.findNodes(Label.label(labelName), NodeFields.Smiles.getValue(), rdkitSmiles);
+    return nodes.stream().map(NodeWrapper::new);
+  }
+
+  @Procedure(name="org.rdkit.search.exact.mol", mode=Mode.READ)
+  @Description("RDKit exact search on `mdlmol` property")
+  public Stream<NodeWrapper> exactSearchMol(@Name("label") String labelName, @Name("mol") String molBlock) {
+    logger.info("Exact search mol :: label={}, molBlock={}", labelName, molBlock);
+
+    ResourceIterator<Node> nodes = db.findNodes(Label.label(labelName), NodeFields.MdlMol.getValue(), molBlock);
+    return nodes.stream().map(NodeWrapper::new);
+  }
+
+  private String indexName(String label) {
+    return "rdkit";
+  }
+
+  public static class NodeWrapper {
+    public final Node node;
+
+    public NodeWrapper(Node node) {
+      this.node = node;
+    }
+  }
+
+  private void checkIndexExistence(String labelName) {
     try {
       IndexDefinition index = db.schema().getIndexByName("rdkit");
       assert index.isNodeIndex();
@@ -43,39 +74,7 @@ public class ExactSearch {
           .anyMatch(x -> x.equals(Label.label(labelName)));
     } catch (IllegalArgumentException e) {
       log.error("No `rdkit` node index found"); // todo: is it correct?
-      return Stream.empty();
-    }
-
-    // todo: does it cover complex cases (?)
-
-    final String rdkitSmiles = Converter.getRDKitSmiles(smiles);
-    String query = String.format("MATCH (node:%s { smiles: '%s' }) RETURN node", labelName, rdkitSmiles);
-//    String query = "MATCH (node:$label { smiles: '$smiles' }) RETURN node";
-
-    return db.execute(query)
-        .stream()
-        .map(ExampleObject::new);
-  }
-
-  private String indexName(String label) {
-    return "rdkit";
-  }
-
-  public static class ExampleObject {
-
-    public final long nodeId;
-    public final String mol_id;
-    public final String smiles;
-
-
-    public ExampleObject(Node node) {
-      this.nodeId = node.getId();
-      this.mol_id = (String) node.getProperty("mol_id");
-      this.smiles = (String) node.getProperty("smiles");
-    }
-
-    public ExampleObject(Map<String, Object> map) {
-      this((Node) map.get("node"));
+      Stream.empty();
     }
   }
 }

@@ -21,14 +21,9 @@ public class EmbeddedTest extends BaseTest {
 
   @Test
   public void insertDataTest() throws Exception {
-    final List<String> rows = ChemicalStructureParser.readTestData();
-
     Map<String, Object> parameters = new HashMap<>();
-    List<Map<String, Object>> structures = new ArrayList<>();
+    List<Map<String, Object>> structures = ChemicalStructureParser.getChemicalRows();
 
-    for (final String row : rows) {
-      structures.add(ChemicalStructureParser.mapChemicalRow(row));
-    }
     parameters.put("rows", structures);
 
     // Insert objects
@@ -44,33 +39,20 @@ public class EmbeddedTest extends BaseTest {
     }
 
     try (val tx = graphDb.beginTx()) {
+
       val result1 = graphDb.execute("MATCH (c:Doc) RETURN count(*) as docs");
-
-      result1.accept(rowVisited -> {
-        Number docs = rowVisited.getNumber("docs");
-        assertEquals(56L, docs);
-
-        return false;
-      });
+      long docsAmount = (Long) GraphUtils.getFirstRow(result1).get("docs");
+      assertEquals(56L, docsAmount);
 
       val result2 = graphDb.execute("MATCH (a:Chemical) RETURN count(*) as chemicals");
 
-      result2.accept(rowVisited -> {
-        Number chemicals = rowVisited.getNumber("chemicals");
-        assertEquals(940L, chemicals);
+      long chemicalsAmount = (Long) GraphUtils.getFirstRow(result2).get("docs");
+      assertEquals(940L, chemicalsAmount);
 
-        return false;
-      });
+      val result3 = graphDb.execute("MATCH (a:Chemical) -[b:PUBLISHED]-> (c:Doc) RETURN count(*) as relations");
 
-      val result3 = graphDb
-          .execute("MATCH (a:Chemical) -[b:PUBLISHED]-> (c:Doc) RETURN count(*) as relations");
-
-      result3.accept(rowVisited -> {
-        Number relationsCount = rowVisited.getNumber("relations");
-        assertEquals(1111L, relationsCount);
-
-        return false;
-      });
+      long relationsCount = (Long) GraphUtils.getFirstRow(result3).get("docs");
+      assertEquals(1111L, relationsCount);
 
       tx.success();
     }
@@ -78,13 +60,11 @@ public class EmbeddedTest extends BaseTest {
 
   @Test
   public void loadIndexTest() {
-    graphDb = GraphUtils.getTestDatabase(new File("neo4j-temp/test"));
-
     val result = graphDb.execute("CALL db.index.fulltext.listAvailableAnalyzers() "
         + "YIELD analyzer "
         + "WHERE analyzer = \"rdkit\" RETURN analyzer");
 
-    Map<String, Object> analyzersList = getFirstRow(result);
+    Map<String, Object> analyzersList = GraphUtils.getFirstRow(result);
     assertEquals("rdkit", analyzersList.get("analyzer"));
     logger.info("Analyzer found");
 
@@ -96,13 +76,9 @@ public class EmbeddedTest extends BaseTest {
 
     val indexExists = graphDb.execute("CALL db.indexes()");
 
-    Map<String, Object> columns = getFirstRow(indexExists);
+    Map<String, Object> columns = GraphUtils.getFirstRow(indexExists);
     assertEquals("rdkit", columns.get("indexName"));
     assertEquals("node_fulltext", columns.get("type"));
     logger.info("Node Index created");
-  }
-
-  private Map<String, Object> getFirstRow(Result result) {
-    return result.next();
   }
 }

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import lombok.val;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -19,16 +20,30 @@ import org.neo4j.driver.v1.GraphDatabase;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
 import org.neo4j.harness.junit.Neo4jRule;
+import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.rdkit.neo4j.index.utils.BaseTest;
 import org.rdkit.neo4j.index.utils.ChemicalStructureParser;
+import org.rdkit.neo4j.index.utils.GraphUtils;
 
 
 public class ExactSearchTest extends BaseTest {
 
   public Neo4jRule neo4j = new Neo4jRule()
       .withProcedure(ExactSearch.class);
+
+  @Override
+  public void prepareTestDatabase() {
+    graphDb = GraphUtils.getTestDatabase();
+    Procedures proceduresService = ((GraphDatabaseAPI) graphDb).getDependencyResolver().resolveDependency(Procedures.class, FIRST);
+    try {
+      proceduresService.registerProcedure(ExactSearch.class, true);
+    } catch (KernelException e) {
+      e.printStackTrace();
+      logger.error("Not success :(");
+    }
+  }
 
   @Test
   @Ignore
@@ -78,27 +93,17 @@ public class ExactSearchTest extends BaseTest {
   @Test
   public void callExactSmilesTest() throws Throwable {
     try (org.neo4j.graphdb.Transaction tx = graphDb.beginTx()) {
-      final List<String> rows = ChemicalStructureParser.readTestData();
+      List<Map<String, Object>> structures = ChemicalStructureParser.getChemicalRows();
       Map<String, Object> parameters = new HashMap<>();
-      List<Map<String, Object>> structures = new ArrayList<>();
 
-      for (final String row : rows) {
-        structures.add(ChemicalStructureParser.mapChemicalRow(row));
-      }
       parameters.put("rows", structures);
 
-      val r = graphDb.execute(
-          "UNWIND {rows} as row "
-              + "MERGE (from:Chemical{smiles: row.smiles, mol_id: row.mol_id})", parameters);
-
+      graphDb.execute("UNWIND {rows} as row MERGE (from:Chemical{smiles: row.smiles, mol_id: row.mol_id})", parameters);
       tx.success();
     }
 
     String createIndex = "CALL db.index.fulltext.createNodeIndex(\"rdkit\", [\"Chemical\"], [\"smiles\"], {analyzer: \"rdkit\"})";
     graphDb.execute(createIndex);
-
-    Procedures proceduresService = ((GraphDatabaseAPI) graphDb).getDependencyResolver().resolveDependency(Procedures.class, FIRST);
-    proceduresService.registerProcedure(ExactSearch.class, true);
 
     final String expectedSmiles = "COc1cc2c(cc1Br)C(C)CNCC2";
     final String label = "Chemical";
@@ -114,5 +119,47 @@ public class ExactSearchTest extends BaseTest {
       assertEquals(chembls[i], chembl);
       assertEquals(expectedSmiles, smiles);
     }
+  }
+
+  @Test
+  @Ignore
+  public void callExactMolTest() throws Throwable {
+    final String mol = "\n"
+        + "  Mrv1810 07051914202D          \n"
+        + "\n"
+        + "  8  8  0  0  0  0            999 V2000\n"
+        + "   -4.4436   -2.5359    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        + "   -5.1581   -2.9484    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        + "   -5.1581   -3.7734    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        + "   -4.4436   -4.1859    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        + "   -3.7291   -3.7734    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        + "   -3.7291   -2.9484    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        + "   -3.0147   -2.5359    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        + "   -3.0147   -1.7109    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        + "  1  2  1  0  0  0  0\n"
+        + "  2  3  2  0  0  0  0\n"
+        + "  3  4  1  0  0  0  0\n"
+        + "  4  5  2  0  0  0  0\n"
+        + "  5  6  1  0  0  0  0\n"
+        + "  1  6  2  0  0  0  0\n"
+        + "  6  7  1  0  0  0  0\n"
+        + "  7  8  1  0  0  0  0\n"
+        + "M  END\n";
+
+    try (org.neo4j.graphdb.Transaction tx = graphDb.beginTx()) {
+      graphDb.execute(String.format("CREATE (node:Chemical {mdlmol: %s})", mol));
+      tx.success();
+    }
+
+//    String createIndex = "CALL db.index.fulltext.createNodeIndex(\"rdkit\", [\"Chemical\"], [\"smiles\"], {analyzer: \"rdkit\"})";
+//    graphDb.execute(createIndex);
+
+    final String label = "Chemical";
+    final String query = String.format("CALL org.rdkit.search.exact.mol(\"%s\", \"%s\")", label, mol);
+    val result = graphDb.execute(query);
+
+    val item = result.next();
+    String obtainedMol = (String) item.get("mdlmol");
+    assertEquals(obtainedMol, mol);
   }
 }

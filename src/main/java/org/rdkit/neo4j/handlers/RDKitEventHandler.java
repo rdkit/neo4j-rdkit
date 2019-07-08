@@ -28,18 +28,6 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
     this.label = Label.label(NodeFields.Label.getValue());
   }
 
-  /* todo: remove comment below
-   * The transaction is still open when this method is invoked, making it
-   * possible to perform mutating operations in this method. This is however
-   * highly discouraged since changes made in this method are not guaranteed to be
-   * visible by this or other {@link TransactionEventHandler}s.
-   *
-   * @param data the changes that will be committed in this transaction.
-   * @return a state object (or <code>null</code>) that will be passed on to
-   *         {@link #afterCommit(TransactionData, Object)} or
-   *         {@link #afterRollback(TransactionData, Object)} of this object.
-   * @throws Exception to indicate that the transaction should be rolled back.
-   */
   @Override
   public Object beforeCommit(TransactionData data) throws Exception {
     val nodesMol = getNodes(data, label, NodeFields.MdlMol.getValue());
