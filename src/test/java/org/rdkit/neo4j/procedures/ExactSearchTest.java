@@ -19,6 +19,7 @@ import org.neo4j.driver.v1.Driver;
 import org.neo4j.driver.v1.GraphDatabase;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
+import org.neo4j.graphdb.Node;
 import org.neo4j.harness.junit.Neo4jRule;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.impl.proc.Procedures;
@@ -92,38 +93,44 @@ public class ExactSearchTest extends BaseTest {
 
   @Test
   public void callExactSmilesTest() throws Throwable {
-    try (org.neo4j.graphdb.Transaction tx = graphDb.beginTx()) {
+    try (val tx = graphDb.beginTx()) {
       List<Map<String, Object>> structures = ChemicalStructureParser.getChemicalRows();
       Map<String, Object> parameters = new HashMap<>();
 
       parameters.put("rows", structures);
 
       graphDb.execute("UNWIND {rows} as row MERGE (from:Chemical{smiles: row.smiles, mol_id: row.mol_id})", parameters);
+
+//      String createIndex = "CALL db.index.fulltext.createNodeIndex(\"rdkit\", [\"Chemical\"], [\"smiles\"], {analyzer: \"rdkit\"})";
+//      graphDb.execute(createIndex);
       tx.success();
     }
 
-    String createIndex = "CALL db.index.fulltext.createNodeIndex(\"rdkit\", [\"Chemical\"], [\"smiles\"], {analyzer: \"rdkit\"})";
-    graphDb.execute(createIndex);
+
 
     final String expectedSmiles = "COc1cc2c(cc1Br)C(C)CNCC2";
     final String label = "Chemical";
     final String query = String.format("CALL org.rdkit.search.exact.smiles(\"%s\", \"%s\")", label, expectedSmiles);
-    val result = graphDb.execute(query);
+    try (val tx = graphDb.beginTx()) {
+      val result = graphDb.execute(query);
 
-    final String[] chembls = new String[]{"CHEMBL180815", "CHEMBL182184", "CHEMBL180867"};
+      final String[] chembls = new String[]{"CHEMBL180815", "CHEMBL182184", "CHEMBL180867"};
 
-    for (int i = 0; i < chembls.length; i++) {
-      val item = result.next();
-      String chembl = (String) item.get("mol_id");
-      String smiles = (String) item.get("smiles");
-      assertEquals(chembls[i], chembl);
-      assertEquals(expectedSmiles, smiles);
+      for (int i = 0; i < chembls.length; i++) {
+        Node node = (Node) result.next().get("node");
+        String chembl = (String) node.getProperty("mol_id");
+        String smiles = (String) node.getProperty("smiles");
+        assertEquals(chembls[i], chembl);
+        assertEquals(expectedSmiles, smiles);
+      }
+
+      tx.success();
     }
   }
 
   @Test
   @Ignore
-  public void callExactMolTest() throws Throwable {
+  public void callExactMolTest() {
     final String mol = "\n"
         + "  Mrv1810 07051914202D          \n"
         + "\n"
@@ -156,10 +163,14 @@ public class ExactSearchTest extends BaseTest {
 
     final String label = "Chemical";
     final String query = String.format("CALL org.rdkit.search.exact.mol(\"%s\", \"%s\")", label, mol);
-    val result = graphDb.execute(query);
 
-    val item = result.next();
-    String obtainedMol = (String) item.get("mdlmol");
-    assertEquals(obtainedMol, mol);
+    try (val tx = graphDb.beginTx()) {
+      val result = graphDb.execute(query);
+      val item = result.next();
+
+      Node node = (Node) item.get("node");
+      String obtainedMol = (String) node.getProperty("mdlmol");
+      assertEquals(obtainedMol, mol);
+    }
   }
 }
