@@ -70,7 +70,7 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
 
   }
 
-  private void addProperties(final Node node, final MolBlock block) {
+  public static void addProperties(final Node node, final MolBlock block) {
     logger.debug("Node={} adding properties: {}", node, block);
     node.setProperty(NodeFields.CanonicalSmiles.getValue(), block.getCanonicalSmiles());
     node.setProperty(NodeFields.Inchi.getValue(), block.getInchi());

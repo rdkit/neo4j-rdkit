@@ -2,9 +2,11 @@ package org.rdkit.neo4j.procedures;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import lombok.val;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
@@ -18,14 +20,16 @@ import org.neo4j.procedure.Context;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.Procedure;
 
+import org.rdkit.neo4j.handlers.RDKitEventHandler;
+import org.rdkit.neo4j.models.MolBlock;
 import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.utils.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ExactSearch {
+public class RDKitProcedures {
 
-  private static final Logger logger = LoggerFactory.getLogger(ExactSearch.class);
+  private static final Logger logger = LoggerFactory.getLogger(RDKitProcedures.class);
 
   private static final String query = "MATCH (node:%s { %s: '%s' }) RETURN node";
 
@@ -45,12 +49,12 @@ public class ExactSearch {
     final String rdkitSmiles = Converter.getRDKitSmiles(smiles);
     final String labels = String.join(":", labelNames);
 
-    Result result = db.execute(String.format(query, labels,  NodeFields.CanonicalSmiles.getValue(), rdkitSmiles));
+    Result result = db.execute(String.format(query, labels, NodeFields.CanonicalSmiles.getValue(), rdkitSmiles));
 //    ResourceIterator<Node> nodes = db.findNodes(Label.label(labelName), NodeFields.CanonicalSmiles.getValue(), rdkitSmiles);
     return result.stream().map(NodeWrapper::new);
   }
 
-  @Procedure(name="org.rdkit.search.exact.mol", mode=Mode.READ)
+  @Procedure(name = "org.rdkit.search.exact.mol", mode = Mode.READ)
   @Description("RDKit exact search on `mdlmol` property")
   public Stream<NodeWrapper> exactSearchMol(@Name("labels") List<String> labelNames, @Name("mol") String molBlock) {
     logger.info("Exact search mol :: label={}, molBlock={}", labelNames, molBlock);
@@ -58,11 +62,34 @@ public class ExactSearch {
     final String rdkitSmiles = Converter.convertMolBlock(molBlock).getCanonicalSmiles();
     final String labels = String.join(":", labelNames);
 
-    Result result = db.execute(String.format(query, labels,  NodeFields.CanonicalSmiles.getValue(), rdkitSmiles));
+    Result result = db.execute(String.format(query, labels, NodeFields.CanonicalSmiles.getValue(), rdkitSmiles));
     return result.stream().map(NodeWrapper::new);
   }
 
+  @Procedure(name = "org.rdkit.update", mode = Mode.WRITE)
+  @Description("RDKit update procedure, allows to construct ['formula', 'molecular_weight', 'canonical_smiles'] values from 'mdlmol' property")
+  public Stream<NodeWrapper> createPropertiesMol(@Name("labels") List<String> labelNames) {
+    logger.info("Update nodes with labels={}, create additional fields", labelNames);
+
+    final String firstLabel = labelNames.get(0);
+    final List<Label> labels = labelNames.stream().map(Label::label).collect(Collectors.toList());
+
+    ResourceIterator<Node> nodes = db.findNodes(Label.label(firstLabel));
+    val nodesForUpdate = nodes.stream()
+        .filter(node -> labels.stream().allMatch(node::hasLabel))
+        .collect(Collectors.toList());
+
+    nodesForUpdate.forEach(node -> {
+      final String mol = (String) node.getProperty("mdlmol");
+      final MolBlock block = Converter.convertMolBlock(mol);
+      RDKitEventHandler.addProperties(node, block);
+    });
+
+    return Stream.empty();
+  }
+
   public static class NodeWrapper {
+
     public Node node;
 
     public NodeWrapper(Node node) {

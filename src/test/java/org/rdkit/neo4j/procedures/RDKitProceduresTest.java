@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 
 import lombok.val;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -29,17 +28,17 @@ import org.rdkit.neo4j.index.utils.ChemicalStructureParser;
 import org.rdkit.neo4j.index.utils.GraphUtils;
 
 
-public class ExactSearchTest extends BaseTest {
+public class RDKitProceduresTest extends BaseTest {
 
   public Neo4jRule neo4j = new Neo4jRule()
-      .withProcedure(ExactSearch.class);
+      .withProcedure(RDKitProcedures.class);
 
   @Override
   public void prepareTestDatabase() {
     graphDb = GraphUtils.getTestDatabase();
     Procedures proceduresService = ((GraphDatabaseAPI) graphDb).getDependencyResolver().resolveDependency(Procedures.class, FIRST);
     try {
-      proceduresService.registerProcedure(ExactSearch.class, true);
+      proceduresService.registerProcedure(RDKitProcedures.class, true);
     } catch (KernelException e) {
       e.printStackTrace();
       logger.error("Not success :(");
