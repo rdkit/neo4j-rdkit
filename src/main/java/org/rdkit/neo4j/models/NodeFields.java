@@ -2,7 +2,8 @@ package org.rdkit.neo4j.models;
 
 public enum NodeFields {
 
-  Label("Chemical"),
+  Chemical("Chemical"),
+  Structure("Structure"),
   MdlMol("mdlmol"),
   Smiles("smiles"),
   CanonicalSmiles("canonical_smiles"),

@@ -1,5 +1,7 @@
 package org.rdkit.neo4j.handlers;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -21,16 +23,16 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
   private static final Logger logger = LoggerFactory.getLogger(RDKitEventHandler.class);
 
   public static GraphDatabaseService db;
-  private final Label label;
+  private final List<Label> labels;
 
   public RDKitEventHandler(GraphDatabaseService graphDatabaseService) {
     db = graphDatabaseService;
-    this.label = Label.label(NodeFields.Label.getValue());
+    this.labels = Arrays.asList(Label.label(NodeFields.Chemical.getValue()), Label.label(NodeFields.Structure.getValue()));
   }
 
   @Override
   public Object beforeCommit(TransactionData data) throws Exception {
-    val nodesMol = getNodes(data, label, NodeFields.MdlMol.getValue());
+    val nodesMol = getNodes(data, NodeFields.MdlMol.getValue());
 
     // todo: catch new nodes with `mol` property and instatiate other properties
 
@@ -42,7 +44,7 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
     }
 
 
-    val nodesSmiles = getNodes(data, label, NodeFields.Smiles.getValue());
+    val nodesSmiles = getNodes(data, NodeFields.Smiles.getValue());
     nodesSmiles.removeAll(nodesMol);
 
     // todo: will there appear nodes created only by smiles (not mol file)?
@@ -80,18 +82,17 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
       node.setProperty(NodeFields.MdlMol.getValue(), block.getMolBlock());
   }
 
-  private Set<Node> getNodes(final TransactionData data, Label label, String property) {
+  private Set<Node> getNodes(final TransactionData data, String property) {
     // todo: logic here needs improvement
     Set<Node> nodes = StreamSupport.stream(data.createdNodes().spliterator(), false)
-        .filter(node -> node.hasLabel(label) && node.hasProperty(property))
+        .filter(node -> labels.stream().allMatch(node::hasLabel) && node.hasProperty(property))
         .collect(Collectors.toSet());
 
     val labelAssigned = StreamSupport.stream(data.assignedLabels().spliterator(), false)
         .filter(
             labelEntry -> {
-              Node n = labelEntry.node();
-              Label l = labelEntry.label();
-              return l.equals(label) && !nodes.contains(n) && n.hasProperty(property);
+              Node node = labelEntry.node();
+              return labels.stream().allMatch(node::hasLabel) && !nodes.contains(node) && node.hasProperty(property);
             })
         .map(LabelEntry::node)
         .collect(Collectors.toSet());

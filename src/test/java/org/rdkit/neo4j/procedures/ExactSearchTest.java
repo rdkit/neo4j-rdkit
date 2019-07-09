@@ -99,7 +99,7 @@ public class ExactSearchTest extends BaseTest {
 
       parameters.put("rows", structures);
 
-      graphDb.execute("UNWIND {rows} as row MERGE (from:Chemical{smiles: row.smiles, mol_id: row.mol_id})", parameters);
+      graphDb.execute("UNWIND {rows} as row MERGE (from:Chemical:Structure {smiles: row.smiles, mol_id: row.mol_id})", parameters);
 
 //      String createIndex = "CALL db.index.fulltext.createNodeIndex(\"rdkit\", [\"Chemical\"], [\"smiles\"], {analyzer: \"rdkit\"})";
 //      graphDb.execute(createIndex);
@@ -109,8 +109,7 @@ public class ExactSearchTest extends BaseTest {
 
 
     final String expectedSmiles = "COc1cc2c(cc1Br)C(C)CNCC2";
-    final String label = "Chemical";
-    final String query = String.format("CALL org.rdkit.search.exact.smiles(\"%s\", \"%s\")", label, expectedSmiles);
+    final String query = String.format("CALL org.rdkit.search.exact.smiles([\"Chemical\", \"Structure\"], \"%s\")", expectedSmiles);
     try (val tx = graphDb.beginTx()) {
       val result = graphDb.execute(query);
 
@@ -129,7 +128,6 @@ public class ExactSearchTest extends BaseTest {
   }
 
   @Test
-  @Ignore
   public void callExactMolTest() {
     final String mol = "\n"
         + "  Mrv1810 07051914202D          \n"
@@ -154,15 +152,14 @@ public class ExactSearchTest extends BaseTest {
         + "M  END\n";
 
     try (org.neo4j.graphdb.Transaction tx = graphDb.beginTx()) {
-      graphDb.execute(String.format("CREATE (node:Chemical {mdlmol: %s})", mol));
+      graphDb.execute(String.format("CREATE (node:Chemical:Structure {mdlmol: '%s'})", mol));
       tx.success();
     }
 
 //    String createIndex = "CALL db.index.fulltext.createNodeIndex(\"rdkit\", [\"Chemical\"], [\"smiles\"], {analyzer: \"rdkit\"})";
 //    graphDb.execute(createIndex);
 
-    final String label = "Chemical";
-    final String query = String.format("CALL org.rdkit.search.exact.mol(\"%s\", \"%s\")", label, mol);
+    final String query = String.format("CALL org.rdkit.search.exact.mol([\"Chemical\", \"Structure\"], \"%s\")", mol);
 
     try (val tx = graphDb.beginTx()) {
       val result = graphDb.execute(query);

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.val;
 
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -35,7 +34,7 @@ public class EmbeddedTest extends BaseTest {
     try (val tx = graphDb.beginTx()) {
       val r = graphDb.execute(
           "UNWIND {rows} as row "
-              + "MERGE (from:Chemical{smiles: row.smiles, mol_id: row.mol_id}) "
+              + "MERGE (from:Chemical:Structure {smiles: row.smiles, mol_id: row.mol_id}) "
               + "MERGE (to:Doc{doc_id: row.doc_id}) "
               + "MERGE (from) -[:PUBLISHED]-> (to)", parameters);
 
@@ -72,10 +71,10 @@ public class EmbeddedTest extends BaseTest {
     assertEquals("rdkit", analyzersList.get("analyzer"));
     logger.info("Analyzer found");
 
-    String chemical = "create (:Chemical {mol_id: \"CHEMBL77517\", smiles: \"NS(=O)(=O)c1ccc(S(=O)(=O)Nc2cccc3c(Cl)c[nH]c32)cc1\"})";
+    String chemical = "create (:Chemical:Structure {mol_id: \"CHEMBL77517\", smiles: \"NS(=O)(=O)c1ccc(S(=O)(=O)Nc2cccc3c(Cl)c[nH]c32)cc1\"})";
     graphDb.execute(chemical);
 
-    String createIndex = "CALL db.index.fulltext.createNodeIndex(\"rdkit\", [\"Chemical\"], [\"smiles\"], {analyzer: \"rdkit\"})";
+    String createIndex = "CALL db.index.fulltext.createNodeIndex(\"rdkit\", [\"Chemical\", \"Structure\"], [\"smiles\"], {analyzer: \"rdkit\"})";
     graphDb.execute(createIndex);
 
     val indexExists = graphDb.execute("CALL db.indexes()");

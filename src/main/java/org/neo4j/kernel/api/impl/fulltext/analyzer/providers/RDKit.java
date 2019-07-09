@@ -13,14 +13,6 @@ import org.slf4j.LoggerFactory;
 public class RDKit extends AnalyzerProvider {
   private static final Logger logger = LoggerFactory.getLogger(RDKitAnalyzer.class);
 
-  static {
-    try {
-      LibraryLoader.loadLibraries();
-    } catch (LoaderException e) {
-      logger.error("Unable to load native libraries");
-    }
-  }
-
   public RDKit() {
     super("rdkit");
   }

@@ -8,12 +8,23 @@ import org.neo4j.kernel.lifecycle.Lifecycle;
 import org.neo4j.kernel.lifecycle.LifecycleAdapter;
 import org.neo4j.logging.internal.LogService;
 
+import org.rdkit.neo4j.bin.LibraryLoader;
+import org.rdkit.neo4j.exceptions.LoaderException;
 import org.rdkit.neo4j.handlers.RDKitEventHandlerExtensionFactory.Dependencies;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RDKitEventHandlerExtensionFactory extends KernelExtensionFactory<Dependencies> {
   private static final Logger logger = LoggerFactory.getLogger(RDKitEventHandlerExtensionFactory.class);
+
+  static {
+    try {
+      LibraryLoader.loadLibraries();
+    } catch (LoaderException e) {
+      logger.error("Unable to load native libraries: RDKit");
+      e.printStackTrace();
+    }
+  }
 
   @Override
   public Lifecycle newInstance(KernelContext kernelContext, final Dependencies dependencies) {

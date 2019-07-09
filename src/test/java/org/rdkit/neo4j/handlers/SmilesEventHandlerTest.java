@@ -21,9 +21,7 @@ public class SmilesEventHandlerTest extends BaseTest {
 
   @Test
   public void emptySmilesTest() {
-    // todo: I must load jni libs somewhere
-    // todo: should it be placed in event handler?
-    final String query = "CREATE (c:Chemical {smiles: ''})";
+    final String query = "CREATE (c:Chemical:Structure {smiles: ''})";
     logger.info("{}", query);
     try (val tx = graphDb.beginTx()) {
       graphDb.execute(query);
@@ -36,7 +34,7 @@ public class SmilesEventHandlerTest extends BaseTest {
 
   @Test
   public void invalidNodeTest() {
-    final String query = "CREATE (c:Chemical {mol_id: '1244_65'})";
+    final String query = "CREATE (c:Chemical:Structure {mol_id: '1244_65'})";
     logger.info("{}", query);
 
     try (val tx = graphDb.beginTx()) {
@@ -52,7 +50,7 @@ public class SmilesEventHandlerTest extends BaseTest {
   public void insertCanonicalSmilesTest() {
     final String smiles = "C(F)(F)F";
     final String canonicalSmiles = "FC(F)F";
-    final String query = String.format("CREATE (c:Chemical {smiles: '%s'})", smiles);
+    final String query = String.format("CREATE (c:Chemical:Structure {smiles: '%s'})", smiles);
 
     logger.info("{}, expected canonical={}", query, canonicalSmiles);
 
@@ -93,7 +91,7 @@ public class SmilesEventHandlerTest extends BaseTest {
         + "  7  8  1  0  0  0  0\n"
         + "M  END\n";
 
-    final String query = String.format("CREATE (c:Chemical {mdlmol: '%s'})", mol);
+    final String query = String.format("CREATE (c:Chemical:Structure {mdlmol: '%s'})", mol);
     final String canonicalSmiles = "COc1ccccc1";
     final String formula = "C7H8O";
     final String inchi = "RDOXTESZEPMUJZ-UHFFFAOYSA-N";
