@@ -60,9 +60,7 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
 
   @Override
   public void afterCommit(TransactionData data, Object state) {
-//    val nodes = getNodes(label, data);
-//    boolean allNodesMatch = nodes.stream().
-//        allMatch(node -> node.getProperty("canonical_smiles", null) != null);
+
   }
 
   @Override

@@ -28,7 +28,27 @@ mvn org.apache.maven.plugins:maven-install-plugin:2.3.1:install-file \
   ```
 2) Generate .jar file with all dependencies with `mvn package`  
 
+## Extension functionality
 
+### Node labels: [`Chemical`, `Structure`] - strict rule (!)
+
+* __Whenever a new node added with labels__, an `rdkit` event handler is applied and new node properties are constructed from `mdlmol` property.
+1) `canonical_smiles`  
+2) `inchi`  
+3) `formula`  
+4) `molecular_weight`  
+
+* If the graph was fulfilled with nodes before the extension was loaded, it is possible to apply a procedure:  
+  `CALL org.rdkit.update(['Chemical', 'Structure'])` - which iterates through nodes with specified labels and creates properties described before.  
+
+### User-defined procedures
+
+1) `CALL org.rdkit.search.exact.smiles(['Chemical', 'Structure'], 'CC(=O)Nc1nnc(S(N)(=O)=O)s1')`
+2) `CALL org.rdkit.search.exact.mol(['Chemical', 'Structure'], '<mdlmol block>')`
+3) `CALL org.rdkit.update(['Chemical', 'Structure'])`
+
+* RDKit provides functionality to use `exact search` on top of `smiles` and `mdlmol blocks`, returns a node which satisfies `canonical smiles`  
+* Update procedure (manual properties initialization from `mdlmol` property)  
 
 ## Useful links:
 - https://github.com/neo4j/neo4j  
