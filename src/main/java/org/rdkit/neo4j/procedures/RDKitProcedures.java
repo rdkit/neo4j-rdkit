@@ -1,5 +1,6 @@
 package org.rdkit.neo4j.procedures;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -7,12 +8,9 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import lombok.val;
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.Label;
-import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.ResourceIterator;
-import org.neo4j.graphdb.Result;
+import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.schema.IndexDefinition;
+import org.neo4j.helpers.collection.PagingIterator;
 import org.neo4j.logging.Log;
 import org.neo4j.procedure.Description;
 import org.neo4j.procedure.Mode;
@@ -68,23 +66,54 @@ public class RDKitProcedures {
 
   @Procedure(name = "org.rdkit.update", mode = Mode.WRITE)
   @Description("RDKit update procedure, allows to construct ['formula', 'molecular_weight', 'canonical_smiles'] values from 'mdlmol' property")
-  public Stream<NodeWrapper> createPropertiesMol(@Name("labels") List<String> labelNames) {
+  public Stream<NodeWrapper> createPropertiesMol(@Name("labels") List<String> labelNames) throws InterruptedException {
     logger.info("Update nodes with labels={}, create additional fields", labelNames);
 
     final String firstLabel = labelNames.get(0);
     final List<Label> labels = labelNames.stream().map(Label::label).collect(Collectors.toList());
 
-    ResourceIterator<Node> nodes = db.findNodes(Label.label(firstLabel));
-    val nodesForUpdate = nodes.stream()
-        .filter(node -> labels.stream().allMatch(node::hasLabel))
-        .collect(Collectors.toList());
+    Iterator<Node> nodeIterator = db.findNodes(Label.label(firstLabel))
+            .stream()
+            .filter(node -> labels.stream().allMatch(node::hasLabel))
+            .iterator();
 
-    nodesForUpdate.forEach(node -> {
-      final String mol = (String) node.getProperty("mdlmol");
-      final MolBlock block = Converter.convertMolBlock(mol);
-      RDKitEventHandler.addProperties(node, block);
+    final PagingIterator<Node> pagingIterator = new PagingIterator<>(nodeIterator, 10_000);
+
+    Thread t = new Thread(() -> {  // we do explicit tx management so we require a separate thread
+
+      Transaction tx = db.beginTx();  // tx needs to opened here - we need one upon consuming the iterator
+      try {
+
+        int numberOfBatches = 0;
+        while (pagingIterator.hasNext()) {
+          Iterator<Node> page = pagingIterator.nextPage();
+
+          tx.success();
+          tx.close();
+          tx = db.beginTx();
+
+          page.forEachRemaining(node -> {
+            final String mol = (String) node.getProperty("mdlmol");
+            final MolBlock block = Converter.convertMolBlock(mol);
+            RDKitEventHandler.addProperties(node, block);
+
+          });
+          numberOfBatches++;
+          log.info("batch # %d", numberOfBatches);
+        }
+        log.info("done, ran %d batches successfully", numberOfBatches);
+
+
+      } finally {
+        if (tx!=null) {
+          tx.success();
+          tx.close();
+        }
+      }
+
     });
-
+    t.start();
+    t.join();
     return Stream.empty();
   }
 
