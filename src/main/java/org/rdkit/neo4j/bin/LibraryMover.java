@@ -27,7 +27,7 @@ import org.rdkit.neo4j.exceptions.LoaderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class LibraryMover {
+class LibraryMover {
   private static final Logger logger = LoggerFactory.getLogger(LibraryMover.class);
 
   /**
@@ -36,7 +36,7 @@ public class LibraryMover {
    * @param platform where to take libraries from
    * @throws LoaderException if unable to initialize temp dir or unable to move libraries
    */
-  public static void resolveMissingLibraries(List<String> missingLibraries, String platform) throws LoaderException {
+  static void resolveMissingLibraries(List<String> missingLibraries, String platform) throws LoaderException {
     // Make new java.library.path
     File temporaryDir;
     try {
@@ -57,7 +57,7 @@ public class LibraryMover {
     }
   }
 
-  public static void moveMissingLibraries(List<String> missingLibraries, String fromFolder, File temporaryDir) throws LoaderException {
+  static void moveMissingLibraries(List<String> missingLibraries, String fromFolder, File temporaryDir) throws LoaderException {
     final File jarFile = new File(LibraryLoader.class.getProtectionDomain().getCodeSource().getLocation().getPath());
     final Map<String, InputStream> libStreams;
 
@@ -97,7 +97,7 @@ public class LibraryMover {
   }
 
   /**
-   * * <p>Method moves library from .jar to temporary folder and loads it</p>
+   * Method moves library from .jar to temporary folder and loads it
    * Temp folder previously should be added to java.library.path
    *
    * @param fileStreams - map of <filename, inputStream> pairs, used for interoperability between loading from JAR and loading from IDE
