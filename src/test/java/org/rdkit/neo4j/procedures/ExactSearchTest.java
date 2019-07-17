@@ -28,17 +28,17 @@ import org.rdkit.neo4j.index.utils.ChemicalStructureParser;
 import org.rdkit.neo4j.index.utils.GraphUtils;
 
 
-public class RDKitProceduresTest extends BaseTest {
+public class ExactSearchTest extends BaseTest {
 
   public Neo4jRule neo4j = new Neo4jRule()
-      .withProcedure(RDKitProcedures.class);
+      .withProcedure(ExactSearch.class);
 
   @Override
   public void prepareTestDatabase() {
     graphDb = GraphUtils.getTestDatabase();
     Procedures proceduresService = ((GraphDatabaseAPI) graphDb).getDependencyResolver().resolveDependency(Procedures.class, FIRST);
     try {
-      proceduresService.registerProcedure(RDKitProcedures.class, true);
+      proceduresService.registerProcedure(ExactSearch.class, true);
     } catch (KernelException e) {
       e.printStackTrace();
       logger.error("Not success :(");

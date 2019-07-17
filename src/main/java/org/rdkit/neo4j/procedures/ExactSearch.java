@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import lombok.val;
 import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.schema.IndexDefinition;
 import org.neo4j.helpers.collection.PagingIterator;
@@ -25,9 +24,9 @@ import org.rdkit.neo4j.utils.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RDKitProcedures {
+public class ExactSearch {
 
-  private static final Logger logger = LoggerFactory.getLogger(RDKitProcedures.class);
+  private static final Logger logger = LoggerFactory.getLogger(ExactSearch.class);
 
   private static final String query = "MATCH (node:%s { %s: '%s' }) RETURN node";
 
