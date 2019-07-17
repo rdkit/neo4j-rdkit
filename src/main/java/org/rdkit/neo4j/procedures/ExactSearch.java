@@ -21,13 +21,8 @@ import org.rdkit.neo4j.handlers.RDKitEventHandler;
 import org.rdkit.neo4j.models.MolBlock;
 import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.utils.Converter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ExactSearch {
-
-  private static final Logger logger = LoggerFactory.getLogger(ExactSearch.class);
-
   private static final String query = "MATCH (node:%s { %s: '%s' }) RETURN node";
 
   @Context
@@ -39,7 +34,7 @@ public class ExactSearch {
   @Procedure(name = "org.rdkit.search.exact.smiles", mode = Mode.READ)
   @Description("RDKit exact search on `smiles` property")
   public Stream<NodeWrapper> exactSearchSmiles(@Name("label") List<String> labelNames, @Name("smiles") String smiles) {
-    logger.info("Exact search smiles :: label={}, smiles={}", labelNames, smiles);
+    log.info("Exact search smiles :: label={}, smiles={}", labelNames, smiles);
 
     // todo: validate smiles is correct (possible)
 
@@ -54,7 +49,7 @@ public class ExactSearch {
   @Procedure(name = "org.rdkit.search.exact.mol", mode = Mode.READ)
   @Description("RDKit exact search on `mdlmol` property")
   public Stream<NodeWrapper> exactSearchMol(@Name("labels") List<String> labelNames, @Name("mol") String molBlock) {
-    logger.info("Exact search mol :: label={}, molBlock={}", labelNames, molBlock);
+    log.info("Exact search mol :: label={}, molBlock={}", labelNames, molBlock);
 
     final String rdkitSmiles = Converter.convertMolBlock(molBlock).getCanonicalSmiles();
     final String labels = String.join(":", labelNames);
@@ -66,7 +61,7 @@ public class ExactSearch {
   @Procedure(name = "org.rdkit.update", mode = Mode.WRITE)
   @Description("RDKit update procedure, allows to construct ['formula', 'molecular_weight', 'canonical_smiles'] values from 'mdlmol' property")
   public Stream<NodeWrapper> createPropertiesMol(@Name("labels") List<String> labelNames) throws InterruptedException {
-    logger.info("Update nodes with labels={}, create additional fields", labelNames);
+    log.info("Update nodes with labels={}, create additional fields", labelNames);
 
     final String firstLabel = labelNames.get(0);
     final List<Label> labels = labelNames.stream().map(Label::label).collect(Collectors.toList());
