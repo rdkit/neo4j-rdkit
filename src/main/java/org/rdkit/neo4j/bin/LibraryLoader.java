@@ -11,7 +11,6 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.val;
-import org.rdkit.neo4j.exceptions.LoaderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

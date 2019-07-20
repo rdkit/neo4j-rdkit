@@ -9,7 +9,7 @@ import org.neo4j.kernel.lifecycle.LifecycleAdapter;
 import org.neo4j.logging.internal.LogService;
 
 import org.rdkit.neo4j.bin.LibraryLoader;
-import org.rdkit.neo4j.exceptions.LoaderException;
+import org.rdkit.neo4j.bin.LoaderException;
 import org.rdkit.neo4j.handlers.RDKitEventHandlerExtensionFactory.Dependencies;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
