@@ -9,7 +9,9 @@ public enum NodeFields {
   CanonicalSmiles("canonical_smiles"),
   Inchi("inchi"),
   Formula("formula"),
-  MolecularWeight("molecular_weight");
+  MolecularWeight("molecular_weight"),
+  FingerprintEncoded("fp"),
+  FingerprintOnes("fp_ones");
 
 
   private final String value;

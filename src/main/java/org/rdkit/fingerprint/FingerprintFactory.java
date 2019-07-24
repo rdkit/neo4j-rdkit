@@ -33,6 +33,7 @@
 package org.rdkit.fingerprint;
 
 import java.util.BitSet;
+import org.RDKit.RWMol;
 
 /**
  * A fingerprint factory is an object that knows how to produce fingerprints for SMILES.
@@ -61,4 +62,20 @@ public interface FingerprintFactory {
    * @return Fingerprint as BitSet.
    */
   public BitSet createQueryFingerprint(final String strSmiles);
+
+  /**
+   * Method for already opened RWMol to build fingerprint from Structure settings.
+   *
+   * @param mol already opened RWMol object
+   * @return Fingerprint as BitSet.
+   */
+  public BitSet createStructureFingerprint(final RWMol mol);
+
+  /**
+   * Method for already opened RWMol to build fingerprint from Query settings.
+   *
+   * @param mol already opened RWMol object
+   * @return Fingerprint as BitSet.
+   */
+  public BitSet createQueryFingerprint(final RWMol mol);
 }

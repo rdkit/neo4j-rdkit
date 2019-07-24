@@ -120,8 +120,28 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
     return createFingerprint(strSmiles, settingsQuery);
   }
 
+  /**
+   * Method for already opened RWMol to build fingerprint from Query settings.
+   *
+   * @param mol already opened RWMol object
+   * @return Fingerprint as BitSet.
+   */
+  public BitSet createQueryFingerprint(final RWMol mol) {
+    return createFingerprint(mol, settingsQuery);
+  }
+
+  /**
+   * Method for already opened RWMol to build fingerprint from Structure settings.
+   *
+   * @param mol already opened RWMol object
+   * @return Fingerprint as BitSet.
+   */
+  public BitSet createStructureFingerprint(final RWMol mol) {
+    return createFingerprint(mol, settingsStructure);
+  }
+
   //
-  // Protected Methods
+  // Private Methods
   //
 
   /**
@@ -135,22 +155,28 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
 
     // todo: update code if other types are used
 
-      // Normally: ROMol objects are needed to calculate fingerprints
-      // Create an ROMol object
+    // Normally: ROMol objects are needed to calculate fingerprints
+    // Create an ROMol object
 
-      // Performance trick, if SMILES is already canonicalized
+    // Performance trick, if SMILES is already canonicalized
     try (val mol = RWMolCloseable.from(RWMol.MolFromSmiles(strSmiles, 0, false))) {
-      mol.updatePropertyCache();
-      RDKFuncs.fastFindRings(mol);
-
-      // Calculate fingerprint
-      return convert(settings.getRdkitFingerprintType().calculate(mol, settings));
+      return createFingerprint(mol, settings);
     }
   }
 
-  //
-  // Private Methods
-  //
+  /**
+   * Method for already opened RWMol
+   * @param mol - canonicalized
+   * @param settings to build fingerprint from
+   * @return BitSet from rwmol (fingerprint of `settings` type)
+   */
+  private BitSet createFingerprint(final RWMol mol, final FingerprintSettings settings) {
+    mol.updatePropertyCache(); // todo: is it necessary ?
+    RDKFuncs.fastFindRings(mol);
+
+    // Calculate fingerprint
+    return convert(settings.getRdkitFingerprintType().calculate(mol, settings));
+  }
 
   /**
    * Converts an RDKit bit vector into a Java BitSet object.

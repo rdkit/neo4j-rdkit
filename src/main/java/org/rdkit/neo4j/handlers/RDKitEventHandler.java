@@ -12,6 +12,9 @@ import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.event.LabelEntry;
 import org.neo4j.graphdb.event.TransactionData;
 import org.neo4j.graphdb.event.TransactionEventHandler;
+import org.rdkit.fingerprint.DefaultFingerprintFactory;
+import org.rdkit.fingerprint.DefaultFingerprintSettings;
+import org.rdkit.fingerprint.FingerprintType;
 import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.utils.Converter;
 import org.rdkit.neo4j.models.MolBlock;
@@ -24,21 +27,25 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
 
   public static GraphDatabaseService db;
   private final List<Label> labels;
+  private final Converter converter;
 
   public RDKitEventHandler(GraphDatabaseService graphDatabaseService) {
     db = graphDatabaseService;
     this.labels = Arrays.asList(Label.label(NodeFields.Chemical.getValue()), Label.label(NodeFields.Structure.getValue()));
+
+    // todo: think about injection
+    val fpSettings = new DefaultFingerprintSettings(FingerprintType.pattern);
+    val fpFactory = new DefaultFingerprintFactory(fpSettings);
+    this.converter = new Converter(fpFactory);
   }
 
   @Override
   public Object beforeCommit(TransactionData data) throws Exception {
     val nodesMol = getNodes(data, NodeFields.MdlMol.getValue());
 
-    // todo: catch new nodes with `mol` property and instatiate other properties
-
     for (Node node: nodesMol) {
       final String mol = (String) node.getProperty(NodeFields.MdlMol.getValue());
-      final MolBlock block = Converter.convertMolBlock(mol);
+      final MolBlock block = converter.convertMolBlock(mol);
 
       addProperties(node, block);
     }
@@ -50,7 +57,7 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
     // todo: will there appear nodes created only by smiles (not mol file)?
     for (Node node: nodesSmiles) {
       final String smiles = (String) node.getProperty(NodeFields.Smiles.getValue());
-      final MolBlock block = Converter.convertSmiles(smiles);
+      final MolBlock block = converter.convertSmiles(smiles);
 
       addProperties(node, block);
     }
@@ -74,12 +81,19 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
     node.setProperty(NodeFields.Inchi.getValue(), block.getInchi());
     node.setProperty(NodeFields.Formula.getValue(), block.getFormula());
     node.setProperty(NodeFields.MolecularWeight.getValue(), block.getMolecularWeight());
+    node.setProperty(NodeFields.FingerprintEncoded.getValue(), block.getFingerprintEncoded());
 
     // When molblock is created from smiles
     if (!node.hasProperty(NodeFields.MdlMol.getValue()))
       node.setProperty(NodeFields.MdlMol.getValue(), block.getMolBlock());
   }
 
+  /**
+   * Return all nodes that obtained specified `labels` and contain a `property` field
+   * @param data transaction
+   * @param property name
+   * @return set of nodes for further update
+   */
   private Set<Node> getNodes(final TransactionData data, String property) {
     // todo: logic here needs improvement
     Set<Node> nodes = StreamSupport.stream(data.createdNodes().spliterator(), false)

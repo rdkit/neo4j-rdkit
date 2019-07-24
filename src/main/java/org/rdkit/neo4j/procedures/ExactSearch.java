@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import lombok.val;
 import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.schema.IndexDefinition;
 import org.neo4j.helpers.collection.PagingIterator;
@@ -17,6 +18,9 @@ import org.neo4j.procedure.Context;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.Procedure;
 
+import org.rdkit.fingerprint.DefaultFingerprintFactory;
+import org.rdkit.fingerprint.DefaultFingerprintSettings;
+import org.rdkit.fingerprint.FingerprintType;
 import org.rdkit.neo4j.handlers.RDKitEventHandler;
 import org.rdkit.neo4j.models.MolBlock;
 import org.rdkit.neo4j.models.NodeFields;
@@ -31,6 +35,15 @@ public class ExactSearch {
   @Context
   public Log log;
 
+  private final Converter converter;
+
+  public ExactSearch() {
+    // todo: think about injection
+    val fpSettings = new DefaultFingerprintSettings(FingerprintType.pattern);
+    val fpFactory = new DefaultFingerprintFactory(fpSettings);
+    this.converter = new Converter(fpFactory);
+  }
+
   @Procedure(name = "org.rdkit.search.exact.smiles", mode = Mode.READ)
   @Description("RDKit exact search on `smiles` property")
   public Stream<NodeWrapper> exactSearchSmiles(@Name("label") List<String> labelNames, @Name("smiles") String smiles) {
@@ -38,7 +51,7 @@ public class ExactSearch {
 
     // todo: validate smiles is correct (possible)
 
-    final String rdkitSmiles = Converter.getRDKitSmiles(smiles);
+    final String rdkitSmiles = converter.getRDKitSmiles(smiles);
     final String labels = String.join(":", labelNames);
 
     Result result = db.execute(String.format(query, labels, NodeFields.CanonicalSmiles.getValue(), rdkitSmiles));
@@ -51,7 +64,7 @@ public class ExactSearch {
   public Stream<NodeWrapper> exactSearchMol(@Name("labels") List<String> labelNames, @Name("mol") String molBlock) {
     log.info("Exact search mol :: label={}, molBlock={}", labelNames, molBlock);
 
-    final String rdkitSmiles = Converter.convertMolBlock(molBlock).getCanonicalSmiles();
+    final String rdkitSmiles = converter.convertMolBlock(molBlock).getCanonicalSmiles();
     final String labels = String.join(":", labelNames);
 
     Result result = db.execute(String.format(query, labels, NodeFields.CanonicalSmiles.getValue(), rdkitSmiles));
@@ -88,7 +101,7 @@ public class ExactSearch {
 
           page.forEachRemaining(node -> {
             final String mol = (String) node.getProperty("mdlmol");
-            final MolBlock block = Converter.convertMolBlock(mol);
+            final MolBlock block = converter.convertMolBlock(mol);
             RDKitEventHandler.addProperties(node, block);
 
           });
@@ -111,32 +124,16 @@ public class ExactSearch {
     return Stream.empty();
   }
 
-  public static class NodeWrapper {
+  static class NodeWrapper {
 
     public Node node;
 
-    public NodeWrapper(Node node) {
+    NodeWrapper(Node node) {
       this.node = node;
     }
 
-    public NodeWrapper(Map<String, Object> map) {
+    NodeWrapper(Map<String, Object> map) {
       this((Node) map.get("node"));
-    }
-  }
-
-  private String indexName(String label) {
-    return "rdkit";
-  }
-
-  private void checkIndexExistence(String labelName) {
-    try {
-      IndexDefinition index = db.schema().getIndexByName("rdkit");
-      assert index.isNodeIndex();
-      assert StreamSupport.stream(index.getLabels().spliterator(), false)
-          .anyMatch(x -> x.equals(Label.label(labelName)));
-    } catch (IllegalArgumentException e) {
-      log.error("No `rdkit` node index found"); // todo: is it correct?
-      Stream.empty();
     }
   }
 }
