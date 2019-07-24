@@ -1,10 +1,10 @@
 package org.rdkit.neo4j.models;
 
-public enum NodeFields {
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-  Chemical("Chemical"),
-  Structure("Structure"),
-  IndexName("rdkit"),
+@RequiredArgsConstructor
+public enum NodeFields {
 
   MdlMol("mdlmol"),
   Smiles("smiles"),
@@ -16,13 +16,6 @@ public enum NodeFields {
   FingerprintOnes("fp_ones");
 
 
+  @Getter
   private final String value;
-
-  NodeFields(String value) {
-    this.value = value;
-  }
-
-  public String getValue() {
-    return value;
-  }
 }

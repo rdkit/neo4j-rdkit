@@ -18,6 +18,7 @@ import org.neo4j.procedure.*;
 import org.rdkit.fingerprint.DefaultFingerprintFactory;
 import org.rdkit.fingerprint.DefaultFingerprintSettings;
 import org.rdkit.fingerprint.FingerprintType;
+import org.rdkit.neo4j.models.Constants;
 import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.models.SSSQuery;
 import org.rdkit.neo4j.utils.Converter;
@@ -47,7 +48,7 @@ public class SubstructureSearch {
 
     val labelsEscaped = labelNames.stream().map(name -> '\'' + name + '\'').collect(Collectors.toList());
     val labelsDelimited = String.join(", ", labelsEscaped);
-    val indexName = NodeFields.IndexName.getValue();
+    val indexName = Constants.IndexName.getValue();
 
     db.execute(String.format(createIndexQuery, indexName, labelsDelimited, fingerprintProperty));
   }

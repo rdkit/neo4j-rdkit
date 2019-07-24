@@ -15,6 +15,7 @@ import org.neo4j.graphdb.event.TransactionEventHandler;
 import org.rdkit.fingerprint.DefaultFingerprintFactory;
 import org.rdkit.fingerprint.DefaultFingerprintSettings;
 import org.rdkit.fingerprint.FingerprintType;
+import org.rdkit.neo4j.models.Constants;
 import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.utils.Converter;
 import org.rdkit.neo4j.models.MolBlock;
@@ -31,7 +32,7 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
 
   public RDKitEventHandler(GraphDatabaseService graphDatabaseService) {
     db = graphDatabaseService;
-    this.labels = Arrays.asList(Label.label(NodeFields.Chemical.getValue()), Label.label(NodeFields.Structure.getValue()));
+    this.labels = Arrays.asList(Label.label(Constants.Chemical.getValue()), Label.label(Constants.Structure.getValue()));
 
     // todo: think about injection
     val fpSettings = new DefaultFingerprintSettings(FingerprintType.pattern);
