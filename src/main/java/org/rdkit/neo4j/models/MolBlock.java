@@ -14,7 +14,7 @@ public class MolBlock {
   private final double molecularWeight;
   private final String inchi;
   private final String fingerprintEncoded;
-  private final int fingerpintOnes;
+  private final long fingerpintOnes;
   private String molBlock;
   private String smiles;
 }

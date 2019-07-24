@@ -6,15 +6,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.val;
+
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.event.LabelEntry;
 import org.neo4j.graphdb.event.TransactionData;
 import org.neo4j.graphdb.event.TransactionEventHandler;
-import org.rdkit.fingerprint.DefaultFingerprintFactory;
-import org.rdkit.fingerprint.DefaultFingerprintSettings;
-import org.rdkit.fingerprint.FingerprintType;
+
 import org.rdkit.neo4j.models.Constants;
 import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.utils.Converter;
@@ -33,11 +32,7 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
   public RDKitEventHandler(GraphDatabaseService graphDatabaseService) {
     db = graphDatabaseService;
     this.labels = Arrays.asList(Label.label(Constants.Chemical.getValue()), Label.label(Constants.Structure.getValue()));
-
-    // todo: think about injection
-    val fpSettings = new DefaultFingerprintSettings(FingerprintType.pattern);
-    val fpFactory = new DefaultFingerprintFactory(fpSettings);
-    this.converter = new Converter(fpFactory);
+    this.converter = Converter.createDefault();
   }
 
   @Override
@@ -83,6 +78,7 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
     node.setProperty(NodeFields.Formula.getValue(), block.getFormula());
     node.setProperty(NodeFields.MolecularWeight.getValue(), block.getMolecularWeight());
     node.setProperty(NodeFields.FingerprintEncoded.getValue(), block.getFingerprintEncoded());
+    node.setProperty(NodeFields.FingerprintOnes.getValue(), block.getFingerpintOnes());
 
     // When molblock is created from smiles
     if (!node.hasProperty(NodeFields.MdlMol.getValue()))

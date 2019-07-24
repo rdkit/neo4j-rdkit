@@ -1,16 +1,27 @@
 package org.rdkit.neo4j.utils;
 
 import java.util.BitSet;
-import java.util.StringJoiner;
 import org.RDKit.RDKFuncs;
 import org.RDKit.RWMol;
+import org.rdkit.fingerprint.DefaultFingerprintFactory;
+import org.rdkit.fingerprint.DefaultFingerprintSettings;
 import org.rdkit.fingerprint.FingerprintFactory;
+import org.rdkit.fingerprint.FingerprintSettings;
+import org.rdkit.fingerprint.FingerprintType;
 import org.rdkit.neo4j.models.MolBlock;
 import org.rdkit.neo4j.models.SSSQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Converter {
+
+  public static Converter createDefault() {
+    FingerprintType type = FingerprintType.pattern;
+    FingerprintSettings settings = new DefaultFingerprintSettings(type)
+        .setNumBits(2048);
+    FingerprintFactory factory = new DefaultFingerprintFactory(settings);
+    return new Converter(factory);
+  }
 
   private static final Logger logger = LoggerFactory.getLogger(Converter.class);
 
@@ -19,7 +30,7 @@ public class Converter {
 
   private FingerprintFactory fingerprintFactory;
 
-  public Converter(FingerprintFactory fingerprintFactory) {
+  private Converter(FingerprintFactory fingerprintFactory) {
     this.fingerprintFactory = fingerprintFactory;
   }
 
@@ -83,12 +94,10 @@ public class Converter {
     logger.info("Get Lucene fp query for smiles={}", smiles);
 
     final BitSet fp = fingerprintFactory.createStructureFingerprint(smiles);
-    StringJoiner joiner = bitsetToJoiner(fp, DELIMITER_AND);
-    final int positiveBits = joiner.length();
-    final String query = joiner.toString();
+    SSSQuery sssQuery = new SSSQuery(fp, DELIMITER_AND);
 
-    logger.debug("Lucene fp positiveBits={}, query={}", query, positiveBits);
-    return new SSSQuery(query, positiveBits);
+    logger.debug("Lucene fp sssQuery={}", sssQuery);
+    return sssQuery;
   }
 
   /**
@@ -106,30 +115,12 @@ public class Converter {
 
     logger.debug("Construct structure fingerprint for lucene");
     BitSet fp = fingerprintFactory.createStructureFingerprint(rwmol);
-    StringJoiner joiner = bitsetToJoiner(fp, DELIMITER_WHITESPACE);
+    SSSQuery sssQuery = new SSSQuery(fp, DELIMITER_WHITESPACE);
 
-    final int fingerprintOnes = joiner.length(); // todo: does it work?
-    final String fingerprintEncoded = joiner.toString();
+    final long fingerprintOnes = sssQuery.getPositiveBits();
+    final String fingerprintEncoded = sssQuery.getLuceneQuery();
 
     logger.debug("Constructed fp encoded={}", fingerprintEncoded);
     return new MolBlock(rdkitSmiles, formula, molecularWeight, inchi, fingerprintEncoded, fingerprintOnes);
-  }
-
-  /**
-   * Convert a bitset into a string with specified `delimiter`
-   *
-   * @param fingerprint to convert
-   * @param delimiter to join
-   * @return encoded string joiner
-   */
-  private StringJoiner bitsetToJoiner(final BitSet fingerprint, final String delimiter) {
-    StringJoiner joiner = new StringJoiner(delimiter);
-
-    // if i == -1, the FP has ended
-    for (int i = fingerprint.nextSetBit(0); i >= 0; i = fingerprint.nextSetBit(i + 1)) {
-      joiner.add(Integer.toString(i));
-    }
-
-    return joiner;
   }
 }

@@ -6,15 +6,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import lombok.val;
 import org.neo4j.graphdb.*;
 import org.neo4j.helpers.collection.PagingIterator;
 import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
 
-import org.rdkit.fingerprint.DefaultFingerprintFactory;
-import org.rdkit.fingerprint.DefaultFingerprintSettings;
-import org.rdkit.fingerprint.FingerprintType;
 import org.rdkit.neo4j.handlers.RDKitEventHandler;
 import org.rdkit.neo4j.models.MolBlock;
 import org.rdkit.neo4j.models.NodeFields;
@@ -22,7 +18,8 @@ import org.rdkit.neo4j.utils.Converter;
 
 public class ExactSearch {
   private static final String query = "MATCH (node:%s { %s: '%s' }) RETURN node";
-  private final int PAGE_SIZE = 10_000;
+  private static final int PAGE_SIZE = 10_000;
+  private static final Converter converter = Converter.createDefault();
 
   @Context
   public GraphDatabaseService db;
@@ -30,14 +27,6 @@ public class ExactSearch {
   @Context
   public Log log;
 
-  private final Converter converter;
-
-  public ExactSearch() {
-    // todo: think about injection
-    val fpSettings = new DefaultFingerprintSettings(FingerprintType.pattern);
-    val fpFactory = new DefaultFingerprintFactory(fpSettings);
-    this.converter = new Converter(fpFactory);
-  }
 
   @Procedure(name = "org.rdkit.search.exact.smiles", mode = Mode.READ)
   @Description("RDKit exact search on `smiles` property")
@@ -119,11 +108,11 @@ public class ExactSearch {
     return Stream.empty();
   }
 
-  static class NodeWrapper {
+  public static class NodeWrapper {
 
     public Node node;
 
-    NodeWrapper(Node node) {
+    public NodeWrapper(Node node) {
       this.node = node;
     }
 

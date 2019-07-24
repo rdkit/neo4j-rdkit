@@ -8,7 +8,7 @@ public enum Constants {
 
   Chemical("Chemical"),
   Structure("Structure"),
-  IndexName("rdkit");
+  IndexName("rdkitIndex");
 
   @Getter
   private final String value;

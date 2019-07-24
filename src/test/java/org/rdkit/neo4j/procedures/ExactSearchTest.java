@@ -92,20 +92,7 @@ public class ExactSearchTest extends BaseTest {
 
   @Test
   public void callExactSmilesTest() throws Throwable {
-    try (val tx = graphDb.beginTx()) {
-      List<Map<String, Object>> structures = ChemicalStructureParser.getChemicalRows();
-      Map<String, Object> parameters = new HashMap<>();
-
-      parameters.put("rows", structures);
-
-      graphDb.execute("UNWIND {rows} as row MERGE (from:Chemical:Structure {smiles: row.smiles, mol_id: row.mol_id})", parameters);
-
-//      String createIndex = "CALL db.index.fulltext.createNodeIndex(\"rdkit\", [\"Chemical\"], [\"smiles\"], {analyzer: \"rdkit\"})";
-//      graphDb.execute(createIndex);
-      tx.success();
-    }
-
-
+    insertChemblRows();
 
     final String expectedSmiles = "COc1cc2c(cc1Br)C(C)CNCC2";
     final String query = String.format("CALL org.rdkit.search.exact.smiles([\"Chemical\", \"Structure\"], \"%s\")", expectedSmiles);
