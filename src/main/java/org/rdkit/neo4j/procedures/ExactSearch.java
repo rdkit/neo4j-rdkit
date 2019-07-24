@@ -5,18 +5,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import lombok.val;
 import org.neo4j.graphdb.*;
-import org.neo4j.graphdb.schema.IndexDefinition;
 import org.neo4j.helpers.collection.PagingIterator;
 import org.neo4j.logging.Log;
-import org.neo4j.procedure.Description;
-import org.neo4j.procedure.Mode;
-import org.neo4j.procedure.Context;
-import org.neo4j.procedure.Name;
-import org.neo4j.procedure.Procedure;
+import org.neo4j.procedure.*;
 
 import org.rdkit.fingerprint.DefaultFingerprintFactory;
 import org.rdkit.fingerprint.DefaultFingerprintSettings;
@@ -28,6 +22,7 @@ import org.rdkit.neo4j.utils.Converter;
 
 public class ExactSearch {
   private static final String query = "MATCH (node:%s { %s: '%s' }) RETURN node";
+  private final int PAGE_SIZE = 10_000;
 
   @Context
   public GraphDatabaseService db;
@@ -55,7 +50,6 @@ public class ExactSearch {
     final String labels = String.join(":", labelNames);
 
     Result result = db.execute(String.format(query, labels, NodeFields.CanonicalSmiles.getValue(), rdkitSmiles));
-//    ResourceIterator<Node> nodes = db.findNodes(Label.label(labelName), NodeFields.CanonicalSmiles.getValue(), rdkitSmiles);
     return result.stream().map(NodeWrapper::new);
   }
 
@@ -84,8 +78,9 @@ public class ExactSearch {
             .filter(node -> labels.stream().allMatch(node::hasLabel))
             .iterator();
 
-    final PagingIterator<Node> pagingIterator = new PagingIterator<>(nodeIterator, 10_000);
+    final PagingIterator<Node> pagingIterator = new PagingIterator<>(nodeIterator, PAGE_SIZE);
 
+    // todo: refactor
     Thread t = new Thread(() -> {  // we do explicit tx management so we require a separate thread
 
       Transaction tx = db.beginTx();  // tx needs to opened here - we need one upon consuming the iterator

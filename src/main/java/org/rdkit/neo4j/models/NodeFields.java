@@ -4,6 +4,8 @@ public enum NodeFields {
 
   Chemical("Chemical"),
   Structure("Structure"),
+  IndexName("rdkit"),
+
   MdlMol("mdlmol"),
   Smiles("smiles"),
   CanonicalSmiles("canonical_smiles"),
