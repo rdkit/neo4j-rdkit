@@ -2,7 +2,9 @@ package org.rdkit.neo4j.procedures;
 
 import static org.neo4j.graphdb.DependencyResolver.SelectionStrategy.FIRST;
 
+import java.util.Map;
 import lombok.val;
+import org.junit.Assert;
 import org.junit.Test;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.impl.proc.Procedures;
@@ -36,20 +38,34 @@ public class SubstructureSearchTest extends BaseTest {
     try (val tx = graphDb.beginTx()) {
       val result = graphDb.execute(query);
       logger.info(result.resultAsString());
-//
-//      final String[] chembls = new String[]{"CHEMBL180815", "CHEMBL182184", "CHEMBL180867"};
-//
-//      for (int i = 0; i < chembls.length; i++) {
-//        Node node = (Node) result.next().get("node");
-//        String chembl = (String) node.getProperty("mol_id");
-//        String smiles = (String) node.getProperty("smiles");
-//        assertEquals(chembls[i], chembl);
-//        assertEquals(expectedSmiles, smiles);
-//      }
-
       tx.success();
     }
 
+    graphDb.execute(String.format("CALL db.index.fulltext.drop('%s')", Constants.IndexName.getValue())); // otherwise we get an exception on shutdown
+  }
+
+  @Test
+  public void callSubstructureOnEqual() {
+    final String smiles = "c1ccccc1";
+
+    try (val tx = graphDb.beginTx()) {
+      graphDb.execute(String.format("create (n:Structure:Chemical {smiles: '%s'}) return n", smiles));
+      tx.success();
+    }
+
+    graphDb.execute("CALL org.rdkit.search.substructure.createIndex([\"Chemical\", \"Structure\"])");
+    try (val tx = graphDb.beginTx()) {
+      val result = graphDb.execute(String.format("CALL org.rdkit.search.substructure.smiles([\"Chemical\", \"Structure\"], \"%s\")", smiles));
+      Map<String, Object> columns = GraphUtils.getFirstRow(result);
+      final String canonical = (String) columns.get("canonical_smiles");
+      final long score = (Long) columns.get("score");
+
+      Assert.assertEquals(0, score);
+      Assert.assertEquals(canonical, smiles);
+
+      tx.success();
+    }
+    
     graphDb.execute(String.format("CALL db.index.fulltext.drop('%s')", Constants.IndexName.getValue())); // otherwise we get an exception on shutdown
   }
 }

@@ -18,11 +18,6 @@ import org.rdkit.neo4j.index.utils.GraphUtils;
 
 public class EmbeddedTest extends BaseTest {
 
-  @BeforeClass
-  public static void loadLibs() throws Throwable {
-    LibraryLoader.loadLibraries();
-  }
-
   @Test
   public void insertDataTest() throws Exception {
     Map<String, Object> parameters = new HashMap<>();
