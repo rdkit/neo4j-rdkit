@@ -65,6 +65,7 @@ public class ExactSearch {
     Iterator<Node> nodeIterator = db.findNodes(Label.label(firstLabel))
             .stream()
             .filter(node -> labels.stream().allMatch(node::hasLabel))
+            .parallel()
             .iterator();
 
     final PagingIterator<Node> pagingIterator = new PagingIterator<>(nodeIterator, PAGE_SIZE);

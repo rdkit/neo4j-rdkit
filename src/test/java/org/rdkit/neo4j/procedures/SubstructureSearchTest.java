@@ -37,7 +37,13 @@ public class SubstructureSearchTest extends BaseTest {
     final String query = String.format("CALL org.rdkit.search.substructure.smiles([\"Chemical\", \"Structure\"], \"%s\")", sssSmiles);
     try (val tx = graphDb.beginTx()) {
       val result = graphDb.execute(query);
-      logger.info(result.resultAsString());
+      Map<String, Object> row = GraphUtils.getFirstRow(result);
+
+      String smiles = (String) row.get("canonical_smiles");
+      long score = (Long) row.get("score");
+      Assert.assertEquals(63L, score);
+      Assert.assertEquals("OB(O)c1ccccc1", smiles);
+
       tx.success();
     }
 

@@ -58,16 +58,17 @@ public class SubstructureSearch {
     // todo: validate smiles is correct (possible)
     checkIndexExistence(labelNames, Constants.IndexName.getValue()); // if index exists, then the values are
 
-    try (RWMolCloseable query = RWMolCloseable.from(RWMol.MolFromSmiles(smiles))) {
-//      query.updatePropertyCache();
+    try (final RWMolCloseable query = RWMolCloseable.from(RWMol.MolFromSmiles(smiles))) {
+      query.updatePropertyCache();
+
       final SSSQuery sssQuery = converter.getLuceneFPQuery(query);
 
       Result result = db.execute(String
               .format("CALL db.index.fulltext.queryNodes('%s', $query) "
-                      + "YIELD node "
-                      + "RETURN node.preferred_name, node.canonical_smiles, %s", indexName, fingerprintOnesProperty),
+                  + "YIELD node "
+                  + "RETURN node.preferred_name, node.canonical_smiles, %s", indexName, fingerprintOnesProperty),
           MapUtil.map("query", sssQuery.getLuceneQuery()));
-      return result.stream()
+      val evaluated = result.stream()
           .map(map -> new NodeSSSResult(map, sssQuery))
           .filter(item -> {
             try (RWMolCloseable candidate = RWMolCloseable.from(RWMol.MolFromSmiles(item.canonical_smiles, 0, false))) {
@@ -75,7 +76,9 @@ public class SubstructureSearch {
               return candidate.hasSubstructMatch(query);
             }
           })
-          .sorted(Comparator.comparingLong(n -> n.score));
+          .sorted(Comparator.comparingLong(n -> n.score))
+          .collect(Collectors.toList());
+      return evaluated.stream();
     }
   }
 
