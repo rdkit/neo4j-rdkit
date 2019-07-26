@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import lombok.val;
+import org.RDKit.RWMol;
 import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.schema.IndexDefinition;
 import org.neo4j.helpers.collection.MapUtil;
@@ -19,6 +20,7 @@ import org.rdkit.neo4j.models.Constants;
 import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.models.SSSQuery;
 import org.rdkit.neo4j.utils.Converter;
+import org.rdkit.neo4j.utils.RWMolCloseable;
 
 public class SubstructureSearch {
   private static final String createIndexQuery = "CALL db.index.fulltext.createNodeIndex('%s', [%s], ['%s'], {analyzer: 'whitespace'} )";
@@ -55,11 +57,26 @@ public class SubstructureSearch {
 
     // todo: validate smiles is correct (possible)
     checkIndexExistence(labelNames, Constants.IndexName.getValue()); // if index exists, then the values are
-    final SSSQuery query = converter.getLuceneFPQuery(smiles);
 
-    Result result = db.execute(String.format("CALL db.index.fulltext.queryNodes('%s', $query) YIELD node RETURN node.preferred_name, node.canonical_smiles, %s", indexName, fingerprintOnesProperty), // todo: a const is used here
-      MapUtil.map("query", query.getLuceneQuery()));
-    return result.stream().map(map -> new NodeSSSResult(map, query)).sorted(Comparator.comparingLong(n -> n.score));
+    try (RWMolCloseable query = RWMolCloseable.from(RWMol.MolFromSmiles(smiles))) {
+//      query.updatePropertyCache();
+      final SSSQuery sssQuery = converter.getLuceneFPQuery(query);
+
+      Result result = db.execute(String
+              .format("CALL db.index.fulltext.queryNodes('%s', $query) "
+                      + "YIELD node "
+                      + "RETURN node.preferred_name, node.canonical_smiles, %s", indexName, fingerprintOnesProperty),
+          MapUtil.map("query", sssQuery.getLuceneQuery()));
+      return result.stream()
+          .map(map -> new NodeSSSResult(map, sssQuery))
+          .filter(item -> {
+            try (RWMolCloseable candidate = RWMolCloseable.from(RWMol.MolFromSmiles(item.canonical_smiles, 0, false))) {
+              candidate.updatePropertyCache(false);
+              return candidate.hasSubstructMatch(query);
+            }
+          })
+          .sorted(Comparator.comparingLong(n -> n.score));
+    }
   }
 
   /**

@@ -101,6 +101,22 @@ public class Converter {
   }
 
   /**
+   * Return encoded query object with string for lucene fulltext query and count of set bits
+   *
+   * @param mol to user for further construction SSSQuery
+   * @return ex.: { str="3 AND 5 AND 14 AND 256 AND 258", int=5 }
+   */
+  public SSSQuery getLuceneFPQuery(RWMol mol) {
+    logger.info("Get Lucene fp query for mol");
+
+    final BitSet fp = fingerprintFactory.createStructureFingerprint(mol);
+    SSSQuery sssQuery = new SSSQuery(fp, DELIMITER_AND);
+
+    logger.debug("Lucene fp sssQuery={}", sssQuery);
+    return sssQuery;
+  }
+
+  /**
    * Method fulfills the MolBlock with parameters from rwmol object Used to extend properties of the node
    *
    * @param rwmol object

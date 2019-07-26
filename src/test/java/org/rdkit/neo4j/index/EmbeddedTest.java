@@ -78,5 +78,7 @@ public class EmbeddedTest extends BaseTest {
     assertEquals("rdkit", columns.get("indexName"));
     assertEquals("node_fulltext", columns.get("type"));
     logger.info("Node Index created");
+
+    graphDb.execute("CALL db.index.fulltext.drop('rdkit')"); // otherwise we get an exception on shutdown
   }
 }

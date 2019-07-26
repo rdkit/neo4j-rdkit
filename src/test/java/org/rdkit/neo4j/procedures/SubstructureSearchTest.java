@@ -45,7 +45,7 @@ public class SubstructureSearchTest extends BaseTest {
   }
 
   @Test
-  public void callSubstructureOnEqual() {
+  public void fingerprintMatchEqualTest() {
     final String smiles = "c1ccccc1";
 
     try (val tx = graphDb.beginTx()) {
@@ -65,7 +65,7 @@ public class SubstructureSearchTest extends BaseTest {
 
       tx.success();
     }
-    
+
     graphDb.execute(String.format("CALL db.index.fulltext.drop('%s')", Constants.IndexName.getValue())); // otherwise we get an exception on shutdown
   }
 }

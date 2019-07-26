@@ -171,8 +171,7 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
    * @return BitSet from rwmol (fingerprint of `settings` type)
    */
   private BitSet createFingerprint(final RWMol mol, final FingerprintSettings settings) {
-    mol.updatePropertyCache(); // todo: is it necessary ?
-    RDKFuncs.fastFindRings(mol);
+    mol.updatePropertyCache();
 
     // Calculate fingerprint
     return convert(settings.getRdkitFingerprintType().calculate(mol, settings));

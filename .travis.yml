@@ -2,8 +2,8 @@ cache:
   directories:
   - $HOME/.m2
 
-env:
-  - GRAVIS="https://raw.githubusercontent.com/DanySK/Gravis-CI/master/"
+#env:
+#  - GRAVIS="https://raw.githubusercontent.com/DanySK/Gravis-CI/master/"
 
 matrix:
   include:
