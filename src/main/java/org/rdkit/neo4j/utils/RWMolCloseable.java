@@ -1,10 +1,11 @@
 package org.rdkit.neo4j.utils;
 
+import java.io.Closeable;
 import org.RDKit.RWMol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RWMolCloseable extends RWMol implements AutoCloseable {
+public class RWMolCloseable extends RWMol implements Closeable {
   private static final Logger logger = LoggerFactory.getLogger(RWMolCloseable.class);
 
   public static RWMolCloseable from(final RWMol rwmol) {

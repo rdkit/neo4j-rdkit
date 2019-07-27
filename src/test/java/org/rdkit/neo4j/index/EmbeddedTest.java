@@ -18,11 +18,6 @@ import org.rdkit.neo4j.index.utils.GraphUtils;
 
 public class EmbeddedTest extends BaseTest {
 
-  @BeforeClass
-  public static void loadLibs() throws Throwable {
-    LibraryLoader.loadLibraries();
-  }
-
   @Test
   public void insertDataTest() throws Exception {
     Map<String, Object> parameters = new HashMap<>();
@@ -83,5 +78,7 @@ public class EmbeddedTest extends BaseTest {
     assertEquals("rdkit", columns.get("indexName"));
     assertEquals("node_fulltext", columns.get("type"));
     logger.info("Node Index created");
+
+    graphDb.execute("CALL db.index.fulltext.drop('rdkit')"); // otherwise we get an exception on shutdown
   }
 }

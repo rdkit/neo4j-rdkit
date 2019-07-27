@@ -28,17 +28,17 @@ import org.rdkit.neo4j.index.utils.ChemicalStructureParser;
 import org.rdkit.neo4j.index.utils.GraphUtils;
 
 
-public class RDKitProceduresTest extends BaseTest {
+public class ExactSearchTest extends BaseTest {
 
   public Neo4jRule neo4j = new Neo4jRule()
-      .withProcedure(RDKitProcedures.class);
+      .withProcedure(ExactSearch.class);
 
   @Override
   public void prepareTestDatabase() {
     graphDb = GraphUtils.getTestDatabase();
     Procedures proceduresService = ((GraphDatabaseAPI) graphDb).getDependencyResolver().resolveDependency(Procedures.class, FIRST);
     try {
-      proceduresService.registerProcedure(RDKitProcedures.class, true);
+      proceduresService.registerProcedure(ExactSearch.class, true);
     } catch (KernelException e) {
       e.printStackTrace();
       logger.error("Not success :(");
@@ -92,20 +92,7 @@ public class RDKitProceduresTest extends BaseTest {
 
   @Test
   public void callExactSmilesTest() throws Throwable {
-    try (val tx = graphDb.beginTx()) {
-      List<Map<String, Object>> structures = ChemicalStructureParser.getChemicalRows();
-      Map<String, Object> parameters = new HashMap<>();
-
-      parameters.put("rows", structures);
-
-      graphDb.execute("UNWIND {rows} as row MERGE (from:Chemical:Structure {smiles: row.smiles, mol_id: row.mol_id})", parameters);
-
-//      String createIndex = "CALL db.index.fulltext.createNodeIndex(\"rdkit\", [\"Chemical\"], [\"smiles\"], {analyzer: \"rdkit\"})";
-//      graphDb.execute(createIndex);
-      tx.success();
-    }
-
-
+    insertChemblRows();
 
     final String expectedSmiles = "COc1cc2c(cc1Br)C(C)CNCC2";
     final String query = String.format("CALL org.rdkit.search.exact.smiles([\"Chemical\", \"Structure\"], \"%s\")", expectedSmiles);

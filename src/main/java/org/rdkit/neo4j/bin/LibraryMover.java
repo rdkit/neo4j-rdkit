@@ -23,7 +23,6 @@ import java.util.jar.JarFile;
 
 import java.util.stream.Collectors;
 import lombok.val;
-import org.rdkit.neo4j.exceptions.LoaderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

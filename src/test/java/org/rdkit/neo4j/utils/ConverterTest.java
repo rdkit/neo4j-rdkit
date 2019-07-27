@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 
 public class ConverterTest {
   private static final Logger logger = LoggerFactory.getLogger(ConverterTest.class);
+  private Converter converter = Converter.createDefault();
+
 
   @BeforeClass
   public static void initializeLibraries() throws Exception {
@@ -22,8 +24,8 @@ public class ConverterTest {
     final String smiles1 = "O=S(=O)(Cc1ccccc1)CS(=O)(=O)Cc1ccccc1";
     final String smiles2 = "O=S(=O)(CC1=CC=CC=C1)CS(=O)(=O)CC1=CC=CC=C1";
 
-    MolBlock block1 = Converter.convertSmiles(smiles1);
-    MolBlock block2 = Converter.convertSmiles(smiles2);
+    MolBlock block1 = converter.convertSmiles(smiles1);
+    MolBlock block2 = converter.convertSmiles(smiles2);
 
     String rdkitSmiles1 = block1.getCanonicalSmiles();
     String rdkitSmiles2 = block2.getCanonicalSmiles();
@@ -37,7 +39,7 @@ public class ConverterTest {
   @Test(expected = IllegalArgumentException.class)
   public void smilesFailureTest() {
     final String smiles = "nonvalid";
-    MolBlock block = Converter.convertSmiles(smiles);
+    MolBlock block = converter.convertSmiles(smiles);
     String rdkitSmiles = block.getCanonicalSmiles();
 
     logger.error(rdkitSmiles);
@@ -99,7 +101,7 @@ public class ConverterTest {
     final String inchi = "DKXNMYFLQWZCGD-UHFFFAOYSA-N";
     final double molecularWeight = 324.049000992;
 
-    MolBlock block = Converter.convertMolBlock(molBlock);
+    MolBlock block = converter.convertMolBlock(molBlock);
     logger.info("{}", block);
 
     assertEquals(smiles, block.getCanonicalSmiles());

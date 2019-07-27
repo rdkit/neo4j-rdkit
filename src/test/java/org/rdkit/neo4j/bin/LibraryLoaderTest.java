@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.List;
 import org.RDKit.RDKFuncs;
 import org.junit.Test;
-import org.rdkit.neo4j.exceptions.LoaderException;
 
 public class LibraryLoaderTest {
 
