@@ -1,5 +1,7 @@
 package org.rdkit.neo4j.procedures;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +25,9 @@ import org.rdkit.neo4j.utils.Converter;
 import org.rdkit.neo4j.utils.RWMolCloseable;
 
 public class SubstructureSearch {
-  private static final String createIndexQuery = "CALL db.index.fulltext.createNodeIndex('%s', [%s], ['%s'], {analyzer: 'whitespace'} )";
   private static final String fingerprintProperty = NodeFields.FingerprintEncoded.getValue();
-  private static final String fingerprintOnesProperty = "node." + NodeFields.FingerprintOnes.getValue();
+  private static final String fingerprintOnesProperty = NodeFields.FingerprintOnes.getValue();
+  private static final String canonicalSmilesProperty = NodeFields.CanonicalSmiles.getValue();
   private static final String indexName = Constants.IndexName.getValue();
   private static final Converter converter = Converter.createDefault();
 
@@ -41,13 +43,12 @@ public class SubstructureSearch {
   public void createIndex(@Name("label") List<String> labelNames) {
     log.info("Create whitespace node index on `fp` property");
 
-    val labelsEscaped = labelNames.stream().map(name -> '\'' + name + '\'').collect(Collectors.toList());
-    val labelsDelimited = String.join(", ", labelsEscaped);
-
-    String indexQuery = String.format(createIndexQuery, indexName, labelsDelimited, fingerprintProperty);
-//    String indexAwait = String.format("CALL db.index.fulltext.awaitIndex('%s', 120)", indexName);
-    db.execute(indexQuery);
-//    db.execute(indexAwait);
+    Map<String, Object> params = MapUtil.map(
+        "index", indexName,
+        "labels", labelNames,
+        "property", Collections.singletonList(fingerprintProperty)
+    );
+    db.execute("CALL db.index.fulltext.createNodeIndex($index, $labels, $property, {analyzer: 'whitespace'} )", params);
   }
 
   @Procedure(name = "org.rdkit.search.substructure.smiles", mode = Mode.READ)
@@ -63,11 +64,10 @@ public class SubstructureSearch {
 
       final SSSQuery sssQuery = converter.getLuceneFPQuery(query);
 
-      Result result = db.execute(String
-              .format("CALL db.index.fulltext.queryNodes('%s', $query) "
+      Result result = db.execute("CALL db.index.fulltext.queryNodes($index, $query) "
                   + "YIELD node "
-                  + "RETURN node.preferred_name, node.canonical_smiles, %s", indexName, fingerprintOnesProperty),
-          MapUtil.map("query", sssQuery.getLuceneQuery()));
+                  + "RETURN node",
+          MapUtil.map("index", indexName, "query", sssQuery.getLuceneQuery()));
       val evaluated = result.stream()
           .map(map -> new NodeSSSResult(map, sssQuery))
           .filter(item -> {
@@ -91,9 +91,10 @@ public class SubstructureSearch {
     public Long score;
 
     public NodeSSSResult(final Map<String, Object> map, final SSSQuery query) {
-      this.name = (String) map.get("node.preferred_name");
-      this.canonical_smiles = (String) map.get("node.canonical_smiles");
-      long nodeCount = (Long) map.get(fingerprintOnesProperty);
+      Node node = (Node) map.get("node");
+      this.name = (String) node.getProperty("preferred_name", null);
+      this.canonical_smiles = (String) node.getProperty(canonicalSmilesProperty);
+      long nodeCount = (Long) node.getProperty(fingerprintOnesProperty);
       long queryCount = query.getPositiveBits();
       this.score = nodeCount - queryCount;
     }

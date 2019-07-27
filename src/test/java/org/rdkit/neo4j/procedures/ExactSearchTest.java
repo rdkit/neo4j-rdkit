@@ -78,8 +78,6 @@ public class ExactSearchTest extends BaseTest {
 
 //        logger.info("{}", r.summary().toString());
         tx.success();
-        String createIndex = "CALL db.index.fulltext.createNodeIndex(\"rdkit\", [\"Chemical\"], [\"mol_id\"], {analyzer: \"rdkit\"})";
-        session.run(createIndex);
       }
       session.close();
 

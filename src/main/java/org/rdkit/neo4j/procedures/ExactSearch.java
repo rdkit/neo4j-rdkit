@@ -6,7 +6,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import lombok.val;
 import org.neo4j.graphdb.*;
+import org.neo4j.helpers.collection.MapUtil;
 import org.neo4j.helpers.collection.PagingIterator;
 import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
@@ -17,7 +19,7 @@ import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.utils.Converter;
 
 public class ExactSearch {
-  private static final String query = "MATCH (node:%s { %s: '%s' }) RETURN node";
+  private static final String query = "MATCH ($nodelabels { $property: $value }) RETURN node";
   private static final int PAGE_SIZE = 10_000;
   private static final Converter converter = Converter.createDefault();
 
@@ -33,13 +35,8 @@ public class ExactSearch {
   public Stream<NodeWrapper> exactSearchSmiles(@Name("label") List<String> labelNames, @Name("smiles") String smiles) {
     log.info("Exact search smiles :: label={}, smiles={}", labelNames, smiles);
 
-    // todo: validate smiles is correct (possible)
-
     final String rdkitSmiles = converter.getRDKitSmiles(smiles);
-    final String labels = String.join(":", labelNames);
-
-    Result result = db.execute(String.format(query, labels, NodeFields.CanonicalSmiles.getValue(), rdkitSmiles));
-    return result.stream().map(NodeWrapper::new);
+    return findLabeledNodes(labelNames, NodeFields.CanonicalSmiles.getValue(), rdkitSmiles);
   }
 
   @Procedure(name = "org.rdkit.search.exact.mol", mode = Mode.READ)
@@ -48,10 +45,7 @@ public class ExactSearch {
     log.info("Exact search mol :: label={}, molBlock={}", labelNames, molBlock);
 
     final String rdkitSmiles = converter.convertMolBlock(molBlock).getCanonicalSmiles();
-    final String labels = String.join(":", labelNames);
-
-    Result result = db.execute(String.format(query, labels, NodeFields.CanonicalSmiles.getValue(), rdkitSmiles));
-    return result.stream().map(NodeWrapper::new);
+    return findLabeledNodes(labelNames, NodeFields.CanonicalSmiles.getValue(), rdkitSmiles);
   }
 
   @Procedure(name = "org.rdkit.update", mode = Mode.WRITE)
@@ -65,7 +59,6 @@ public class ExactSearch {
     Iterator<Node> nodeIterator = db.findNodes(Label.label(firstLabel))
             .stream()
             .filter(node -> labels.stream().allMatch(node::hasLabel))
-            .parallel()
             .iterator();
 
     final PagingIterator<Node> pagingIterator = new PagingIterator<>(nodeIterator, PAGE_SIZE);
@@ -120,5 +113,15 @@ public class ExactSearch {
     NodeWrapper(Map<String, Object> map) {
       this((Node) map.get("node"));
     }
+  }
+
+  private Stream<NodeWrapper> findLabeledNodes(List<String> labelNames, String property, String value) {
+    final String firstLabel = labelNames.get(0);
+    final List<Label> labels = labelNames.stream().map(Label::label).collect(Collectors.toList());
+
+    return db.findNodes(Label.label(firstLabel), property, value)
+        .stream()
+        .filter(node -> labels.stream().allMatch(node::hasLabel))
+        .map(NodeWrapper::new);
   }
 }
