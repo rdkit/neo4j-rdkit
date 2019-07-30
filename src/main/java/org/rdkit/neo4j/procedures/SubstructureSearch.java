@@ -1,6 +1,5 @@
 package org.rdkit.neo4j.procedures;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -48,6 +47,8 @@ public class SubstructureSearch {
         "labels", labelNames,
         "property", Collections.singletonList(fingerprintProperty)
     );
+
+//    db.execute(String.format("CREATE INDEX ON :%s(%s)", labelNames.get(0), canonicalSmilesProperty));
     db.execute("CALL db.index.fulltext.createNodeIndex($index, $labels, $property, {analyzer: 'whitespace'} )", params);
   }
 
@@ -66,7 +67,7 @@ public class SubstructureSearch {
 
       Result result = db.execute("CALL db.index.fulltext.queryNodes($index, $query) "
                   + "YIELD node "
-                  + "RETURN node",
+                  + "RETURN node.canonical_smiles as canonical_smiles, node.fp_ones as fp_ones, node.preferred_name as name",
           MapUtil.map("index", indexName, "query", sssQuery.getLuceneQuery()));
       val evaluated = result.stream()
           .map(map -> new NodeSSSResult(map, sssQuery))
@@ -91,10 +92,9 @@ public class SubstructureSearch {
     public Long score;
 
     public NodeSSSResult(final Map<String, Object> map, final SSSQuery query) {
-      Node node = (Node) map.get("node");
-      this.name = (String) node.getProperty("preferred_name", null);
-      this.canonical_smiles = (String) node.getProperty(canonicalSmilesProperty);
-      long nodeCount = (Long) node.getProperty(fingerprintOnesProperty);
+      this.name = (String) map.getOrDefault("name", null);
+      this.canonical_smiles = (String) map.get(canonicalSmilesProperty);
+      long nodeCount = (Long) map.get(fingerprintOnesProperty);
       long queryCount = query.getPositiveBits();
       this.score = nodeCount - queryCount;
     }

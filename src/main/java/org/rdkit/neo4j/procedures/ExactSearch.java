@@ -6,9 +6,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import lombok.val;
 import org.neo4j.graphdb.*;
-import org.neo4j.helpers.collection.MapUtil;
 import org.neo4j.helpers.collection.PagingIterator;
 import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
@@ -35,6 +33,7 @@ public class ExactSearch {
   public Stream<NodeWrapper> exactSearchSmiles(@Name("label") List<String> labelNames, @Name("smiles") String smiles) {
     log.info("Exact search smiles :: label={}, smiles={}", labelNames, smiles);
 
+    // todo: add index on canonical_smiles property
     final String rdkitSmiles = converter.getRDKitSmiles(smiles);
     return findLabeledNodes(labelNames, NodeFields.CanonicalSmiles.getValue(), rdkitSmiles);
   }
