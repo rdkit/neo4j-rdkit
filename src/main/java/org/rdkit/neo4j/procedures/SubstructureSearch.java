@@ -64,7 +64,7 @@ public class SubstructureSearch {
   @Procedure(name = "org.rdkit.search.substructure.smiles", mode = Mode.READ)
   @Description("RDKit substructure search based on `smiles` property")
   public Stream<NodeSSSResult> substructureSearch(@Name("label") List<String> labelNames, @Name("smiles") String smiles) {
-    log.info("Substructure search smiles :: label=%s, smiles=%s", labelNames, smiles);
+    log.info("Substructure search smiles started :: label=%s, smiles=%s", labelNames, smiles);
 
     // todo: validate smiles is correct (possible)
     checkIndexExistence(labelNames, Constants.IndexName.getValue()); // if index exists, then the values are
@@ -79,7 +79,7 @@ public class SubstructureSearch {
                   + "RETURN node.canonical_smiles as canonical_smiles, node.fp_ones as fp_ones, node.preferred_name as name",
           MapUtil.map("index", indexName, "query", sssQuery.getLuceneQuery()));
       val evaluated = result.stream()
-          .map(map -> new NodeSSSResult(map, sssQuery))
+          .map(map -> new NodeSSSResult(map, sssQuery.getPositiveBits()))
           .filter(item -> {
             try (RWMolCloseable candidate = RWMolCloseable.from(RWMol.MolFromSmiles(item.canonical_smiles, 0, false))) {
               candidate.updatePropertyCache(false);
@@ -88,6 +88,7 @@ public class SubstructureSearch {
           })
           .sorted(Comparator.comparingLong(n -> n.score))
           .collect(Collectors.toList());
+      log.info("Substructure search smiles ended :: label=%s, smiles=%s", labelNames, smiles);
       return evaluated.stream();
     }
   }
@@ -99,15 +100,17 @@ public class SubstructureSearch {
     public String name;
     public String canonical_smiles;
     public Long score;
-    public Double tani_similarity; // Tanimoto similarity :: popcnt(A&B) / (popcnt(A) + popcnt(B) - popcnt(A&B))
+    public String tani_similarity; // Tanimoto similarity :: popcnt(A&B) / (popcnt(A) + popcnt(B) - popcnt(A&B))
 
-    public NodeSSSResult(final Map<String, Object> map, final SSSQuery query) {
+    public NodeSSSResult(final Map<String, Object> map, final long queryPositiveBits) {
       this.name = (String) map.getOrDefault("name", null);
       this.canonical_smiles = (String) map.get(canonicalSmilesProperty);
+
       long nodeCount = (Long) map.get(fingerprintOnesProperty);
-      long queryCount = query.getPositiveBits();
-      this.score = nodeCount - queryCount;
-      this.tani_similarity = 1.0 * queryCount / nodeCount; // As it is SSS, then popcnt(Query&Candidate) === popcnt(Query)
+      this.score = nodeCount - queryPositiveBits;
+
+      double similarity = 1.0 * queryPositiveBits / nodeCount;
+      this.tani_similarity = String.format("%.4f", similarity); // As it is SSS, then popcnt(Query&Candidate) === popcnt(Query)
     }
   }
 

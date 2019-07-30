@@ -20,6 +20,7 @@ import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.Transaction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.harness.junit.Neo4jRule;
+import org.neo4j.helpers.collection.MapUtil;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
@@ -93,9 +94,9 @@ public class ExactSearchTest extends BaseTest {
     insertChemblRows();
 
     final String expectedSmiles = "COc1cc2c(cc1Br)C(C)CNCC2";
-    final String query = String.format("CALL org.rdkit.search.exact.smiles([\"Chemical\", \"Structure\"], \"%s\")", expectedSmiles);
     try (val tx = graphDb.beginTx()) {
-      val result = graphDb.execute(query);
+      val result = graphDb.execute("CALL org.rdkit.search.exact.smiles($labels, $smiles)",
+          MapUtil.map("labels", defaultLabels, "smiles", expectedSmiles));
 
       final String[] chembls = new String[]{"CHEMBL180815", "CHEMBL182184", "CHEMBL180867"};
 
@@ -136,17 +137,12 @@ public class ExactSearchTest extends BaseTest {
         + "M  END\n";
 
     try (org.neo4j.graphdb.Transaction tx = graphDb.beginTx()) {
-      graphDb.execute(String.format("CREATE (node:Chemical:Structure {mdlmol: '%s'})", mol));
+      graphDb.execute("CREATE (node:Chemical:Structure {mdlmol: $mol})", MapUtil.map("mol", mol));
       tx.success();
     }
 
-//    String createIndex = "CALL db.index.fulltext.createNodeIndex(\"rdkit\", [\"Chemical\"], [\"smiles\"], {analyzer: \"rdkit\"})";
-//    graphDb.execute(createIndex);
-
-    final String query = String.format("CALL org.rdkit.search.exact.mol([\"Chemical\", \"Structure\"], \"%s\")", mol);
-
     try (val tx = graphDb.beginTx()) {
-      val result = graphDb.execute(query);
+      val result = graphDb.execute("CALL org.rdkit.search.exact.mol($labels, $mol)", MapUtil.map("labels", defaultLabels, "mol", mol));
       val item = result.next();
 
       Node node = (Node) item.get("node");

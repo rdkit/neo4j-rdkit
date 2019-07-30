@@ -34,9 +34,12 @@ public class SubstructureSearchTest extends BaseTest {
     insertChemblRows();
 
     final String sssSmiles = "c1ccccc1";
-    final String query = String.format("CALL org.rdkit.search.substructure.smiles([\"Chemical\", \"Structure\"], \"%s\")", sssSmiles);
+
     try (val tx = graphDb.beginTx()) {
-      val result = graphDb.execute(query);
+      val result = graphDb.execute("CALL org.rdkit.search.substructure.smiles($labels, $smiles)", MapUtil.map(
+          "labels", defaultLabels,
+          "smiles", sssSmiles
+      ));
       Map<String, Object> row = GraphUtils.getFirstRow(result);
 
       String smiles = (String) row.get("canonical_smiles");
@@ -61,7 +64,10 @@ public class SubstructureSearchTest extends BaseTest {
 
     graphDb.execute("CALL org.rdkit.search.createIndex($labels)", MapUtil.map("labels", defaultLabels));
     try (val tx = graphDb.beginTx()) {
-      val result = graphDb.execute(String.format("CALL org.rdkit.search.substructure.smiles([\"Chemical\", \"Structure\"], \"%s\")", smiles));
+      val result = graphDb.execute("CALL org.rdkit.search.substructure.smiles($labels, $smiles)", MapUtil.map(
+          "labels", defaultLabels,
+          "smiles", smiles
+      ));
       Map<String, Object> columns = GraphUtils.getFirstRow(result);
       final String canonical = (String) columns.get("canonical_smiles");
       final long score = (Long) columns.get("score");

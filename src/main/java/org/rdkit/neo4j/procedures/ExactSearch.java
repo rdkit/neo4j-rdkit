@@ -2,7 +2,6 @@ package org.rdkit.neo4j.procedures;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,7 +31,7 @@ public class ExactSearch {
   @Procedure(name = "org.rdkit.search.exact.smiles", mode = Mode.READ)
   @Description("RDKit exact search on `smiles` property")
   public Stream<NodeWrapper> exactSearchSmiles(@Name("label") List<String> labelNames, @Name("smiles") String smiles) {
-    log.info("Exact search smiles :: label={}, smiles={}", labelNames, smiles);
+    log.info("Exact search smiles :: label=%s, smiles=%s", labelNames, smiles);
 
     // todo: add index on canonical_smiles property
     final String rdkitSmiles = converter.getRDKitSmiles(smiles);
@@ -42,7 +41,7 @@ public class ExactSearch {
   @Procedure(name = "org.rdkit.search.exact.mol", mode = Mode.READ)
   @Description("RDKit exact search on `mdlmol` property")
   public Stream<NodeWrapper> exactSearchMol(@Name("labels") List<String> labelNames, @Name("mol") String molBlock) {
-    log.info("Exact search mol :: label={}, molBlock={}", labelNames, molBlock);
+    log.info("Exact search mol :: label=%s, molBlock=%s", labelNames, molBlock);
 
     final String rdkitSmiles = converter.convertMolBlock(molBlock).getCanonicalSmiles();
     return findLabeledNodes(labelNames, NodeFields.CanonicalSmiles.getValue(), rdkitSmiles);
@@ -51,7 +50,7 @@ public class ExactSearch {
   @Procedure(name = "org.rdkit.update", mode = Mode.WRITE)
   @Description("RDKit update procedure, allows to construct ['formula', 'molecular_weight', 'canonical_smiles'] values from 'mdlmol' property")
   public Stream<NodeWrapper> createPropertiesMol(@Name("labels") List<String> labelNames) throws InterruptedException {
-    log.info("Update nodes with labels={}, create additional fields", labelNames);
+    log.info("Update nodes with labels=%s, create additional fields", labelNames);
 
     final String firstLabel = labelNames.get(0);
     final List<Label> labels = labelNames.stream().map(Label::label).collect(Collectors.toList());
@@ -108,10 +107,6 @@ public class ExactSearch {
 
     public NodeWrapper(Node node) {
       this.node = node;
-    }
-
-    NodeWrapper(Map<String, Object> map) {
-      this((Node) map.get("node"));
     }
   }
 
