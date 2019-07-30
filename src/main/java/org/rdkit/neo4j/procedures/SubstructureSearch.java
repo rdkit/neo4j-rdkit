@@ -37,7 +37,7 @@ public class SubstructureSearch {
   public Log log;
 
 
-  @Procedure(name = "org.rdkit.search.substructure.createIndex", mode = Mode.SCHEMA)
+  @Procedure(name = "org.rdkit.search.createIndex", mode = Mode.SCHEMA)
   @Description("RDKit create a nodeIndex for specific field on top of fingerprint property")
   public void createIndex(@Name("label") List<String> labelNames) {
     log.info("Create whitespace node index on `fp` property");
@@ -48,8 +48,17 @@ public class SubstructureSearch {
         "property", Collections.singletonList(fingerprintProperty)
     );
 
-//    db.execute(String.format("CREATE INDEX ON :%s(%s)", labelNames.get(0), canonicalSmilesProperty));
+    db.execute(String.format("CREATE INDEX ON :%s(%s)", Constants.Chemical.getValue(), canonicalSmilesProperty));
     db.execute("CALL db.index.fulltext.createNodeIndex($index, $labels, $property, {analyzer: 'whitespace'} )", params);
+  }
+
+  @Procedure(name = "org.rdkit.search.dropIndex", mode = Mode.SCHEMA)
+  @Description("Delete RDKit indexes")
+  public void deleteIndex() {
+    log.info("Create whitespace node index on `fp` property");
+
+    db.execute(String.format("DROP INDEX ON :%s(%s)", Constants.Chemical.getValue(), canonicalSmilesProperty));
+    db.execute("CALL db.index.fulltext.drop($index)", MapUtil.map("index", indexName));
   }
 
   @Procedure(name = "org.rdkit.search.substructure.smiles", mode = Mode.READ)
@@ -90,6 +99,7 @@ public class SubstructureSearch {
     public String name;
     public String canonical_smiles;
     public Long score;
+    public Double tani_similarity; // Tanimoto similarity :: popcnt(A&B) / (popcnt(A) + popcnt(B) - popcnt(A&B))
 
     public NodeSSSResult(final Map<String, Object> map, final SSSQuery query) {
       this.name = (String) map.getOrDefault("name", null);
@@ -97,6 +107,7 @@ public class SubstructureSearch {
       long nodeCount = (Long) map.get(fingerprintOnesProperty);
       long queryCount = query.getPositiveBits();
       this.score = nodeCount - queryCount;
+      this.tani_similarity = 1.0 * queryCount / nodeCount; // As it is SSS, then popcnt(Query&Candidate) === popcnt(Query)
     }
   }
 

@@ -12,6 +12,7 @@ import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
 
 import org.rdkit.neo4j.handlers.RDKitEventHandler;
+import org.rdkit.neo4j.models.Constants;
 import org.rdkit.neo4j.models.MolBlock;
 import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.utils.Converter;
@@ -115,7 +116,7 @@ public class ExactSearch {
   }
 
   private Stream<NodeWrapper> findLabeledNodes(List<String> labelNames, String property, String value) {
-    final String firstLabel = labelNames.get(0);
+    final String firstLabel = Constants.Chemical.getValue();
     final List<Label> labels = labelNames.stream().map(Label::label).collect(Collectors.toList());
 
     return db.findNodes(Label.label(firstLabel), property, value)

@@ -6,12 +6,12 @@ import java.util.Map;
 import lombok.val;
 import org.junit.Assert;
 import org.junit.Test;
+import org.neo4j.helpers.collection.MapUtil;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.rdkit.neo4j.index.utils.BaseTest;
 import org.rdkit.neo4j.index.utils.GraphUtils;
-import org.rdkit.neo4j.models.Constants;
 
 public class SubstructureSearchTest extends BaseTest {
 
@@ -29,7 +29,7 @@ public class SubstructureSearchTest extends BaseTest {
 
   @Test
   public void callSubstructureSearch() throws Exception {
-    graphDb.execute("CALL org.rdkit.search.substructure.createIndex([\"Chemical\", \"Structure\"])");
+    graphDb.execute("CALL org.rdkit.search.createIndex($labels)", MapUtil.map("labels", defaultLabels));
 
     insertChemblRows();
 
@@ -47,7 +47,7 @@ public class SubstructureSearchTest extends BaseTest {
       tx.success();
     }
 
-    graphDb.execute(String.format("CALL db.index.fulltext.drop('%s')", Constants.IndexName.getValue())); // otherwise we get an exception on shutdown
+    graphDb.execute("CALL org.rdkit.search.dropIndex()");
   }
 
   @Test
@@ -59,7 +59,7 @@ public class SubstructureSearchTest extends BaseTest {
       tx.success();
     }
 
-    graphDb.execute("CALL org.rdkit.search.substructure.createIndex([\"Chemical\", \"Structure\"])");
+    graphDb.execute("CALL org.rdkit.search.createIndex($labels)", MapUtil.map("labels", defaultLabels));
     try (val tx = graphDb.beginTx()) {
       val result = graphDb.execute(String.format("CALL org.rdkit.search.substructure.smiles([\"Chemical\", \"Structure\"], \"%s\")", smiles));
       Map<String, Object> columns = GraphUtils.getFirstRow(result);
@@ -72,6 +72,6 @@ public class SubstructureSearchTest extends BaseTest {
       tx.success();
     }
 
-    graphDb.execute(String.format("CALL db.index.fulltext.drop('%s')", Constants.IndexName.getValue())); // otherwise we get an exception on shutdown
+    graphDb.execute("CALL org.rdkit.search.dropIndex()"); // otherwise we get an exception on shutdown
   }
 }

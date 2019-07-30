@@ -1,5 +1,6 @@
 package org.rdkit.neo4j.index.utils;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ public class BaseTest {
   protected final Logger logger = LoggerFactory.getLogger(getClass());
 
   protected GraphDatabaseService graphDb;
+  protected List<String> defaultLabels = Arrays.asList("Chemical", "Structure");
 
   @Before
   public void prepareTestDatabase() {
