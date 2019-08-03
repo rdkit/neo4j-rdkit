@@ -16,12 +16,31 @@ import org.slf4j.LoggerFactory;
 public class Converter {
 
   public static Converter createDefault() {
-    FingerprintType type = FingerprintType.pattern;
-    FingerprintSettings settings = new DefaultFingerprintSettings(type)
-        .setNumBits(2048);
+    return createConverter(FingerprintType.pattern);
+  }
+
+  public static Converter createConverter(FingerprintType fpType) {
+
+    FingerprintSettings settings = new DefaultFingerprintSettings(fpType).setNumBits(2048);
+    switch (fpType) {
+      case pattern:
+        break;
+      case morgan:
+        settings = settings
+            .setRadius(2);
+        break;
+      case torsion:
+        // todo: targetSize(4)
+        break;
+      default: break;
+    }
+
     FingerprintFactory factory = new DefaultFingerprintFactory(settings);
     return new Converter(factory);
   }
+
+  // todo:
+  // TopologicalTorsion: fpSize(2048), targetSize(4) (edited)
 
   private static final Logger logger = LoggerFactory.getLogger(Converter.class);
 

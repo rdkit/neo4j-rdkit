@@ -73,6 +73,87 @@ public enum FingerprintType {
 				return RDKFuncs.PatternFingerprintMol(mol, settings.getNumBits());
 			}
 		}
+	},
+
+	morgan("Morgan") {
+		@Override
+		public FingerprintSettings getSpecification(final int iTorsionPathLength, final int iMinPath,
+				final int iMaxPath, final int iAtomPairMinPath, final int iAtomPairMaxPath,
+				final int iNumBits, final int iRadius, final int iLayerFlags,
+				final int iAvalonQueryFlag, final int iAvalonBitFlags) {
+			return new DefaultFingerprintSettings(toString(),
+					FingerprintSettings.UNAVAILABLE,
+					FingerprintSettings.UNAVAILABLE,
+					FingerprintSettings.UNAVAILABLE,
+					FingerprintSettings.UNAVAILABLE,
+					FingerprintSettings.UNAVAILABLE,
+					iNumBits,
+					iRadius,
+					FingerprintSettings.UNAVAILABLE,
+					FingerprintSettings.UNAVAILABLE,
+					FingerprintSettings.UNAVAILABLE);
+		}
+
+		@Override
+		public void validateSpecification(final FingerprintSettings settings)
+				throws InvalidFingerprintSettingsException {
+			super.validateSpecification(settings);
+			if (settings.getNumBits() <= 0) {
+				throw new InvalidFingerprintSettingsException("Number of bits must be a positive number > 0.");
+			}
+			if (settings.getRadius() <= 0) {
+				throw new InvalidFingerprintSettingsException("Radius must be a positive number > 0.");
+			}
+		}
+
+		@Override
+		public ExplicitBitVect calculate(final ROMol mol, final FingerprintSettings settings) {
+			return RDKFuncs.getMorganFingerprintAsBitVect(mol, settings.getRadius(), settings.getNumBits());
+		}
+	},
+
+	torsion("Torsion") {
+		@Override
+		public FingerprintSettings getSpecification(final int iTorsionPathLength, final int iMinPath,
+				final int iMaxPath, final int iAtomPairMinPath, final int iAtomPairMaxPath,
+				final int iNumBits, final int iRadius, final int iLayerFlags,
+				final int iAvalonQueryFlag, final int iAvalonBitFlags) {
+			return new DefaultFingerprintSettings(toString(),
+					iTorsionPathLength,
+					FingerprintSettings.UNAVAILABLE,
+					FingerprintSettings.UNAVAILABLE,
+					FingerprintSettings.UNAVAILABLE,
+					FingerprintSettings.UNAVAILABLE,
+					iNumBits,
+					FingerprintSettings.UNAVAILABLE,
+					FingerprintSettings.UNAVAILABLE,
+					FingerprintSettings.UNAVAILABLE,
+					FingerprintSettings.UNAVAILABLE);
+		}
+
+		@Override
+		public void validateSpecification(final FingerprintSettings settings)
+				throws InvalidFingerprintSettingsException {
+			super.validateSpecification(settings);
+			if (settings.getNumBits() <= 0) {
+				throw new InvalidFingerprintSettingsException("Number of bits must be a positive number > 0.");
+			}
+			if (settings.getTorsionPathLength() != FingerprintSettings.UNAVAILABLE && settings.getTorsionPathLength() <= 0) {
+				throw new InvalidFingerprintSettingsException("Torsion path length must be a positive number > 0.");
+			}
+		}
+
+		@Override
+		public ExplicitBitVect calculate(final ROMol mol, final FingerprintSettings settings) {
+			int iTorsionPathLength = settings.getTorsionPathLength();
+
+			// Use old default value, if the value is undefined
+			if (!settings.isAvailable(iTorsionPathLength)) {
+				iTorsionPathLength = 4;
+			}
+
+			return RDKFuncs.getHashedTopologicalTorsionFingerprintAsBitVect(mol, settings.getNumBits(), iTorsionPathLength);
+		}
 	};
 
 	//
