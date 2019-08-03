@@ -87,11 +87,13 @@ public class SubstructureSearch {
    */
   public static class NodeSSSResult {
     public String name;
+    public String luri;
     public String canonical_smiles;
     public Long score;
 
     public NodeSSSResult(final Map<String, Object> map, final long queryPositiveBits) {
       this.name = (String) map.getOrDefault("name", null);
+      this.luri = (String) map.getOrDefault("luri", null);
       this.canonical_smiles = (String) map.get(canonicalSmilesProperty);
       long nodeCount = (Long) map.get(fingerprintOnesProperty);
       this.score = nodeCount - queryPositiveBits;
@@ -128,7 +130,7 @@ public class SubstructureSearch {
 
     Result result = db.execute("CALL db.index.fulltext.queryNodes($index, $query) "
             + "YIELD node "
-            + "RETURN node.canonical_smiles as canonical_smiles, node.fp_ones as fp_ones, node.preferred_name as name",
+            + "RETURN node.canonical_smiles as canonical_smiles, node.fp_ones as fp_ones, node.preferred_name as name, node.luri as luri",
         MapUtil.map("index", indexName, "query", sssQuery.getLuceneQuery()));
     return result.stream()
         .map(map -> new NodeSSSResult(map, sssQuery.getPositiveBits()))

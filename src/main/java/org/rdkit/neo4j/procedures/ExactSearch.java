@@ -17,7 +17,6 @@ import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.utils.Converter;
 
 public class ExactSearch {
-  private static final String query = "MATCH ($nodelabels { $property: $value }) RETURN node";
   private static final int PAGE_SIZE = 10_000;
   private static final Converter converter = Converter.createDefault();
 
@@ -103,10 +102,14 @@ public class ExactSearch {
 
   public static class NodeWrapper {
 
-    public Node node;
+    public String name;
+    public String luri;
+    public String canonical_smiles;
 
     public NodeWrapper(Node node) {
-      this.node = node;
+      this.canonical_smiles = (String) node.getProperty(NodeFields.CanonicalSmiles.getValue());
+      this.name = (String) node.getProperty("name", null);
+      this.luri = (String) node.getProperty("luri", null);
     }
   }
 
