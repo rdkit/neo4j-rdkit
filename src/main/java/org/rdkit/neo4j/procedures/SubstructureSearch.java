@@ -62,35 +62,24 @@ public class SubstructureSearch {
   }
 
   @Procedure(name = "org.rdkit.search.substructure.smiles", mode = Mode.READ)
-  @Description("RDKit substructure search based on `smiles` property")
-  public Stream<NodeSSSResult> substructureSearch(@Name("label") List<String> labelNames, @Name("smiles") String smiles) {
+  @Description("RDKit substructure search based on `smiles` value")
+  public Stream<NodeSSSResult> substructureSearchSmiles(@Name("label") List<String> labelNames, @Name("smiles") String smiles) {
     log.info("Substructure search smiles started :: label=%s, smiles=%s", labelNames, smiles);
-
     // todo: validate smiles is correct (possible)
     checkIndexExistence(labelNames, Constants.IndexName.getValue()); // if index exists, then the values are
 
-    try (final RWMolCloseable query = RWMolCloseable.from(RWMol.MolFromSmiles(smiles))) {
-      query.updatePropertyCache();
+    val query = RWMol.MolFromSmiles(smiles); // todo: memory problems here
+    return findSSCandidates(query);
+  }
 
-      final SSSQuery sssQuery = converter.getLuceneFPQuery(query);
+  @Procedure(name = "org.rdkit.search.substructure.mol", mode = Mode.READ)
+  @Description("RDKit substructure search based on `mol` value")
+  public Stream<NodeSSSResult> substructureSearchMol(@Name("label") List<String> labelNames, @Name("mol") String mol) {
+    log.info("Substructure search smiles started :: label=%s, mdlmol=%s", labelNames, mol);
+    checkIndexExistence(labelNames, Constants.IndexName.getValue()); // if index exists, then the values are
 
-      Result result = db.execute("CALL db.index.fulltext.queryNodes($index, $query) "
-                  + "YIELD node "
-                  + "RETURN node.canonical_smiles as canonical_smiles, node.fp_ones as fp_ones, node.preferred_name as name",
-          MapUtil.map("index", indexName, "query", sssQuery.getLuceneQuery()));
-      val evaluated = result.stream()
-          .map(map -> new NodeSSSResult(map, sssQuery.getPositiveBits()))
-          .filter(item -> {
-            try (RWMolCloseable candidate = RWMolCloseable.from(RWMol.MolFromSmiles(item.canonical_smiles, 0, false))) {
-              candidate.updatePropertyCache(false);
-              return candidate.hasSubstructMatch(query);
-            }
-          })
-          .sorted(Comparator.comparingLong(n -> n.score))
-          .collect(Collectors.toList());
-      log.info("Substructure search smiles ended :: label=%s, smiles=%s", labelNames, smiles);
-      return evaluated.stream();
-    }
+    val query = RWMol.MolFromMolBlock(mol); // todo: memory problems here
+    return findSSCandidates(query);
   }
 
   /**
@@ -100,17 +89,12 @@ public class SubstructureSearch {
     public String name;
     public String canonical_smiles;
     public Long score;
-    public String tani_similarity; // Tanimoto similarity :: popcnt(A&B) / (popcnt(A) + popcnt(B) - popcnt(A&B))
 
     public NodeSSSResult(final Map<String, Object> map, final long queryPositiveBits) {
       this.name = (String) map.getOrDefault("name", null);
       this.canonical_smiles = (String) map.get(canonicalSmilesProperty);
-
       long nodeCount = (Long) map.get(fingerprintOnesProperty);
       this.score = nodeCount - queryPositiveBits;
-
-      double similarity = 1.0 * queryPositiveBits / nodeCount;
-      this.tani_similarity = String.format("%.4f", similarity); // As it is SSS, then popcnt(Query&Candidate) === popcnt(Query)
     }
   }
 
@@ -131,5 +115,29 @@ public class SubstructureSearch {
       log.error("No `{}` node index found", indexName);
       throw e;
     }
+  }
+
+  /**
+   * Method queries fulltext index, returns fingerprint matches and filters by substruct match
+   * @param query RWMol
+   * @return stream of chemical structures with substruct match
+   */
+  private Stream<NodeSSSResult> findSSCandidates(RWMol query) {
+    query.updatePropertyCache();
+    final SSSQuery sssQuery = converter.getLuceneFPQuery(query);
+
+    Result result = db.execute("CALL db.index.fulltext.queryNodes($index, $query) "
+            + "YIELD node "
+            + "RETURN node.canonical_smiles as canonical_smiles, node.fp_ones as fp_ones, node.preferred_name as name",
+        MapUtil.map("index", indexName, "query", sssQuery.getLuceneQuery()));
+    return result.stream()
+        .map(map -> new NodeSSSResult(map, sssQuery.getPositiveBits()))
+        .filter(item -> {
+          try (RWMolCloseable candidate = RWMolCloseable.from(RWMol.MolFromSmiles(item.canonical_smiles, 0, false))) {
+            candidate.updatePropertyCache(false);
+            return candidate.hasSubstructMatch(query);
+          }
+        })
+        .sorted(Comparator.comparingLong(n -> n.score));
   }
 }
