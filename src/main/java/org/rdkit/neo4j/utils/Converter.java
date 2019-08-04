@@ -106,6 +106,16 @@ public class Converter {
     }
   }
 
+  public String getLuceneFingerprint(String smiles) {
+    logger.info("Get Lucene fingerprint from smiles={}", smiles);
+    return getLuceneQuery(smiles, DELIMITER_WHITESPACE).getLuceneQuery();
+  }
+
+  public String getLuceneFingerprint(RWMol mol) {
+    logger.info("Get Lucene fingerprint from mol");
+    return getLuceneQuery(mol, DELIMITER_WHITESPACE).getLuceneQuery();
+  }
+
   public LuceneQuery getLuceneSimilarityQuery(String smiles) {
     logger.info("Get Lucene similairy query for smiles={}", smiles);
     return getLuceneQuery(smiles, DELIMITER_OR);
@@ -168,8 +178,7 @@ public class Converter {
     final String inchi = RDKFuncs.MolToInchiKey(rwmol);
 
     logger.debug("Construct structure fingerprint for lucene");
-    BitSet fp = fingerprintFactory.createStructureFingerprint(rwmol);
-    LuceneQuery luceneQuery = new LuceneQuery(fp, DELIMITER_WHITESPACE);
+    LuceneQuery luceneQuery = getLuceneQuery(rwmol, DELIMITER_WHITESPACE);
 
     final long fingerprintOnes = luceneQuery.getPositiveBits();
     final String fingerprintEncoded = luceneQuery.getLuceneQuery();

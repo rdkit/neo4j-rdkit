@@ -37,7 +37,7 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
 
   @Override
   public Object beforeCommit(TransactionData data) throws Exception {
-    val nodesMol = getNodes(data, NodeFields.MdlMol.getValue());
+    val nodesMol = getNodes(data, NodeFields.MdlMol.getValue()); // todo: probably extend it
 
     for (Node node: nodesMol) {
       final String mol = (String) node.getProperty(NodeFields.MdlMol.getValue());
@@ -93,6 +93,8 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
    */
   private Set<Node> getNodes(final TransactionData data, String property) {
     // todo: logic here needs improvement
+
+    // todo: refactor, get rid of collect and may be stream
     Set<Node> nodes = StreamSupport.stream(data.createdNodes().spliterator(), false)
         .filter(node -> labels.stream().allMatch(node::hasLabel) && node.hasProperty(property))
         .collect(Collectors.toSet());

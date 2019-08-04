@@ -4,17 +4,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import lombok.val;
 import org.RDKit.RWMol;
 import org.neo4j.graphdb.*;
-import org.neo4j.graphdb.schema.IndexDefinition;
 import org.neo4j.helpers.collection.MapUtil;
-import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
 
 import org.rdkit.neo4j.models.Constants;
@@ -23,33 +18,20 @@ import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.utils.Converter;
 import org.rdkit.neo4j.utils.RWMolCloseable;
 
-public class SubstructureSearch {
+public class SubstructureSearch extends BaseProcedure {
   private static final String fingerprintProperty = NodeFields.FingerprintEncoded.getValue();
   private static final String fingerprintOnesProperty = NodeFields.FingerprintOnes.getValue();
   private static final String canonicalSmilesProperty = NodeFields.CanonicalSmiles.getValue();
   private static final String indexName = Constants.IndexName.getValue();
   private static final Converter converter = Converter.createDefault();
 
-  @Context
-  public GraphDatabaseService db;
-
-  @Context
-  public Log log;
-
-
   @Procedure(name = "org.rdkit.search.createIndex", mode = Mode.SCHEMA)
   @Description("RDKit create a nodeIndex for specific field on top of fingerprint property")
   public void createIndex(@Name("label") List<String> labelNames) {
     log.info("Create whitespace node index on `fp` property");
 
-    Map<String, Object> params = MapUtil.map(
-        "index", indexName,
-        "labels", labelNames,
-        "property", Collections.singletonList(fingerprintProperty)
-    );
-
     db.execute(String.format("CREATE INDEX ON :%s(%s)", Constants.Chemical.getValue(), canonicalSmilesProperty));
-    db.execute("CALL db.index.fulltext.createNodeIndex($index, $labels, $property, {analyzer: 'whitespace'} )", params);
+    createFullTextIndex(indexName, labelNames, Collections.singletonList(fingerprintProperty));
   }
 
   @Procedure(name = "org.rdkit.search.dropIndex", mode = Mode.SCHEMA)
@@ -97,25 +79,6 @@ public class SubstructureSearch {
       this.canonical_smiles = (String) map.get(canonicalSmilesProperty);
       long nodeCount = (Long) map.get(fingerprintOnesProperty);
       this.score = nodeCount - queryPositiveBits;
-    }
-  }
-
-  /**
-   * Method checks existence of nodeIndex
-   * If it does not exist, fulltext query will not be executed (lucene does not contain the data)
-   * @param labelNames to query on
-   * @param indexName to look for
-   */
-  private void checkIndexExistence(List<String> labelNames, String indexName) {
-    Set<Label> labels = labelNames.stream().map(Label::label).collect(Collectors.toSet());
-
-    try {
-      IndexDefinition index = db.schema().getIndexByName(indexName);
-      assert index.isNodeIndex();
-      assert StreamSupport.stream(index.getLabels().spliterator(), false).allMatch(labels::contains);
-    } catch (AssertionError e) {
-      log.error("No `{}` node index found", indexName);
-      throw e;
     }
   }
 

@@ -109,4 +109,21 @@ public class ConverterTest {
     assertEquals(inchi, block.getInchi());
     assertEquals(molecularWeight, block.getMolecularWeight(), 1e-4);
   }
+
+  @Test
+  public void luceneSSSQueryTest() {
+    // todo: create lucene sss from smiles using `pattern`
+//    assertEquals(true, false);
+  }
+
+  @Test
+  public void luceneSimilarityQueryTest() {
+    // todo: create lucene similarity from smiles using `morgan`
+//    assertEquals(true, false);
+  }
+
+  @Test
+  public void differentLuceneFPsTest() {
+    // todo: should I test that lucene fps created from different fp types aren't equal?
+  }
 }
