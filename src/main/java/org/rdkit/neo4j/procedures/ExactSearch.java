@@ -1,26 +1,25 @@
 package org.rdkit.neo4j.procedures;
 
-import java.util.Map;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.Label;
-import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.schema.IndexDefinition;
+import org.neo4j.graphdb.*;
+import org.neo4j.helpers.collection.PagingIterator;
 import org.neo4j.logging.Log;
-import org.neo4j.procedure.Mode;
-import org.neo4j.procedure.Context;
-import org.neo4j.procedure.Name;
-import org.neo4j.procedure.Procedure;
+import org.neo4j.procedure.*;
 
+import org.rdkit.neo4j.handlers.RDKitEventHandler;
+import org.rdkit.neo4j.models.Constants;
+import org.rdkit.neo4j.models.MolBlock;
+import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.utils.Converter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ExactSearch {
-
-  private static final Logger logger = LoggerFactory.getLogger(ExactSearch.class);
+  private static final String query = "MATCH ($nodelabels { $property: $value }) RETURN node";
+  private static final int PAGE_SIZE = 10_000;
+  private static final Converter converter = Converter.createDefault();
 
   @Context
   public GraphDatabaseService db;
@@ -28,53 +27,96 @@ public class ExactSearch {
   @Context
   public Log log;
 
+
   @Procedure(name = "org.rdkit.search.exact.smiles", mode = Mode.READ)
-  public Stream<ExampleObject> exactSearchSmiles(@Name("label") String labelName,
-      @Name("smiles") String smiles) {
-    logger.info("label={}, smiles={}", labelName, smiles);
+  @Description("RDKit exact search on `smiles` property")
+  public Stream<NodeWrapper> exactSearchSmiles(@Name("label") List<String> labelNames, @Name("smiles") String smiles) {
+    log.info("Exact search smiles :: label=%s, smiles=%s", labelNames, smiles);
 
-    // todo: validate smiles is correct (possible)
+    // todo: add index on canonical_smiles property
+    final String rdkitSmiles = converter.getRDKitSmiles(smiles);
+    return findLabeledNodes(labelNames, NodeFields.CanonicalSmiles.getValue(), rdkitSmiles);
+  }
 
-    // todo: is it even necessary to have index for it ?
-    try {
-      IndexDefinition index = db.schema().getIndexByName("rdkit");
-      assert index.isNodeIndex();
-      assert StreamSupport.stream(index.getLabels().spliterator(), false)
-          .anyMatch(x -> x.equals(Label.label(labelName)));
-    } catch (IllegalArgumentException e) {
-      log.error("No `rdkit` node index found"); // todo: is it correct?
-      return Stream.empty();
+  @Procedure(name = "org.rdkit.search.exact.mol", mode = Mode.READ)
+  @Description("RDKit exact search on `mdlmol` property")
+  public Stream<NodeWrapper> exactSearchMol(@Name("labels") List<String> labelNames, @Name("mol") String molBlock) {
+    log.info("Exact search mol :: label=%s, molBlock=%s", labelNames, molBlock);
+
+    final String rdkitSmiles = converter.convertMolBlock(molBlock).getCanonicalSmiles();
+    return findLabeledNodes(labelNames, NodeFields.CanonicalSmiles.getValue(), rdkitSmiles);
+  }
+
+  @Procedure(name = "org.rdkit.update", mode = Mode.WRITE)
+  @Description("RDKit update procedure, allows to construct ['formula', 'molecular_weight', 'canonical_smiles'] values from 'mdlmol' property")
+  public Stream<NodeWrapper> createPropertiesMol(@Name("labels") List<String> labelNames) throws InterruptedException {
+    log.info("Update nodes with labels=%s, create additional fields", labelNames);
+
+    final String firstLabel = labelNames.get(0);
+    final List<Label> labels = labelNames.stream().map(Label::label).collect(Collectors.toList());
+
+    Iterator<Node> nodeIterator = db.findNodes(Label.label(firstLabel))
+            .stream()
+            .filter(node -> labels.stream().allMatch(node::hasLabel))
+            .iterator();
+
+    final PagingIterator<Node> pagingIterator = new PagingIterator<>(nodeIterator, PAGE_SIZE);
+
+    // todo: refactor
+    Thread t = new Thread(() -> {  // we do explicit tx management so we require a separate thread
+
+      Transaction tx = db.beginTx();  // tx needs to opened here - we need one upon consuming the iterator
+      try {
+
+        int numberOfBatches = 0;
+        while (pagingIterator.hasNext()) {
+          Iterator<Node> page = pagingIterator.nextPage();
+
+          tx.success();
+          tx.close();
+          tx = db.beginTx();
+
+          page.forEachRemaining(node -> {
+            final String mol = (String) node.getProperty("mdlmol");
+            final MolBlock block = converter.convertMolBlock(mol);
+            RDKitEventHandler.addProperties(node, block);
+
+          });
+          numberOfBatches++;
+          log.info("batch # %d", numberOfBatches);
+        }
+        log.info("done, ran %d batches successfully", numberOfBatches);
+
+
+      } finally {
+        if (tx!=null) {
+          tx.success();
+          tx.close();
+        }
+      }
+
+    });
+    t.start();
+    t.join();
+    return Stream.empty();
+  }
+
+  public static class NodeWrapper {
+
+    public Node node;
+
+    public NodeWrapper(Node node) {
+      this.node = node;
     }
+  }
 
-    // todo: does it cover complex cases (?)
-    final String rdkitSmiles = Converter.getRDKitSmiles(smiles);
-    String query = String.format("MATCH (node:%s { smiles: '%s' }) RETURN node", labelName, rdkitSmiles);
-//    String query = "MATCH (node:$label { smiles: '$smiles' }) RETURN node";
+  private Stream<NodeWrapper> findLabeledNodes(List<String> labelNames, String property, String value) {
+    final String firstLabel = Constants.Chemical.getValue();
+    final List<Label> labels = labelNames.stream().map(Label::label).collect(Collectors.toList());
 
-    return db.execute(query)
+    return db.findNodes(Label.label(firstLabel), property, value)
         .stream()
-        .map(ExampleObject::new);
-  }
-
-  private String indexName(String label) {
-    return "rdkit";
-  }
-
-  public static class ExampleObject {
-
-    public final long nodeId;
-    public final String mol_id;
-    public final String smiles;
-
-
-    public ExampleObject(Node node) {
-      this.nodeId = node.getId();
-      this.mol_id = (String) node.getProperty("mol_id");
-      this.smiles = (String) node.getProperty("smiles");
-    }
-
-    public ExampleObject(Map<String, Object> map) {
-      this((Node) map.get("node"));
-    }
+        .filter(node -> labels.stream().allMatch(node::hasLabel))
+        .map(NodeWrapper::new);
   }
 }

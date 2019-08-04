@@ -1,4 +1,4 @@
-package org.rdkit.neo4j.exceptions;
+package org.rdkit.neo4j.bin;
 
 public class LoaderException extends Exception {
   public LoaderException(String s) {

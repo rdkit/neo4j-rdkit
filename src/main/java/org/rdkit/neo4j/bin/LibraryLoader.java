@@ -11,7 +11,6 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.val;
-import org.rdkit.neo4j.exceptions.LoaderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,7 +93,7 @@ public class LibraryLoader {
    * @param fileNames to detect
    * @return list of detected libraries
    */
-  public static List<String> getLibrariesInFolder(String path, List<String> fileNames) {
+  static List<String> getLibrariesInFolder(String path, List<String> fileNames) {
     final List<String> existingLibraries = new ArrayList<>();
     for (final String library : fileNames) {
       final File fileDir = new File(path);

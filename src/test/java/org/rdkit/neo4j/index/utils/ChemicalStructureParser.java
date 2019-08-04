@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.rdkit.neo4j.index.model.ChemblRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,10 @@ public class ChemicalStructureParser {
     try (InputStream is = url.openStream()) {
       BufferedReader reader = new BufferedReader(new InputStreamReader(is));
       String line;
+
+      // skip first line
+      reader.readLine();
+
       while ((line = reader.readLine()) != null) {
         lines.add(line);
       }
@@ -32,6 +37,11 @@ public class ChemicalStructureParser {
       logger.error("IOException during file read");
       throw e;
     }
+  }
+
+  public static List<Map<String, Object>> getChemicalRows() throws Exception {
+    List<String> rows = readTestData();
+    return rows.stream().map(ChemicalStructureParser::mapChemicalRow).collect(Collectors.toList());
   }
 
   public static Map<String, Object> mapChemicalRow(String row) {

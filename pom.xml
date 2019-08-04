@@ -6,7 +6,7 @@
 
   <groupId>org.neo4j.rdkit</groupId>
   <artifactId>rdkit-index</artifactId>
-  <version>0.0.1</version>
+  <version>0.0.3</version>
   <name>RDKit-Neo4j</name>
   <packaging>jar</packaging>
 
@@ -96,7 +96,6 @@
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <version>${lombok.version}</version>
-      <scope>provided</scope>
     </dependency>
 
 
@@ -124,6 +123,9 @@
         </includes>
         <targetPath>native</targetPath>
       </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
     </resources>
 
     <plugins>
@@ -145,6 +147,14 @@
             <goals>
               <goal>shade</goal>
             </goals>
+            <configuration>
+              <artifactSet>
+                <excludes>
+                  <!--<exclude>org.slf4j:*</exclude>-->
+                  <exclude>org.projectlombok:lombok</exclude>
+                </excludes>
+              </artifactSet>
+            </configuration>
           </execution>
         </executions>
       </plugin>

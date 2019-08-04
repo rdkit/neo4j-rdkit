@@ -3,13 +3,13 @@ package org.neo4j.kernel.api.impl.fulltext.analyzer.providers;
 import org.apache.lucene.analysis.Analyzer;
 import org.neo4j.graphdb.index.fulltext.AnalyzerProvider;
 import org.neo4j.helpers.Service;
-import org.rdkit.neo4j.analyzer.RDKitAnalyzer;
+import org.rdkit.lucene.DefaultAnalyzerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service.Implementation( AnalyzerProvider.class )
 public class RDKit extends AnalyzerProvider {
-
-//  todo: * The {@code jar} that includes this implementation must also contain a {@code META-INF/services/org.neo4j.graphdb.index.fulltext.AnalyzerProvider} file,
-//  todo: * that contains the fully-qualified class names of all of the {@code AnalyzerProvider} implementations it contains.
+  private static final Logger logger = LoggerFactory.getLogger(DefaultAnalyzerFactory.class);
 
   public RDKit() {
     super("rdkit");
@@ -17,7 +17,7 @@ public class RDKit extends AnalyzerProvider {
 
   @Override
   public Analyzer createAnalyzer() {
-    return new RDKitAnalyzer();
+    return new DefaultAnalyzerFactory().createAnalyzer();
   }
 
   @Override
