@@ -18,8 +18,8 @@ import org.neo4j.logging.Log;
 import org.neo4j.procedure.*;
 
 import org.rdkit.neo4j.models.Constants;
+import org.rdkit.neo4j.models.LuceneQuery;
 import org.rdkit.neo4j.models.NodeFields;
-import org.rdkit.neo4j.models.SSSQuery;
 import org.rdkit.neo4j.utils.Converter;
 import org.rdkit.neo4j.utils.RWMolCloseable;
 
@@ -126,14 +126,14 @@ public class SubstructureSearch {
    */
   private Stream<NodeSSSResult> findSSCandidates(RWMol query) {
     query.updatePropertyCache();
-    final SSSQuery sssQuery = converter.getLuceneFPQuery(query);
+    final LuceneQuery luceneQuery = converter.getLuceneSSSQuery(query);
 
     Result result = db.execute("CALL db.index.fulltext.queryNodes($index, $query) "
             + "YIELD node "
             + "RETURN node.canonical_smiles as canonical_smiles, node.fp_ones as fp_ones, node.preferred_name as name, node.luri as luri",
-        MapUtil.map("index", indexName, "query", sssQuery.getLuceneQuery()));
+        MapUtil.map("index", indexName, "query", luceneQuery.getLuceneQuery()));
     return result.stream()
-        .map(map -> new NodeSSSResult(map, sssQuery.getPositiveBits()))
+        .map(map -> new NodeSSSResult(map, luceneQuery.getPositiveBits()))
         .filter(item -> {
           try (RWMolCloseable candidate = RWMolCloseable.from(RWMol.MolFromSmiles(item.canonical_smiles, 0, false))) {
             candidate.updatePropertyCache(false);

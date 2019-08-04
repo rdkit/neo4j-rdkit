@@ -8,8 +8,8 @@ import org.rdkit.fingerprint.DefaultFingerprintSettings;
 import org.rdkit.fingerprint.FingerprintFactory;
 import org.rdkit.fingerprint.FingerprintSettings;
 import org.rdkit.fingerprint.FingerprintType;
+import org.rdkit.neo4j.models.LuceneQuery;
 import org.rdkit.neo4j.models.MolBlock;
-import org.rdkit.neo4j.models.SSSQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +30,8 @@ public class Converter {
             .setRadius(2);
         break;
       case torsion:
+        settings = settings
+            .setTorsionPathLength(4);
         // todo: targetSize(4)
         break;
       default: break;
@@ -46,6 +48,7 @@ public class Converter {
 
   private final String DELIMITER_WHITESPACE = " ";
   private final String DELIMITER_AND = " AND ";
+  private final String DELIMITER_OR = " OR ";
 
   private FingerprintFactory fingerprintFactory;
 
@@ -103,36 +106,52 @@ public class Converter {
     }
   }
 
-  /**
-   * Return encoded query object with string for lucene fulltext query and count of set bits
-   *
-   * @param smiles to convert for further SSSQuery
-   * @return ex.: { str="3 AND 5 AND 14 AND 256 AND 258", int=5 }
-   */
-  public SSSQuery getLuceneFPQuery(String smiles) {
-    logger.info("Get Lucene fp query for smiles={}", smiles);
+  public LuceneQuery getLuceneSimilarityQuery(String smiles) {
+    logger.info("Get Lucene similairy query for smiles={}", smiles);
+    return getLuceneQuery(smiles, DELIMITER_OR);
+  }
 
-    final BitSet fp = fingerprintFactory.createStructureFingerprint(smiles);
-    SSSQuery sssQuery = new SSSQuery(fp, DELIMITER_AND);
-
-    logger.debug("Lucene fp sssQuery={}", sssQuery);
-    return sssQuery;
+  public LuceneQuery getLuceneSimilarityQuery(RWMol mol) {
+    logger.info("Get Lucene similairy query for mol");
+    return getLuceneQuery(mol, DELIMITER_OR);
   }
 
   /**
    * Return encoded query object with string for lucene fulltext query and count of set bits
    *
-   * @param mol to user for further construction SSSQuery
+   * @param smiles to convert for further LuceneQuery
    * @return ex.: { str="3 AND 5 AND 14 AND 256 AND 258", int=5 }
    */
-  public SSSQuery getLuceneFPQuery(RWMol mol) {
+  public LuceneQuery getLuceneSSSQuery(String smiles) {
+    logger.info("Get Lucene fp query for smiles={}", smiles);
+    return getLuceneQuery(smiles, DELIMITER_AND);
+  }
+
+  /**
+   * Return encoded query object with string for lucene fulltext query and count of set bits
+   *
+   * @param mol to user for further construction LuceneQuery
+   * @return ex.: { str="3 AND 5 AND 14 AND 256 AND 258", int=5 }
+   */
+  public LuceneQuery getLuceneSSSQuery(RWMol mol) {
     logger.info("Get Lucene fp query for mol");
+    return getLuceneQuery(mol, DELIMITER_AND);
+  }
 
+  private LuceneQuery getLuceneQuery(RWMol mol, final String delimiter) {
     final BitSet fp = fingerprintFactory.createStructureFingerprint(mol);
-    SSSQuery sssQuery = new SSSQuery(fp, DELIMITER_AND);
+    return getLuceneQuery(fp, delimiter);
+  }
 
-    logger.debug("Lucene fp sssQuery={}", sssQuery);
-    return sssQuery;
+  private LuceneQuery getLuceneQuery(String smiles, final String delimiter) {
+    final BitSet fp = fingerprintFactory.createStructureFingerprint(smiles);
+    return getLuceneQuery(fp, delimiter);
+  }
+
+  private LuceneQuery getLuceneQuery(final BitSet fp, final String delimiter) {
+    LuceneQuery luceneQuery = new LuceneQuery(fp, delimiter);
+    logger.debug("Lucene fp luceneQuery={}", luceneQuery);
+    return luceneQuery;
   }
 
   /**
@@ -150,10 +169,10 @@ public class Converter {
 
     logger.debug("Construct structure fingerprint for lucene");
     BitSet fp = fingerprintFactory.createStructureFingerprint(rwmol);
-    SSSQuery sssQuery = new SSSQuery(fp, DELIMITER_WHITESPACE);
+    LuceneQuery luceneQuery = new LuceneQuery(fp, DELIMITER_WHITESPACE);
 
-    final long fingerprintOnes = sssQuery.getPositiveBits();
-    final String fingerprintEncoded = sssQuery.getLuceneQuery();
+    final long fingerprintOnes = luceneQuery.getPositiveBits();
+    final String fingerprintEncoded = luceneQuery.getLuceneQuery();
 
     logger.debug("Constructed fp encoded={}", fingerprintEncoded);
     return new MolBlock(rdkitSmiles, formula, molecularWeight, inchi, fingerprintEncoded, fingerprintOnes);
