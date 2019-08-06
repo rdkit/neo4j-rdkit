@@ -50,7 +50,14 @@ public class SubstructureSearch extends BaseProcedure {
     // todo: validate smiles is correct (possible)
     checkIndexExistence(labelNames, Constants.IndexName.getValue()); // if index exists, then the values are
 
-    val query = RWMol.MolFromSmiles(smiles); // todo: memory problems here
+    RWMol query;
+    try {
+      query = RWMol.MolFromSmiles(smiles); // todo: memory problems here
+      if (query == null)
+        throw new IllegalArgumentException("Unable to convert specified smiles");
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Unable to convert specified smiles");
+    }
     return findSSCandidates(query);
   }
 
@@ -60,7 +67,15 @@ public class SubstructureSearch extends BaseProcedure {
     log.info("Substructure search smiles started :: label=%s, mdlmol=%s", labelNames, mol);
     checkIndexExistence(labelNames, Constants.IndexName.getValue()); // if index exists, then the values are
 
-    val query = RWMol.MolFromMolBlock(mol); // todo: memory problems here
+
+    RWMol query;
+    try {
+      query = RWMol.MolFromMolBlock(mol); // todo: memory problems here
+      if (query == null)
+        throw new IllegalArgumentException("Unable to convert specified mol");
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Unable to convert specified mol");
+    }
     return findSSCandidates(query);
   }
 
@@ -94,7 +109,7 @@ public class SubstructureSearch extends BaseProcedure {
     // added mdlmol as a returned item as sometimes it fails (probably reduces speed)
     Result result = db.execute("CALL db.index.fulltext.queryNodes($index, $query) "
             + "YIELD node "
-            + "RETURN node.canonical_smiles as canonical_smiles, node.fp_ones as fp_ones, node.preferred_name as name, node.luri as luri, node.mdlmol as mdlmol",
+            + "RETURN node.canonical_smiles as canonical_smiles, node.fp_ones as fp_ones, node.preferred_name as name, node.luri as luri",
         MapUtil.map("index", indexName, "query", luceneQuery.getLuceneQuery()));
     return result.stream()
         .filter(map -> {
@@ -104,7 +119,7 @@ public class SubstructureSearch extends BaseProcedure {
             return candidate.hasSubstructMatch(query);
           } catch (Exception e) {
             log.error("Failed to convert object with smiles=%s, convert using mdmol", smiles);
-            final String mdlmol = (String) map.get("mdlmol");
+            final String mdlmol = (String) db.findNode(Label.label("Chemical"), canonicalSmilesProperty, smiles).getProperty("mdlmol"); // cheaper solution, as it is very rare
             try (RWMolCloseable molCandidate = RWMolCloseable.from(RWMol.MolFromMolBlock(mdlmol))) { // todo: is there any speed improvements?
               molCandidate.updatePropertyCache(false);
               return molCandidate.hasSubstructMatch(query);

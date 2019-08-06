@@ -4,9 +4,9 @@ import static org.neo4j.graphdb.DependencyResolver.SelectionStrategy.FIRST;
 
 import java.util.Map;
 import lombok.val;
-import org.RDKit.RWMol;
 import org.junit.Assert;
 import org.junit.Test;
+import org.neo4j.graphdb.QueryExecutionException;
 import org.neo4j.helpers.collection.MapUtil;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.impl.proc.Procedures;
@@ -128,9 +128,18 @@ public class SubstructureSearchTest extends BaseTest {
     graphDb.execute("CALL org.rdkit.search.dropIndex()"); // otherwise we get an exception on shutdown
   }
 
-  @Test
-  public void sssTest() {
-    RWMol mol = RWMol.MolFromSmiles("N");
-    System.out.println(mol);
+  @Test(expected = IllegalArgumentException.class)
+  public void smilesNullRWMolTest() throws Throwable {
+    final String smiles = "[H]C1O[C@@H](C(=O)[O-])[C@H](O)[C@@H](O)[C@H]10";
+
+    try (val tx = graphDb.beginTx()) {
+      graphDb.execute("CALL org.rdkit.search.substructure.smiles($labels, $smiles)", MapUtil.map(
+          "labels", defaultLabels,
+          "smiles", smiles
+      ));
+    } catch (QueryExecutionException e) {
+      // todo: looks terrible
+      throw e.getCause().getCause().getCause().getCause(); // get Kernel exception, cypher execution exception, get procedure exception, get procedure invoked exceptionведь
+    }
   }
 }
