@@ -109,22 +109,22 @@ public class Converter {
   }
 
   public LuceneQuery getLuceneFingerprint(String smiles) {
-    logger.info("Get Lucene fingerprint from smiles={}", smiles);
+    logger.debug("Get Lucene fingerprint from smiles={}", smiles);
     return getLuceneQuery(smiles, DELIMITER_WHITESPACE);
   }
 
   public LuceneQuery getLuceneFingerprint(RWMol mol) {
-    logger.info("Get Lucene fingerprint from mol");
+    logger.debug("Get Lucene fingerprint from mol");
     return getLuceneQuery(mol, DELIMITER_WHITESPACE);
   }
 
   public LuceneQuery getLuceneSimilarityQuery(String smiles) {
-    logger.info("Get Lucene similairy query for smiles={}", smiles);
+    logger.debug("Get Lucene similairy query for smiles={}", smiles);
     return getLuceneQuery(smiles, DELIMITER_OR);
   }
 
   public LuceneQuery getLuceneSimilarityQuery(RWMol mol) {
-    logger.info("Get Lucene similairy query for mol");
+    logger.debug("Get Lucene similairy query for mol");
     return getLuceneQuery(mol, DELIMITER_OR);
   }
 
@@ -135,7 +135,7 @@ public class Converter {
    * @return ex.: { str="3 AND 5 AND 14 AND 256 AND 258", int=5 }
    */
   public LuceneQuery getLuceneSSSQuery(String smiles) {
-    logger.info("Get Lucene fp query for smiles={}", smiles);
+    logger.debug("Get Lucene fp query for smiles={}", smiles);
     return getLuceneQuery(smiles, DELIMITER_AND);
   }
 
@@ -146,7 +146,7 @@ public class Converter {
    * @return ex.: { str="3 AND 5 AND 14 AND 256 AND 258", int=5 }
    */
   public LuceneQuery getLuceneSSSQuery(RWMol mol) {
-    logger.info("Get Lucene fp query for mol");
+    logger.debug("Get Lucene fp query for mol");
     return getLuceneQuery(mol, DELIMITER_AND);
   }
 
