@@ -40,11 +40,15 @@ public class FingerprintProcedures extends BaseProcedure {
 
     executeBatches(nodes, PAGE_SIZE, node -> {
       final String smiles = (String) node.getProperty(CanonicalSmiles.getValue());
-      final LuceneQuery fp = converter.getLuceneFingerprint(smiles);
-      // todo: save fp_type?
-      node.setProperty(propertyName + "_ones", fp.getPositiveBits()); // TODO: THINK ABOUT STANDARTIZATION
-      node.setProperty(propertyName + "_type", fingerprintType.toString()); // TODO: THINK ABOUT STANDARTIZATION
-      node.setProperty(propertyName, fp.getLuceneQuery());
+      try {
+        final LuceneQuery fp = converter.getLuceneFingerprint(smiles);
+        // todo: save fp_type?
+        node.setProperty(propertyName + "_ones", fp.getPositiveBits()); // TODO: THINK ABOUT STANDARTIZATION
+        node.setProperty(propertyName + "_type", fingerprintType.toString()); // TODO: THINK ABOUT STANDARTIZATION
+        node.setProperty(propertyName, fp.getLuceneQuery());
+      } catch (Exception e) {
+        log.error("Fingerprint type={} unable to convert smiles={}", fpType, smiles);
+      }
     });
 
     final String indexName = propertyName; // todo: how should I name it each time unique, may be use property as a name for this index ?

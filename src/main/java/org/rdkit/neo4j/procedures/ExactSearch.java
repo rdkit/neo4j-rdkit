@@ -43,8 +43,13 @@ public class ExactSearch extends BaseProcedure {
 
     executeBatches(getLabeledNodes(labelNames), PAGE_SIZE, node -> {
       final String mol = (String) node.getProperty("mdlmol");
-      final MolBlock block = converter.convertMolBlock(mol);
-      RDKitEventHandler.addProperties(node, block);
+      try {
+        final MolBlock block = converter.convertMolBlock(mol);
+        RDKitEventHandler.addProperties(node, block);
+      } catch (Exception e) {
+        final String luri = (String) node.getProperty("luri", "<undefined>");
+        log.error("Unable to convert node with luri={}", luri);
+      }
     });
     return Stream.empty();
   }
