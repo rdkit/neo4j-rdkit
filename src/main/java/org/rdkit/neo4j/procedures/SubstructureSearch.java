@@ -91,18 +91,28 @@ public class SubstructureSearch extends BaseProcedure {
     query.updatePropertyCache();
     final LuceneQuery luceneQuery = converter.getLuceneSSSQuery(query);
 
+    // added mdlmol as a returned item as sometimes it fails (probably reduces speed)
     Result result = db.execute("CALL db.index.fulltext.queryNodes($index, $query) "
             + "YIELD node "
-            + "RETURN node.canonical_smiles as canonical_smiles, node.fp_ones as fp_ones, node.preferred_name as name, node.luri as luri",
+            + "RETURN node.canonical_smiles as canonical_smiles, node.fp_ones as fp_ones, node.preferred_name as name, node.luri as luri, node.mdlmol as mdlmol",
         MapUtil.map("index", indexName, "query", luceneQuery.getLuceneQuery()));
     return result.stream()
-        .map(map -> new NodeSSSResult(map, luceneQuery.getPositiveBits()))
-        .filter(item -> {
-          try (RWMolCloseable candidate = RWMolCloseable.from(RWMol.MolFromSmiles(item.canonical_smiles, 0, false))) {
+        .filter(map -> {
+          final String smiles = (String) map.get("canonical_smiles");
+          try (RWMolCloseable candidate = RWMolCloseable.from(RWMol.MolFromSmiles(smiles, 0, false))) {
             candidate.updatePropertyCache(false);
             return candidate.hasSubstructMatch(query);
+          } catch (Exception e) {
+            log.error("Failed to convert object with smiles=%s, convert using mdmol", smiles);
+            final String mdlmol = (String) map.get("mdlmol");
+            try (RWMolCloseable molCandidate = RWMolCloseable.from(RWMol.MolFromMolBlock(mdlmol))) { // todo: is there any speed improvements?
+              molCandidate.updatePropertyCache(false);
+              return molCandidate.hasSubstructMatch(query);
+            }
           }
         })
+        .map(map -> new NodeSSSResult(map, luceneQuery.getPositiveBits()))
         .sorted(Comparator.comparingLong(n -> n.score));
   }
+
 }

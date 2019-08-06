@@ -43,7 +43,8 @@ public class RDKitEventHandlerExtensionFactory extends KernelExtensionFactory<De
       @Override
       public void shutdown() {
         logger.debug("Stopping canonical smiles trigger watcher");
-        dependencies.getGraphDatabaseService().unregisterTransactionEventHandler(handler);
+        if (handler != null)
+          dependencies.getGraphDatabaseService().unregisterTransactionEventHandler(handler);
       }
     };
   }

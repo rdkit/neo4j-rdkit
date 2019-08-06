@@ -32,28 +32,30 @@ public class Converter {
       case torsion:
         settings = settings
             .setTorsionPathLength(4);
-        // todo: targetSize(4)
         break;
       default: break;
     }
 
     FingerprintFactory factory = new DefaultFingerprintFactory(settings);
-    return new Converter(factory);
+    return new Converter(factory, fpType);
   }
-
-  // todo:
-  // TopologicalTorsion: fpSize(2048), targetSize(4) (edited)
 
   private static final Logger logger = LoggerFactory.getLogger(Converter.class);
 
-  private final String DELIMITER_WHITESPACE = " ";
-  private final String DELIMITER_AND = " AND ";
-  private final String DELIMITER_OR = " OR ";
+  static final String DELIMITER_WHITESPACE = " ";
+  static final String DELIMITER_AND = " AND ";
+  static final String DELIMITER_OR = " OR ";
 
   private FingerprintFactory fingerprintFactory;
+  private FingerprintType fingerprintType;
 
-  private Converter(FingerprintFactory fingerprintFactory) {
+  private Converter(FingerprintFactory fingerprintFactory, FingerprintType type) {
     this.fingerprintFactory = fingerprintFactory;
+    this.fingerprintType = type;
+  }
+
+  public FingerprintType getFingerprintType() {
+    return fingerprintType;
   }
 
   /**
@@ -106,14 +108,14 @@ public class Converter {
     }
   }
 
-  public String getLuceneFingerprint(String smiles) {
+  public LuceneQuery getLuceneFingerprint(String smiles) {
     logger.info("Get Lucene fingerprint from smiles={}", smiles);
-    return getLuceneQuery(smiles, DELIMITER_WHITESPACE).getLuceneQuery();
+    return getLuceneQuery(smiles, DELIMITER_WHITESPACE);
   }
 
-  public String getLuceneFingerprint(RWMol mol) {
+  public LuceneQuery getLuceneFingerprint(RWMol mol) {
     logger.info("Get Lucene fingerprint from mol");
-    return getLuceneQuery(mol, DELIMITER_WHITESPACE).getLuceneQuery();
+    return getLuceneQuery(mol, DELIMITER_WHITESPACE);
   }
 
   public LuceneQuery getLuceneSimilarityQuery(String smiles) {

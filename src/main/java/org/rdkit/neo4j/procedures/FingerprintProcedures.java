@@ -6,13 +6,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 import org.neo4j.graphdb.Node;
-import org.neo4j.procedure.Context;
 import org.neo4j.procedure.Description;
 import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.Procedure;
 import org.rdkit.fingerprint.FingerprintType;
 import org.rdkit.neo4j.models.Constants;
+import org.rdkit.neo4j.models.LuceneQuery;
 import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.utils.Converter;
 
@@ -40,9 +40,11 @@ public class FingerprintProcedures extends BaseProcedure {
 
     executeBatches(nodes, PAGE_SIZE, node -> {
       final String smiles = (String) node.getProperty(CanonicalSmiles.getValue());
-      final String fp = converter.getLuceneFingerprint(smiles);
+      final LuceneQuery fp = converter.getLuceneFingerprint(smiles);
       // todo: save fp_type?
-      node.setProperty(propertyName, fp);
+      node.setProperty(propertyName + "_ones", fp.getPositiveBits()); // TODO: THINK ABOUT STANDARTIZATION
+      node.setProperty(propertyName + "_type", fingerprintType.toString()); // TODO: THINK ABOUT STANDARTIZATION
+      node.setProperty(propertyName, fp.getLuceneQuery());
     });
 
     final String indexName = propertyName; // todo: how should I name it each time unique, may be use property as a name for this index ?

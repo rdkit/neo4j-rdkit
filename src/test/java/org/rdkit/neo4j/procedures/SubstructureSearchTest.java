@@ -4,6 +4,7 @@ import static org.neo4j.graphdb.DependencyResolver.SelectionStrategy.FIRST;
 
 import java.util.Map;
 import lombok.val;
+import org.RDKit.RWMol;
 import org.junit.Assert;
 import org.junit.Test;
 import org.neo4j.helpers.collection.MapUtil;
@@ -125,5 +126,11 @@ public class SubstructureSearchTest extends BaseTest {
       tx.success();
     }
     graphDb.execute("CALL org.rdkit.search.dropIndex()"); // otherwise we get an exception on shutdown
+  }
+
+  @Test
+  public void sssTest() {
+    RWMol mol = RWMol.MolFromSmiles("N");
+    System.out.println(mol);
   }
 }

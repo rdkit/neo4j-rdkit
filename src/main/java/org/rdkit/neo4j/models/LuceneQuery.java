@@ -11,6 +11,8 @@ public class LuceneQuery {
   private final String luceneQuery;
   @Getter
   private final long positiveBits;
+  @Getter
+  private final String delimiter;
 
   /**
    * Convert a bitset into a string with specified `delimiter`
@@ -30,5 +32,6 @@ public class LuceneQuery {
 
     this.luceneQuery = joiner.toString();
     this.positiveBits = counter;
+    this.delimiter = delimiter;
   }
 }
