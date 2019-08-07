@@ -57,14 +57,14 @@ public class FingerprintProcedures extends BaseProcedure {
 
   private void checkPropertyName(final String propertyName) {
     try {
-      Constants.valueOf(propertyName);
+      Constants.from(propertyName);
       throw new IllegalStateException("This property name is protected");
     } catch (IllegalArgumentException e) {
       // no intersection of names found, valueOf thrown an exception
     }
 
     try {
-      NodeFields.valueOf(propertyName);
+      NodeFields.from(propertyName);
       throw new IllegalStateException("This property name is protected");
     } catch (IllegalArgumentException e) {
       // no intersection of names found, valueOf thrown an exception

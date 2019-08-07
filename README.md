@@ -33,6 +33,8 @@ mvn org.apache.maven.plugins:maven-install-plugin:2.3.1:install-file \
 ### Node labels: [`Chemical`, `Structure`] - strict rule (!)
 
 * __Whenever a new node added with labels__, an `rdkit` event handler is applied and new node properties are constructed from `mdlmol` property.
+Those are also reserved property names  
+
 1) `canonical_smiles`  
 2) `inchi`  
 3) `formula`  
@@ -40,6 +42,10 @@ mvn org.apache.maven.plugins:maven-install-plugin:2.3.1:install-file \
 5) `fp` - bit-vector fingerprint in form of indexes of positive bits (`"1 4 19 23"`)  
 6) `fp_ones` - count of positive bits  
 7) `mdlmol`    
+
+Additional reserved property names:
+
+- `smiles`  
 
 * If the graph was fulfilled with nodes before the extension was loaded, it is possible to apply a procedure:  
   `CALL org.rdkit.update(['Chemical', 'Structure'])` - which iterates through nodes with specified labels and creates properties described before.  
@@ -60,11 +66,16 @@ mvn org.apache.maven.plugins:maven-install-plugin:2.3.1:install-file \
         * Delete fulltext index (called `rdkitIndex`) on property `fp`, which is required for substructure search  
         * Delete index for `:Chemical(canonical_smiles)` property   
 6) `CALL org.rdkit.search.substructure.smiles(['Chemical', 'Structure'], 'CC(=O)Nc1nnc(S(N)(=O)=O)s1')`  
-    * Subscture search based on smiles substructure, correct smiles is expected
+    * Subscture search based on smiles substructure
+7) `CALL org.rdkit.search.substructure.mol(['Chemical', 'Structure'], '<mol value>')`
+    * Subscture search based on mdlmol block substructure
+8) `CALL org.rdkit.fingerprint.create(['Chemical, 'Structure'], 'morgan_fp', 'morgan')`
+    * Create a new property called `morgan_fp` with fingerprint type `morgan` on all nodes 
+    * Creates fulltext index on this property. 
+    * Node is skipped if it's not possible to convert its smiles with this fingerprint type
+    * It is __not allowed__ to use property name equal to predefined 
 
 
 ## Useful links:
 - https://github.com/neo4j/neo4j  
-- https://github.com/neo4j-contrib/neo4j-lucene5-index  
-- https://github.com/rdkit/org.rdkit.lucene
-
+- https://github.com/rdkit/org.rdkit.lucene  
