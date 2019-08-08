@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 public class Converter {
 
+  /*  Static methods and fields  */
   public static Converter createDefault() {
     return createConverter(FingerprintType.pattern);
   }
@@ -42,9 +43,11 @@ public class Converter {
 
   private static final Logger logger = LoggerFactory.getLogger(Converter.class);
 
-  static final String DELIMITER_WHITESPACE = " ";
-  static final String DELIMITER_AND = " AND ";
-  static final String DELIMITER_OR = " OR ";
+  public static final String DELIMITER_WHITESPACE = " ";
+  public static final String DELIMITER_AND = " AND ";
+  public static final String DELIMITER_OR = " OR ";
+
+  /*  Class fields  */
 
   private FingerprintFactory fingerprintFactory;
   private FingerprintType fingerprintType;

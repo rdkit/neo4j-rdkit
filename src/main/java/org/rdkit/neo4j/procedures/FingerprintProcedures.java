@@ -2,10 +2,16 @@ package org.rdkit.neo4j.procedures;
 
 import static org.rdkit.neo4j.models.NodeFields.CanonicalSmiles;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Result;
+import org.neo4j.helpers.collection.MapUtil;
 import org.neo4j.procedure.Description;
 import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.Name;
@@ -53,6 +59,54 @@ public class FingerprintProcedures extends BaseProcedure {
 
     final String indexName = propertyName; // todo: how should I name it each time unique, may be use property as a name for this index ?
     createFullTextIndex(indexName, labelNames, Collections.singletonList(propertyName));
+  }
+
+  @Procedure(name = "org.rdkit.fingerprint.similarity.smiles", mode = Mode.READ)
+  @Description("RDKit similarity search procedure.") // todo: text here
+  public Stream<SimilarityResult> similaritySearch(@Name("label") List<String> labelNames, @Name("smiles") String smiles, @Name("fingerprintType") String fpTypeString, @Name("propertyName") String indexName) {
+    checkIndexExistence(labelNames, indexName); // todo: explanation about indexName
+
+    final FingerprintType fpType = FingerprintType.parseString(fpTypeString);
+    final Converter converter = Converter.createConverter(fpType);
+    final LuceneQuery similarityQuery = converter.getLuceneSimilarityQuery(smiles);
+
+    final String query = similarityQuery.getLuceneQuery();
+    final Set<String> queryNumbers = new HashSet<>(Arrays.asList(query.split(similarityQuery.getDelimiter())));
+
+    final long queryPositiveBits = similarityQuery.getPositiveBits();
+
+    Result result = db.execute("CALL db.index.fulltext.queryNodes($index, $query) "
+            + "YIELD node "
+            + "RETURN node.canonical_smiles as smiles, node.fp as fp, node.fp_ones as fp_ones, node.preferred_name as name, node.luri as luri",
+        MapUtil.map("index", indexName, "query", query));
+    return result.stream()
+        .peek(candidate -> {
+          long counter = 0;
+          for (String position: ((String) candidate.get("fp")).split(Converter.DELIMITER_WHITESPACE)) {
+            if (queryNumbers.contains(position)) counter++;
+          }
+
+          long candidatePositiveBits = (Long) candidate.get("fp_ones");
+          double similarity = 1.0d * counter / (queryPositiveBits + candidatePositiveBits - counter);
+          candidate.put("similarity", similarity);
+        })
+        .map(SimilarityResult::new)
+        .sorted((s1, s2) -> Double.compare(s2.similarity, s1.similarity));
+  }
+
+  public class SimilarityResult {
+    public String name;
+    public String luri;
+    public String smiles;
+    public double similarity;
+
+
+    public SimilarityResult(Map<String, Object> map) {
+      this.luri = (String) map.getOrDefault("luri", null);
+      this.name = (String) map.getOrDefault("name", null);
+      this.smiles = (String) map.get("smiles");
+      this.similarity = (Double) map.get("similarity");
+    }
   }
 
   private void checkPropertyName(final String propertyName) {

@@ -91,8 +91,9 @@ public class BitSetIndexQueryingTest extends BaseTest {
     final String queryString = query.getLuceneQuery();
     final Set<String> smiles1BitPositions = new HashSet<>(Arrays.asList(queryString.split(query.getDelimiter())));
 
-    val result = graphDb.execute("CALL db.index.fulltext.queryNodes('bitset', $query) YIELD node " +
-            "RETURN node.smiles, node.fp, node.fp_ones",
+    val result = graphDb.execute("CALL db.index.fulltext.queryNodes('bitset', $query) "
+            + "YIELD node "
+            + "RETURN node.smiles, node.fp, node.fp_ones",
         MapUtil.map("query", queryString))
         .stream()
         .map(candidate -> {

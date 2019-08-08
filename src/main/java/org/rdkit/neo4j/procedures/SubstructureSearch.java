@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import lombok.val;
 import org.RDKit.RWMol;
 import org.neo4j.graphdb.*;
 import org.neo4j.helpers.collection.MapUtil;
@@ -19,10 +18,6 @@ import org.rdkit.neo4j.utils.Converter;
 import org.rdkit.neo4j.utils.RWMolCloseable;
 
 public class SubstructureSearch extends BaseProcedure {
-  private static final String fingerprintProperty = NodeFields.FingerprintEncoded.getValue();
-  private static final String fingerprintOnesProperty = NodeFields.FingerprintOnes.getValue();
-  private static final String canonicalSmilesProperty = NodeFields.CanonicalSmiles.getValue();
-  private static final String indexName = Constants.IndexName.getValue();
   private static final Converter converter = Converter.createDefault();
 
   @Procedure(name = "org.rdkit.search.createIndex", mode = Mode.SCHEMA)

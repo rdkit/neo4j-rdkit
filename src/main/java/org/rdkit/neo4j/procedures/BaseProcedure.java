@@ -17,8 +17,14 @@ import org.neo4j.helpers.collection.MapUtil;
 import org.neo4j.helpers.collection.PagingIterator;
 import org.neo4j.logging.Log;
 import org.neo4j.procedure.Context;
+import org.rdkit.neo4j.models.Constants;
+import org.rdkit.neo4j.models.NodeFields;
 
 public abstract class BaseProcedure {
+  static final String fingerprintProperty = NodeFields.FingerprintEncoded.getValue();
+  static final String fingerprintOnesProperty = NodeFields.FingerprintOnes.getValue();
+  static final String canonicalSmilesProperty = NodeFields.CanonicalSmiles.getValue();
+  static final String indexName = Constants.IndexName.getValue();
 
   static final int PAGE_SIZE = 10_000;
 
@@ -42,7 +48,7 @@ public abstract class BaseProcedure {
       assert index.isNodeIndex();
       assert StreamSupport.stream(index.getLabels().spliterator(), false).allMatch(labels::contains);
     } catch (AssertionError e) {
-      log.error("No `{}` node index found", indexName);
+      log.error("No `%s` node index found", indexName);
       throw e;
     }
   }
