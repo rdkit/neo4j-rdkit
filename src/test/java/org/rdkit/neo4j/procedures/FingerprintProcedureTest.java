@@ -100,8 +100,8 @@ public class FingerprintProcedureTest extends BaseTest {
 
     final String smiles = "COc1ccc(C(=O)O)cc1";
 
-    final String propertyName = "pattern_fp"; // todo: pattern shows huge results, but others don't?
-    final String fptype = FingerprintType.pattern.toString(); // morgan fails
+    final String propertyName = "torsion_fp";
+    final String fptype = FingerprintType.torsion.toString(); // morgan fails
     graphDb.execute("CALL org.rdkit.fingerprint.create($labels, $fptype, $propertyName)", MapUtil.map(
         "labels", defaultLabels,
         "propertyName", propertyName,

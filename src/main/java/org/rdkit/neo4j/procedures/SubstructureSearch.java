@@ -13,7 +13,6 @@ import org.neo4j.procedure.*;
 
 import org.rdkit.neo4j.models.Constants;
 import org.rdkit.neo4j.models.LuceneQuery;
-import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.utils.Converter;
 import org.rdkit.neo4j.utils.RWMolCloseable;
 
@@ -107,6 +106,7 @@ public class SubstructureSearch extends BaseProcedure {
             + "RETURN node.canonical_smiles as canonical_smiles, node.fp_ones as fp_ones, node.preferred_name as name, node.luri as luri",
         MapUtil.map("index", indexName, "query", luceneQuery.getLuceneQuery()));
     return result.stream()
+        .parallel()
         .filter(map -> {
           final String smiles = (String) map.get("canonical_smiles");
           try (RWMolCloseable candidate = RWMolCloseable.from(RWMol.MolFromSmiles(smiles, 0, false))) {

@@ -1,12 +1,10 @@
 package org.rdkit.neo4j.procedures;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.neo4j.graphdb.*;
-import org.neo4j.helpers.collection.PagingIterator;
 import org.neo4j.procedure.*;
 
 import org.rdkit.neo4j.handlers.RDKitEventHandler;
@@ -73,6 +71,7 @@ public class ExactSearch extends BaseProcedure {
 
     return db.findNodes(Label.label(firstLabel), property, value)
         .stream()
+        .parallel()
         .filter(node -> labels.stream().allMatch(node::hasLabel))
         .map(NodeWrapper::new);
   }

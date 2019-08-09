@@ -49,8 +49,8 @@ public class FingerprintProcedures extends BaseProcedure {
       try {
         final LuceneQuery fp = converter.getLuceneFingerprint(smiles);
         // todo: save fp_type?
-        node.setProperty(propertyName + "_ones", fp.getPositiveBits()); // TODO: THINK ABOUT STANDARTIZATION
-        node.setProperty(propertyName + "_type", fingerprintType.toString()); // TODO: THINK ABOUT STANDARTIZATION
+        node.setProperty(getPropertyOnes(propertyName), fp.getPositiveBits());
+        node.setProperty(getPropertyType(propertyName), fingerprintType.toString());
         node.setProperty(propertyName, fp.getLuceneQuery());
       } catch (Exception e) {
         log.error("Fingerprint type={} unable to convert smiles={}", fpType, smiles);
@@ -63,23 +63,35 @@ public class FingerprintProcedures extends BaseProcedure {
 
   @Procedure(name = "org.rdkit.fingerprint.similarity.smiles", mode = Mode.READ)
   @Description("RDKit similarity search procedure.") // todo: text here
-  public Stream<SimilarityResult> similaritySearch(@Name("label") List<String> labelNames, @Name("smiles") String smiles, @Name("fingerprintType") String fpTypeString, @Name("propertyName") String indexName) {
+  public Stream<SimilarityResult> similaritySearch(@Name("label") List<String> labelNames, @Name("smiles") String smiles, @Name("fingerprintType") String fpTypeString, @Name("propertyName") String propertyName) {
+    String indexName = propertyName;
     checkIndexExistence(labelNames, indexName); // todo: explanation about indexName
 
     final FingerprintType fpType = FingerprintType.parseString(fpTypeString);
     final Converter converter = Converter.createConverter(fpType);
-    final LuceneQuery similarityQuery = converter.getLuceneSimilarityQuery(smiles); // todo: wrap exception IllegalArgument
 
+    LuceneQuery similarityQuery;
+    try {
+      similarityQuery = converter.getLuceneSimilarityQuery(smiles);
+    } catch (RuntimeException e) {
+      throw new IllegalArgumentException(String.format("Unable to convert smiles=%s with specified fingerprintType=%s", smiles, fpType));
+    }
+
+    /* stream processing objects */
     final String query = similarityQuery.getLuceneQuery();
     final Set<String> queryNumbers = new HashSet<>(Arrays.asList(query.split(similarityQuery.getDelimiter())));
-
     final long queryPositiveBits = similarityQuery.getPositiveBits();
 
+
+    final String propertyOnes = getPropertyOnes(propertyName);
     Result result = db.execute("CALL db.index.fulltext.queryNodes($index, $query) "
             + "YIELD node "
-            + "RETURN node.canonical_smiles as smiles, node.fp as fp, node.fp_ones as fp_ones, node.preferred_name as name, node.luri as luri",
-        MapUtil.map("index", indexName, "query", query));
+            + String.format("RETURN node.canonical_smiles as smiles, %s as fp, %s as fp_ones, node.preferred_name as name, node.luri as luri", "node." + propertyName, "node." + propertyOnes),
+        MapUtil.map("index", indexName,
+            "query", query)
+    );
     return result.stream()
+        .parallel()
         .peek(candidate -> {
           long counter = 0;
           for (String position: ((String) candidate.get("fp")).split(Converter.DELIMITER_WHITESPACE)) {
@@ -123,5 +135,13 @@ public class FingerprintProcedures extends BaseProcedure {
     } catch (IllegalArgumentException e) {
       // no intersection of names found, valueOf thrown an exception
     }
+  }
+
+  private String getPropertyOnes(final String propertyName) {
+    return propertyName + "_ones";
+  }
+
+  private String getPropertyType(final String proprtyName) {
+    return proprtyName + "_type";
   }
 }

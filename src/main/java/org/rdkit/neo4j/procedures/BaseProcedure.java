@@ -74,6 +74,7 @@ public abstract class BaseProcedure {
 
     return db.findNodes(Label.label(firstLabel))
         .stream()
+        .parallel()
         .filter(node -> labels.stream().allMatch(node::hasLabel));
   }
 
