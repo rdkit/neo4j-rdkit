@@ -39,7 +39,7 @@ public class FingerprintProcedureTest extends BaseTest {
 
     final String propertyName = "torsion_fp";
     final String fptype = FingerprintType.torsion.toString(); // morgan fails
-    graphDb.execute("CALL org.rdkit.fingerprint.create($labels, $propertyName, $fptype)", MapUtil.map(
+    graphDb.execute("CALL org.rdkit.fingerprint.create($labels, $fptype, $propertyName)", MapUtil.map(
        "labels", defaultLabels,
         "propertyName", propertyName,
         "fptype", fptype
@@ -83,7 +83,7 @@ public class FingerprintProcedureTest extends BaseTest {
   public void createInvalidFpTest() throws Throwable {
     final String propertyName = "morgan_fp";
     try {
-      graphDb.execute("CALL org.rdkit.fingerprint.create($labels, $propertyName, $fptype)", MapUtil.map(
+      graphDb.execute("CALL org.rdkit.fingerprint.create($labels, $fptype, $propertyName)", MapUtil.map(
           "labels", defaultLabels,
           "propertyName", propertyName,
           "fptype", "<invalid>"
@@ -92,5 +92,32 @@ public class FingerprintProcedureTest extends BaseTest {
       // todo: looks terrible
       throw e.getCause().getCause().getCause().getCause(); // get Kernel exception, cypher execution exception, get procedure exception, get procedure invoked exceptionведь
     }
+  }
+
+  @Test
+  public void callSimilarityProcedureTest() throws Throwable {
+    insertChemblRows();
+
+    final String smiles = "COc1ccc(C(=O)O)cc1";
+
+    final String propertyName = "pattern_fp"; // todo: pattern shows huge results, but others don't?
+    final String fptype = FingerprintType.pattern.toString(); // morgan fails
+    graphDb.execute("CALL org.rdkit.fingerprint.create($labels, $fptype, $propertyName)", MapUtil.map(
+        "labels", defaultLabels,
+        "propertyName", propertyName,
+        "fptype", fptype
+    ));
+
+    val result = graphDb.execute("CALL org.rdkit.fingerprint.similarity.smiles($labels, $smiles, $fptype, $propertyName)", MapUtil.map(
+      "labels", defaultLabels,
+        "smiles", smiles,
+        "fptype", fptype,
+        "propertyName", propertyName
+    ));
+
+    logger.info(result.resultAsString());
+
+    graphDb.execute("CALL org.rdkit.search.dropIndex()");
+    graphDb.execute("CALL db.index.fulltext.drop($indexName)", MapUtil.map("indexName", propertyName));
   }
 }

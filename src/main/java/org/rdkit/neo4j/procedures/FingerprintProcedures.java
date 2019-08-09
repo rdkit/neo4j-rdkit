@@ -29,7 +29,7 @@ public class FingerprintProcedures extends BaseProcedure {
       + "Creates a fulltext index on that property. \n"
       + "Possible values for `fpType`: ['morgan', 'topological', 'pattern']. \n"
       + "Restriction for `propertyName`: it must not be equal to rdkit properties of nodes.")
-  public void createFingerprintProperty(@Name("label") List<String> labelNames, @Name("propertyName") String propertyName, @Name("fingerprintType") String fpType) throws InterruptedException {
+  public void createFingerprintProperty(@Name("label") List<String> labelNames, @Name("fingerprintType") String fpType, @Name("propertyName") String propertyName) throws InterruptedException {
     log.info("Create fingerprint property with parameters: labelsNames=%s, propertyName=%s, fingerprintType=%s", labelNames, propertyName, fpType);
 
     // start checking parameters
@@ -68,7 +68,7 @@ public class FingerprintProcedures extends BaseProcedure {
 
     final FingerprintType fpType = FingerprintType.parseString(fpTypeString);
     final Converter converter = Converter.createConverter(fpType);
-    final LuceneQuery similarityQuery = converter.getLuceneSimilarityQuery(smiles);
+    final LuceneQuery similarityQuery = converter.getLuceneSimilarityQuery(smiles); // todo: wrap exception IllegalArgument
 
     final String query = similarityQuery.getLuceneQuery();
     final Set<String> queryNumbers = new HashSet<>(Arrays.asList(query.split(similarityQuery.getDelimiter())));
