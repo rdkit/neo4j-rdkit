@@ -106,7 +106,6 @@ public class SubstructureSearch extends BaseProcedure {
             + "RETURN node.canonical_smiles as canonical_smiles, node.fp_ones as fp_ones, node.preferred_name as name, node.luri as luri",
         MapUtil.map("index", indexName, "query", luceneQuery.getLuceneQuery()));
     return result.stream()
-        .parallel()
         .filter(map -> {
           final String smiles = (String) map.get("canonical_smiles");
           try (RWMolCloseable candidate = RWMolCloseable.from(RWMol.MolFromSmiles(smiles, 0, false))) {
@@ -121,6 +120,7 @@ public class SubstructureSearch extends BaseProcedure {
             }
           }
         })
+//        .parallel()
         .map(map -> new NodeSSSResult(map, luceneQuery.getPositiveBits()))
         .sorted(Comparator.comparingLong(n -> n.score));
   }

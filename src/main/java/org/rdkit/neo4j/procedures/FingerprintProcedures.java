@@ -45,7 +45,7 @@ public class FingerprintProcedures extends BaseProcedure {
     Converter converter = Converter.createConverter(fingerprintType);
 
     executeBatches(nodes, PAGE_SIZE, node -> {
-      final String smiles = (String) node.getProperty(CanonicalSmiles.getValue());
+      final String smiles = (String) node.getProperty(canonicalSmilesProperty);
       try {
         final LuceneQuery fp = converter.getLuceneFingerprint(smiles);
         // todo: save fp_type?
@@ -53,17 +53,19 @@ public class FingerprintProcedures extends BaseProcedure {
         node.setProperty(getPropertyType(propertyName), fingerprintType.toString());
         node.setProperty(propertyName, fp.getLuceneQuery());
       } catch (Exception e) {
-        log.error("Fingerprint type={} unable to convert smiles={}", fpType, smiles);
+        log.error("Fingerprint type=%s unable to convert smiles=%s", fpType, smiles);
       }
     });
 
-    final String indexName = propertyName; // todo: how should I name it each time unique, may be use property as a name for this index ?
-    createFullTextIndex(indexName, labelNames, Collections.singletonList(propertyName));
+    final String propertyIndexName = propertyName; // todo: how should I name it each time unique, may be use property as a name for this index ?
+    createFullTextIndex(propertyIndexName, labelNames, Collections.singletonList(propertyName));
+
   }
 
   @Procedure(name = "org.rdkit.fingerprint.similarity.smiles", mode = Mode.READ)
   @Description("RDKit similarity search procedure.") // todo: text here
   public Stream<SimilarityResult> similaritySearch(@Name("label") List<String> labelNames, @Name("smiles") String smiles, @Name("fingerprintType") String fpTypeString, @Name("propertyName") String propertyName) {
+    log.info("Call similaritySearch labelNames=%s, smiles=%s, fptype=%s, propertyName=%s", labelNames, smiles, fpTypeString, propertyName);
     String indexName = propertyName;
     checkIndexExistence(labelNames, indexName); // todo: explanation about indexName
 
@@ -87,11 +89,12 @@ public class FingerprintProcedures extends BaseProcedure {
     Result result = db.execute("CALL db.index.fulltext.queryNodes($index, $query) "
             + "YIELD node "
             + String.format("RETURN node.canonical_smiles as smiles, %s as fp, %s as fp_ones, node.preferred_name as name, node.luri as luri", "node." + propertyName, "node." + propertyOnes),
-        MapUtil.map("index", indexName,
-            "query", query)
-    );
+        MapUtil.map(
+            "index", indexName,
+            "query", query
+        ));
+
     return result.stream()
-        .parallel()
         .peek(candidate -> {
           long counter = 0;
           for (String position: ((String) candidate.get("fp")).split(Converter.DELIMITER_WHITESPACE)) {
@@ -102,6 +105,7 @@ public class FingerprintProcedures extends BaseProcedure {
           double similarity = 1.0d * counter / (queryPositiveBits + candidatePositiveBits - counter);
           candidate.put("similarity", similarity);
         })
+//        .parallel()
         .map(SimilarityResult::new)
         .sorted((s1, s2) -> Double.compare(s2.similarity, s1.similarity));
   }

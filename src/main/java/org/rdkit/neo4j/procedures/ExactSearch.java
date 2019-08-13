@@ -60,7 +60,7 @@ public class ExactSearch extends BaseProcedure {
 
     public NodeWrapper(Node node) {
       this.canonical_smiles = (String) node.getProperty(NodeFields.CanonicalSmiles.getValue());
-      this.name = (String) node.getProperty("name", null);
+      this.name = (String) node.getProperty("preferred_name", null);
       this.luri = (String) node.getProperty("luri", null);
     }
   }
@@ -71,7 +71,7 @@ public class ExactSearch extends BaseProcedure {
 
     return db.findNodes(Label.label(firstLabel), property, value)
         .stream()
-        .parallel()
+//        .parallel()
         .filter(node -> labels.stream().allMatch(node::hasLabel))
         .map(NodeWrapper::new);
   }
