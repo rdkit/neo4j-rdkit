@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.neo4j.graphdb.DependencyResolver.SelectionStrategy.FIRST;
 
+import java.util.Map;
 import lombok.val;
 import org.junit.Test;
 import org.neo4j.graphdb.Label;
@@ -59,7 +60,7 @@ public class FingerprintProcedureTest extends BaseTest {
     }
 
     graphDb.execute("CALL org.rdkit.search.dropIndex()");
-    graphDb.execute("CALL db.index.fulltext.drop($indexName)", MapUtil.map("indexName", propertyName));
+    graphDb.execute("CALL db.index.fulltext.drop($indexName)", MapUtil.map("indexName", propertyName + "_index"));
   }
 
   @Test(expected = IllegalStateException.class)
@@ -74,7 +75,7 @@ public class FingerprintProcedureTest extends BaseTest {
       ));
     } catch (QueryExecutionException e) {
       // todo: looks terrible
-      throw e.getCause().getCause().getCause().getCause(); // get Kernel exception, cypher execution exception, get procedure exception, get procedure invoked exceptionведь
+      throw e.getCause().getCause().getCause().getCause(); // get Kernel exception, cypher execution exception, get procedure exception, get procedure invoked exception
     }
   }
 
@@ -90,7 +91,7 @@ public class FingerprintProcedureTest extends BaseTest {
       ));
     } catch (QueryExecutionException e) {
       // todo: looks terrible
-      throw e.getCause().getCause().getCause().getCause(); // get Kernel exception, cypher execution exception, get procedure exception, get procedure invoked exceptionведь
+      throw e.getCause().getCause().getCause().getCause(); // get Kernel exception, cypher execution exception, get procedure exception, get procedure invoked exception
     }
   }
 
@@ -98,7 +99,7 @@ public class FingerprintProcedureTest extends BaseTest {
   public void callSimilarityProcedureTest() throws Throwable {
     insertChemblRows();
 
-    final String smiles = "COc1ccc(C(=O)O)cc1";
+    final String initialSmiles = "COc1ccc(C(=O)O)cc1";
 
     final String propertyName = "torsion_fp";
     final String fptype = FingerprintType.torsion.toString(); // morgan fails
@@ -108,16 +109,25 @@ public class FingerprintProcedureTest extends BaseTest {
         "fptype", fptype
     ));
 
-    val result = graphDb.execute("CALL org.rdkit.fingerprint.similarity.smiles($labels, $smiles, $fptype, $propertyName)", MapUtil.map(
+    val result = graphDb.execute("CALL org.rdkit.fingerprint.similarity.smiles($labels, $smiles, $fptype, $propertyName, $threshold)", MapUtil.map(
       "labels", defaultLabels,
-        "smiles", smiles,
+        "smiles", initialSmiles,
         "fptype", fptype,
-        "propertyName", propertyName
+        "propertyName", propertyName,
+        "threshold", 0.7d
     ));
 
-    logger.info(result.resultAsString());
+    final int items = 2;
+    final double[] similarities = new double[]{1.0d, 0.764d};
+
+    for (int i = 0; i < items; i++) {
+      Map<String, Object> map = result.next();
+      double similarity = (Double) map.get("similarity");
+      assertEquals(similarities[i], similarity, 1e-2);
+    }
+
 
     graphDb.execute("CALL org.rdkit.search.dropIndex()");
-    graphDb.execute("CALL db.index.fulltext.drop($indexName)", MapUtil.map("indexName", propertyName));
+    graphDb.execute("CALL db.index.fulltext.drop($indexName)", MapUtil.map("indexName", propertyName + "_index"));
   }
 }

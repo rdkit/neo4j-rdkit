@@ -1,7 +1,5 @@
 package org.rdkit.neo4j.procedures;
 
-import static org.rdkit.neo4j.models.NodeFields.CanonicalSmiles;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -57,17 +55,24 @@ public class FingerprintProcedures extends BaseProcedure {
       }
     });
 
-    final String propertyIndexName = propertyName; // todo: how should I name it each time unique, may be use property as a name for this index ?
+    final String propertyIndexName = getIndexName(propertyName); // todo: how should I name it each time unique, may be use property as a name for this index ?
     createFullTextIndex(propertyIndexName, labelNames, Collections.singletonList(propertyName));
 
   }
 
   @Procedure(name = "org.rdkit.fingerprint.similarity.smiles", mode = Mode.READ)
-  @Description("RDKit similarity search procedure.") // todo: text here
-  public Stream<SimilarityResult> similaritySearch(@Name("label") List<String> labelNames, @Name("smiles") String smiles, @Name("fingerprintType") String fpTypeString, @Name("propertyName") String propertyName) {
-    log.info("Call similaritySearch labelNames=%s, smiles=%s, fptype=%s, propertyName=%s", labelNames, smiles, fpTypeString, propertyName);
-    String indexName = propertyName;
-    checkIndexExistence(labelNames, indexName); // todo: explanation about indexName
+  @Description("RDKit similarity search procedure. Finds similarity between provided chemical structure "
+      + "(which is created of type=`fingerprintType`, from `smiles`) and "
+      + "fingerprints placed under proprty=`propertyName`. Values below `threshold` are discarded.")
+  public Stream<SimilarityResult> similaritySearch(@Name("label") List<String> labelNames,
+      @Name("smiles") String smiles,
+      @Name("fingerprintType") String fpTypeString,
+      @Name("propertyName") String propertyName,
+      @Name("threshold") Double threshold) {
+    log.info("Call similaritySearch labelNames=%s, smiles=%s, fptype=%s, propertyName=%s, threshold=%s", labelNames, smiles, fpTypeString, propertyName, threshold);
+    String indexName = getIndexName(propertyName);
+    checkIndexExistence(labelNames, indexName);
+    checkThreshold(threshold);
 
     final FingerprintType fpType = FingerprintType.parseString(fpTypeString);
     final Converter converter = Converter.createConverter(fpType);
@@ -106,6 +111,7 @@ public class FingerprintProcedures extends BaseProcedure {
           candidate.put("similarity", similarity);
         })
 //        .parallel()
+        .filter(map -> (Double) map.get("similarity") > threshold)
         .map(SimilarityResult::new)
         .sorted((s1, s2) -> Double.compare(s2.similarity, s1.similarity));
   }
@@ -123,6 +129,12 @@ public class FingerprintProcedures extends BaseProcedure {
       this.smiles = (String) map.get("smiles");
       this.similarity = (Double) map.get("similarity");
     }
+  }
+
+
+  private void checkThreshold(Double threshold) {
+    if (threshold == null || threshold <= 0.0d || threshold > 1.0d)
+      throw new IllegalStateException(String.format("Threshold value incorrect, value=%f", threshold));
   }
 
   private void checkPropertyName(final String propertyName) {
@@ -145,7 +157,11 @@ public class FingerprintProcedures extends BaseProcedure {
     return propertyName + "_ones";
   }
 
-  private String getPropertyType(final String proprtyName) {
-    return proprtyName + "_type";
+  private String getPropertyType(final String propertyName) {
+    return propertyName + "_type";
+  }
+
+  private String getIndexName(final String propertyName) {
+    return propertyName + "_index";
   }
 }
