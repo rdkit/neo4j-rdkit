@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.RDKit.ROMol;
 import org.RDKit.RWMol;
 import org.neo4j.graphdb.*;
 import org.neo4j.helpers.collection.MapUtil;
@@ -62,11 +63,14 @@ public class SubstructureSearch extends BaseProcedure {
     checkIndexExistence(labelNames, Constants.IndexName.getValue()); // if index exists, then the values are
 
 
-    RWMol query;
+    ROMol query;
     try {
-      query = RWMol.MolFromMolBlock(mol); // todo: memory problems here
+      // todo: UPDATED HERE (removeHs)
+      query = RWMol.MolFromMolBlock(mol, true,false); // todo: memory problems here
       if (query == null)
         throw new IllegalArgumentException("Unable to convert specified mol");
+
+      query = query.mergeQueryHs();
     } catch (Exception e) {
       throw new IllegalArgumentException("Unable to convert specified mol");
     }
@@ -96,7 +100,7 @@ public class SubstructureSearch extends BaseProcedure {
    * @param query RWMol
    * @return stream of chemical structures with substruct match
    */
-  private Stream<NodeSSSResult> findSSCandidates(RWMol query) {
+  private Stream<NodeSSSResult> findSSCandidates(ROMol query) {
     query.updatePropertyCache();
     final LuceneQuery luceneQuery = converter.getLuceneSSSQuery(query);
 

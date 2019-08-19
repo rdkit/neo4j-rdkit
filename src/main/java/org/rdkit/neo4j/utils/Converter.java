@@ -2,6 +2,7 @@ package org.rdkit.neo4j.utils;
 
 import java.util.BitSet;
 import org.RDKit.RDKFuncs;
+import org.RDKit.ROMol;
 import org.RDKit.RWMol;
 import org.rdkit.fingerprint.DefaultFingerprintFactory;
 import org.rdkit.fingerprint.DefaultFingerprintSettings;
@@ -148,12 +149,12 @@ public class Converter {
    * @param mol to user for further construction LuceneQuery
    * @return ex.: { str="3 AND 5 AND 14 AND 256 AND 258", int=5 }
    */
-  public LuceneQuery getLuceneSSSQuery(RWMol mol) {
+  public LuceneQuery getLuceneSSSQuery(ROMol mol) {
     logger.debug("Get Lucene fp query for mol");
     return getLuceneQuery(mol, DELIMITER_AND);
   }
 
-  private LuceneQuery getLuceneQuery(RWMol mol, final String delimiter) {
+  private LuceneQuery getLuceneQuery(ROMol mol, final String delimiter) {
     final BitSet fp = fingerprintFactory.createStructureFingerprint(mol);
     return getLuceneQuery(fp, delimiter);
   }
