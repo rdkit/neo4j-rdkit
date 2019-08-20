@@ -21,6 +21,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
+    <license.licenseName>bsd_2</license.licenseName>
+    <license.descriptionTemplate>${project.baseUri}src/main/resources/license/license-header.ftl</license.descriptionTemplate> <!-- todo: does not work -->
   </properties>
 
   <dependencyManagement>
@@ -155,6 +157,24 @@
                 </excludes>
               </artifactSet>
             </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin> <!-- TODO: requires maven >=3.5.4 -->
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>2.0.0</version>
+        <configuration>
+          <organizationName>RDKit</organizationName>
+          <inceptionYear>2019</inceptionYear>
+        </configuration>
+        <executions>
+          <execution>
+            <id>first</id>
+            <goals>
+              <goal>update-file-header</goal>
+            </goals>
+            <phase>process-sources</phase>
           </execution>
         </executions>
       </plugin>
