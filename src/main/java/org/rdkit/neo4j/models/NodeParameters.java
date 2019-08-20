@@ -8,7 +8,7 @@ import lombok.ToString;
 @Data
 @ToString
 @RequiredArgsConstructor
-public class MolBlock {
+public class NodeParameters {
   private final String canonicalSmiles;
   private final String formula;
   private final double molecularWeight;

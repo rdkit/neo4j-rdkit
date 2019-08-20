@@ -1,5 +1,11 @@
 package org.rdkit.neo4j.index;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
+import lombok.val;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.rdkit.neo4j.index.utils.BaseTest;
+import org.rdkit.neo4j.models.LuceneQuery;
+import org.rdkit.neo4j.utils.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,6 +76,46 @@ public class BitSetIndexQueryingTest extends BaseTest {
 
     graphDb.execute("CALL db.index.fulltext.drop('bitset')"); // otherwise we get an exception on shutdown
 
+  }
+
+  @Test
+  public void makeSimilarityRequestTest() throws Exception {
+    insertChemblRows();
+
+    graphDb.execute("CALL db.index.fulltext.createNodeIndex('bitset', ['Chemical', 'Structure'], ['fp'], {analyzer: 'whitespace'} )");
+
+    final String smiles1 = "COc1ccc(C(=O)NO)cc1";
+
+    final Converter converter = Converter.createDefault();
+    final LuceneQuery query = converter.getLuceneSimilarityQuery(smiles1);
+    final String queryString = query.getLuceneQuery();
+    final Set<String> smiles1BitPositions = new HashSet<>(Arrays.asList(queryString.split(query.getDelimiter())));
+
+    val result = graphDb.execute("CALL db.index.fulltext.queryNodes('bitset', $query) "
+            + "YIELD node "
+            + "RETURN node.smiles, node.fp, node.fp_ones",
+        MapUtil.map("query", queryString))
+        .stream()
+        .map(candidate -> {
+          long counter = 0;
+          for (String position: ((String) candidate.get("node.fp")).split("\\s")) {
+            if (smiles1BitPositions.contains(position)) counter++;
+          }
+
+          long queryPositiveBits = query.getPositiveBits();
+          long candidatePositiveBits = (Long) candidate.get("node.fp_ones");
+          double similarity = 1.0d * counter / (queryPositiveBits + candidatePositiveBits - counter);
+
+          return MapUtil.map("similarity", similarity, "smiles", candidate.get("node.smiles"));
+        })
+        .sorted((m1, m2) -> Double.compare((Double) m2.get("similarity"), (Double) m1.get("similarity")))
+        .collect(Collectors.toList());
+
+    result.forEach(map -> {
+      logger.info("Map={}", map);
+    });
+
+    graphDb.execute("CALL db.index.fulltext.drop('bitset')"); // otherwise we get an exception on shutdown
   }
 
   /**

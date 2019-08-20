@@ -2,47 +2,75 @@ package org.rdkit.neo4j.utils;
 
 import java.util.BitSet;
 import org.RDKit.RDKFuncs;
+import org.RDKit.ROMol;
 import org.RDKit.RWMol;
 import org.rdkit.fingerprint.DefaultFingerprintFactory;
 import org.rdkit.fingerprint.DefaultFingerprintSettings;
 import org.rdkit.fingerprint.FingerprintFactory;
 import org.rdkit.fingerprint.FingerprintSettings;
 import org.rdkit.fingerprint.FingerprintType;
-import org.rdkit.neo4j.models.MolBlock;
-import org.rdkit.neo4j.models.SSSQuery;
+import org.rdkit.neo4j.models.LuceneQuery;
+import org.rdkit.neo4j.models.NodeParameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Converter {
 
+  /*  Static methods and fields  */
   public static Converter createDefault() {
-    FingerprintType type = FingerprintType.pattern;
-    FingerprintSettings settings = new DefaultFingerprintSettings(type)
-        .setNumBits(2048);
+    return createConverter(FingerprintType.pattern);
+  }
+
+  public static Converter createConverter(FingerprintType fpType) {
+
+    FingerprintSettings settings = new DefaultFingerprintSettings(fpType).setNumBits(2048);
+    switch (fpType) {
+      case pattern:
+        break;
+      case morgan:
+        settings = settings
+            .setRadius(2);
+        break;
+      case torsion:
+        settings = settings
+            .setTorsionPathLength(4);
+        break;
+      default: break;
+    }
+
     FingerprintFactory factory = new DefaultFingerprintFactory(settings);
-    return new Converter(factory);
+    return new Converter(factory, fpType);
   }
 
   private static final Logger logger = LoggerFactory.getLogger(Converter.class);
 
-  private final String DELIMITER_WHITESPACE = " ";
-  private final String DELIMITER_AND = " AND ";
+  public static final String DELIMITER_WHITESPACE = " ";
+  public static final String DELIMITER_AND = " AND ";
+  public static final String DELIMITER_OR = " OR ";
+
+  /*  Class fields  */
 
   private FingerprintFactory fingerprintFactory;
+  private FingerprintType fingerprintType;
 
-  private Converter(FingerprintFactory fingerprintFactory) {
+  private Converter(FingerprintFactory fingerprintFactory, FingerprintType type) {
     this.fingerprintFactory = fingerprintFactory;
+    this.fingerprintType = type;
+  }
+
+  public FingerprintType getFingerprintType() {
+    return fingerprintType;
   }
 
   /**
-   * Create MolBlock from SMILES
+   * Create NodeParameters from SMILES
    *
    * @param smiles not canonicalized
-   * @return MolBlock object
+   * @return NodeParameters object
    */
-  public MolBlock convertSmiles(final String smiles) {
+  public NodeParameters convertSmiles(final String smiles) {
     try (RWMolCloseable rwmol = RWMolCloseable.from(RWMol.MolFromSmiles(smiles))) {
-      final MolBlock block = createMolBlock(rwmol);
+      final NodeParameters block = createMolBlock(rwmol);
 
       final String rdkitSmiles = block.getCanonicalSmiles();
 
@@ -59,14 +87,14 @@ public class Converter {
   }
 
   /**
-   * Create MolBlock from string equivalent
+   * Create NodeParameters from string equivalent
    *
    * @param molBlock in string format
-   * @return MolBlock object
+   * @return NodeParameters object
    */
-  public MolBlock convertMolBlock(final String molBlock) {
+  public NodeParameters convertMolBlock(final String molBlock) {
     try (RWMolCloseable rwmol = RWMolCloseable.from(RWMol.MolFromMolBlock(molBlock))) {
-      MolBlock block = createMolBlock(rwmol);
+      NodeParameters block = createMolBlock(rwmol);
       block.setMolBlock(molBlock);
 
       return block;
@@ -84,45 +112,71 @@ public class Converter {
     }
   }
 
-  /**
-   * Return encoded query object with string for lucene fulltext query and count of set bits
-   *
-   * @param smiles to convert for further SSSQuery
-   * @return ex.: { str="3 AND 5 AND 14 AND 256 AND 258", int=5 }
-   */
-  public SSSQuery getLuceneFPQuery(String smiles) {
-    logger.info("Get Lucene fp query for smiles={}", smiles);
+  public LuceneQuery getLuceneFingerprint(String smiles) {
+    logger.debug("Get Lucene fingerprint from smiles={}", smiles);
+    return getLuceneQuery(smiles, DELIMITER_WHITESPACE);
+  }
 
-    final BitSet fp = fingerprintFactory.createStructureFingerprint(smiles);
-    SSSQuery sssQuery = new SSSQuery(fp, DELIMITER_AND);
+  public LuceneQuery getLuceneFingerprint(RWMol mol) {
+    logger.debug("Get Lucene fingerprint from mol");
+    return getLuceneQuery(mol, DELIMITER_WHITESPACE);
+  }
 
-    logger.debug("Lucene fp sssQuery={}", sssQuery);
-    return sssQuery;
+  public LuceneQuery getLuceneSimilarityQuery(String smiles) {
+    logger.debug("Get Lucene similairy query for smiles={}", smiles);
+    return getLuceneQuery(smiles, DELIMITER_OR);
+  }
+
+  public LuceneQuery getLuceneSimilarityQuery(RWMol mol) {
+    logger.debug("Get Lucene similairy query for mol");
+    return getLuceneQuery(mol, DELIMITER_OR);
   }
 
   /**
    * Return encoded query object with string for lucene fulltext query and count of set bits
    *
-   * @param mol to user for further construction SSSQuery
+   * @param smiles to convert for further LuceneQuery
    * @return ex.: { str="3 AND 5 AND 14 AND 256 AND 258", int=5 }
    */
-  public SSSQuery getLuceneFPQuery(RWMol mol) {
-    logger.info("Get Lucene fp query for mol");
+  public LuceneQuery getLuceneSSSQuery(String smiles) {
+    logger.debug("Get Lucene fp query for smiles={}", smiles);
+    return getLuceneQuery(smiles, DELIMITER_AND);
+  }
 
+  /**
+   * Return encoded query object with string for lucene fulltext query and count of set bits
+   *
+   * @param mol to user for further construction LuceneQuery
+   * @return ex.: { str="3 AND 5 AND 14 AND 256 AND 258", int=5 }
+   */
+  public LuceneQuery getLuceneSSSQuery(ROMol mol) {
+    logger.debug("Get Lucene fp query for mol");
+    return getLuceneQuery(mol, DELIMITER_AND);
+  }
+
+  private LuceneQuery getLuceneQuery(ROMol mol, final String delimiter) {
     final BitSet fp = fingerprintFactory.createStructureFingerprint(mol);
-    SSSQuery sssQuery = new SSSQuery(fp, DELIMITER_AND);
+    return getLuceneQuery(fp, delimiter);
+  }
 
-    logger.debug("Lucene fp sssQuery={}", sssQuery);
-    return sssQuery;
+  private LuceneQuery getLuceneQuery(String smiles, final String delimiter) {
+    final BitSet fp = fingerprintFactory.createStructureFingerprint(smiles);
+    return getLuceneQuery(fp, delimiter);
+  }
+
+  private LuceneQuery getLuceneQuery(final BitSet fp, final String delimiter) {
+    LuceneQuery luceneQuery = new LuceneQuery(fp, delimiter);
+    logger.debug("Lucene fp luceneQuery={}", luceneQuery);
+    return luceneQuery;
   }
 
   /**
-   * Method fulfills the MolBlock with parameters from rwmol object Used to extend properties of the node
+   * Method fulfills the NodeParameters with parameters from rwmol object Used to extend properties of the node
    *
    * @param rwmol object
-   * @return MolBlock with fields
+   * @return NodeParameters with fields
    */
-  private MolBlock createMolBlock(final RWMol rwmol) {
+  private NodeParameters createMolBlock(final RWMol rwmol) {
     logger.debug("Construct default molBlock fields");
     final String rdkitSmiles = RDKFuncs.MolToSmiles(rwmol);
     final String formula = RDKFuncs.calcMolFormula(rwmol);
@@ -130,13 +184,12 @@ public class Converter {
     final String inchi = RDKFuncs.MolToInchiKey(rwmol);
 
     logger.debug("Construct structure fingerprint for lucene");
-    BitSet fp = fingerprintFactory.createStructureFingerprint(rwmol);
-    SSSQuery sssQuery = new SSSQuery(fp, DELIMITER_WHITESPACE);
+    LuceneQuery luceneQuery = getLuceneQuery(rwmol, DELIMITER_WHITESPACE);
 
-    final long fingerprintOnes = sssQuery.getPositiveBits();
-    final String fingerprintEncoded = sssQuery.getLuceneQuery();
+    final long fingerprintOnes = luceneQuery.getPositiveBits();
+    final String fingerprintEncoded = luceneQuery.getLuceneQuery();
 
     logger.debug("Constructed fp encoded={}", fingerprintEncoded);
-    return new MolBlock(rdkitSmiles, formula, molecularWeight, inchi, fingerprintEncoded, fingerprintOnes);
+    return new NodeParameters(rdkitSmiles, formula, molecularWeight, inchi, fingerprintEncoded, fingerprintOnes);
   }
 }

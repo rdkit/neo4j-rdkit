@@ -71,7 +71,7 @@ public class LibraryLoader {
     final List<String> missingLibraries = findLibraries(libraryNames);
 
     if (missingLibraries.size() > 0) {
-      logger.info("Missing libraries: {}", missingLibraries);
+      logger.debug("Missing libraries in PATH: {}", missingLibraries);
       LibraryMover.resolveMissingLibraries(missingLibraries, platform);
     }
 
@@ -166,7 +166,7 @@ public class LibraryLoader {
     // todo: what about optional path to load files from?
     for (String lib : libraries) {
       System.loadLibrary(lib);
-      logger.info("Successfully loaded library={}", lib);
+      logger.debug("Successfully loaded library={}", lib);
     }
   }
 

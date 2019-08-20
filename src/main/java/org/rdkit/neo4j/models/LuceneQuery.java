@@ -6,11 +6,13 @@ import lombok.Getter;
 import lombok.ToString;
 
 @ToString
-public class SSSQuery {
+public class LuceneQuery {
   @Getter
   private final String luceneQuery;
   @Getter
   private final long positiveBits;
+  @Getter
+  private final String delimiter;
 
   /**
    * Convert a bitset into a string with specified `delimiter`
@@ -18,7 +20,7 @@ public class SSSQuery {
    * @param fingerprint to convert into lucene string
    * @param delimiter to join
    */
-  public SSSQuery(final BitSet fingerprint, final String delimiter) {
+  public LuceneQuery(final BitSet fingerprint, final String delimiter) {
     int counter = 0;
     StringJoiner joiner = new StringJoiner(delimiter);
 
@@ -30,5 +32,6 @@ public class SSSQuery {
 
     this.luceneQuery = joiner.toString();
     this.positiveBits = counter;
+    this.delimiter = delimiter;
   }
 }

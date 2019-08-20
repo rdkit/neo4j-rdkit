@@ -23,7 +23,6 @@ public class GraphUtils {
     return GraphDatabase.driver(uri, AuthTokens.basic("neo4j", "test"), config);
   }
 
-  // todo: it is possible to use folder
   // https://neo4j.com/docs/java-reference/current/tutorials-java-embedded/unit-testing/
   public static GraphDatabaseService getTestDatabase() {
     return new TestGraphDatabaseFactory().newImpermanentDatabase();
