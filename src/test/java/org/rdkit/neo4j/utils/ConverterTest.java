@@ -5,7 +5,6 @@ import static org.rdkit.neo4j.utils.Converter.DELIMITER_AND;
 import static org.rdkit.neo4j.utils.Converter.DELIMITER_OR;
 import static org.rdkit.neo4j.utils.Converter.DELIMITER_WHITESPACE;
 
-import org.RDKit.RDKFuncs;
 import org.RDKit.RWMol;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -13,7 +12,7 @@ import org.junit.Test;
 import org.rdkit.fingerprint.FingerprintType;
 import org.rdkit.neo4j.bin.LibraryLoader;
 import org.rdkit.neo4j.models.LuceneQuery;
-import org.rdkit.neo4j.models.MolBlock;
+import org.rdkit.neo4j.models.NodeParameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,8 +31,8 @@ public class ConverterTest {
     final String smiles1 = "O=S(=O)(Cc1ccccc1)CS(=O)(=O)Cc1ccccc1";
     final String smiles2 = "O=S(=O)(CC1=CC=CC=C1)CS(=O)(=O)CC1=CC=CC=C1";
 
-    MolBlock block1 = converter.convertSmiles(smiles1);
-    MolBlock block2 = converter.convertSmiles(smiles2);
+    NodeParameters block1 = converter.convertSmiles(smiles1);
+    NodeParameters block2 = converter.convertSmiles(smiles2);
 
     String rdkitSmiles1 = block1.getCanonicalSmiles();
     String rdkitSmiles2 = block2.getCanonicalSmiles();
@@ -47,7 +46,7 @@ public class ConverterTest {
   @Test(expected = IllegalArgumentException.class)
   public void smilesFailureTest() {
     final String smiles = "nonvalid";
-    MolBlock block = converter.convertSmiles(smiles);
+    NodeParameters block = converter.convertSmiles(smiles);
     String rdkitSmiles = block.getCanonicalSmiles();
 
     logger.error(rdkitSmiles);
@@ -109,7 +108,7 @@ public class ConverterTest {
     final String inchi = "DKXNMYFLQWZCGD-UHFFFAOYSA-N";
     final double molecularWeight = 324.049000992;
 
-    MolBlock block = converter.convertMolBlock(molBlock);
+    NodeParameters block = converter.convertMolBlock(molBlock);
     logger.info("{}", block);
 
     assertEquals(smiles, block.getCanonicalSmiles());
@@ -322,7 +321,7 @@ public class ConverterTest {
         + "M  CHG  2   1  -1   2   1\n"
         + "M  END\n";
 
-    MolBlock block = converter.convertMolBlock(mdlmol);
+    NodeParameters block = converter.convertMolBlock(mdlmol);
     final String expectedSmiles = "[Cl-].c1ccc(Oc2ccc3c4[nH]c([nH]c5c6ccc(Oc7ccccc7)cc6c6[nH]c7[nH]c([nH]c8c9ccc(Oc%10ccccc%10)cc9c([nH]4)n8[al+]n56)c4cc(Oc5ccccc5)ccc74)c3c2)cc1";
     assertEquals("RWMol from mdlmol block creates canonical smiles", expectedSmiles, block.getCanonicalSmiles());
 

@@ -16,8 +16,8 @@ import org.neo4j.graphdb.event.TransactionEventHandler;
 
 import org.rdkit.neo4j.models.Constants;
 import org.rdkit.neo4j.models.NodeFields;
+import org.rdkit.neo4j.models.NodeParameters;
 import org.rdkit.neo4j.utils.Converter;
-import org.rdkit.neo4j.models.MolBlock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +41,7 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
 
     for (Node node: nodesMol) {
       final String mol = (String) node.getProperty(NodeFields.MdlMol.getValue());
-      final MolBlock block = converter.convertMolBlock(mol);
+      final NodeParameters block = converter.convertMolBlock(mol);
 
       addProperties(node, block);
     }
@@ -53,7 +53,7 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
     // todo: will there appear nodes created only by smiles (not mol file)?
     for (Node node: nodesSmiles) {
       final String smiles = (String) node.getProperty(NodeFields.Smiles.getValue());
-      final MolBlock block = converter.convertSmiles(smiles);
+      final NodeParameters block = converter.convertSmiles(smiles);
 
       addProperties(node, block);
     }
@@ -71,7 +71,7 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
 
   }
 
-  public static void addProperties(final Node node, final MolBlock block) {
+  public static void addProperties(final Node node, final NodeParameters block) {
     logger.debug("Node={} adding properties: {}", node, block);
     node.setProperty(NodeFields.CanonicalSmiles.getValue(), block.getCanonicalSmiles());
     node.setProperty(NodeFields.Inchi.getValue(), block.getInchi());

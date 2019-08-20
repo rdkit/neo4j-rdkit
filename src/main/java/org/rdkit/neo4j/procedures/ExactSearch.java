@@ -9,7 +9,7 @@ import org.neo4j.procedure.*;
 
 import org.rdkit.neo4j.handlers.RDKitEventHandler;
 import org.rdkit.neo4j.models.Constants;
-import org.rdkit.neo4j.models.MolBlock;
+import org.rdkit.neo4j.models.NodeParameters;
 import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.utils.Converter;
 
@@ -42,7 +42,7 @@ public class ExactSearch extends BaseProcedure {
     executeBatches(getLabeledNodes(labelNames), PAGE_SIZE, node -> {
       final String mol = (String) node.getProperty("mdlmol");
       try {
-        final MolBlock block = converter.convertMolBlock(mol);
+        final NodeParameters block = converter.convertMolBlock(mol);
         RDKitEventHandler.addProperties(node, block);
       } catch (Exception e) {
         final String luri = (String) node.getProperty("luri", "<undefined>");

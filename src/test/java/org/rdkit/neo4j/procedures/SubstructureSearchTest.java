@@ -20,8 +20,10 @@ public class SubstructureSearchTest extends BaseTest {
   public void prepareTestDatabase() {
     graphDb = GraphUtils.getTestDatabase();
     Procedures proceduresService = ((GraphDatabaseAPI) graphDb).getDependencyResolver().resolveDependency(Procedures.class, FIRST);
+
     try {
       proceduresService.registerProcedure(SubstructureSearch.class, true);
+      proceduresService.registerFunction(SubstructureSearch.class, true);
     } catch (KernelException e) {
       e.printStackTrace();
       logger.error("Not success :(");
@@ -141,5 +143,33 @@ public class SubstructureSearchTest extends BaseTest {
       // todo: looks terrible
       throw e.getCause().getCause().getCause().getCause(); // get Kernel exception, cypher execution exception, get procedure exception, get procedure invoked exceptionведь
     }
+  }
+
+  @Test
+  public void callIsSubstructureTest() throws Throwable {
+    final String querySmiles = "c1ccccc1";
+    final String[] candidateSmiles = new String[]{
+        "OB(O)c1ccccc1",
+        "C=C(C)CC1CC(O)[C@]2(C)OC3CC4OC5C[C@]6(C)O[C@]7(C)CCC8OC9C[C@]%10(C)OC%11C(C)=CC(=O)OC%11CC%10OC9C[C@H](C)C8OC7CC6O[C@]5(C)CC=CC4OC3CC2O1"
+    };
+    final boolean[] substructMatches = new boolean[]{true, false};
+
+    try (val tx = graphDb.beginTx()) {
+      for (String smiles: candidateSmiles)
+        graphDb.execute("CREATE (n:Chemical:Structure {smiles:$smiles})", MapUtil.map("smiles", smiles));
+      tx.success();
+    }
+
+    for (int i = 0; i < candidateSmiles.length; i++) {
+      val result = graphDb.execute(
+          "MATCH (n:Chemical:Structure) WHERE n.smiles = $candidate_smiles RETURN n.smiles as smiles, org.rdkit.search.substructure.is(n, $query) as bool",
+          MapUtil.map("query", querySmiles, "candidate_smiles", candidateSmiles[i]));
+
+      val map = result.next();
+      Assert.assertEquals(substructMatches[i], map.get("bool"));
+      Assert.assertEquals(candidateSmiles[i], map.get("smiles"));
+    }
+
+    graphDb.execute("CALL org.rdkit.search.dropIndex()"); // otherwise we get an exception on shutdown
   }
 }

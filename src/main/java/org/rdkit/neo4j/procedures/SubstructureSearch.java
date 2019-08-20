@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import lombok.val;
 import org.RDKit.ROMol;
 import org.RDKit.RWMol;
 import org.neo4j.graphdb.*;
@@ -77,6 +78,25 @@ public class SubstructureSearch extends BaseProcedure {
     return findSSCandidates(query);
   }
 
+
+  @UserFunction(name = "org.rdkit.search.substructure.is")
+  @Description("RDKit function checks substructure match between two chemical structures (provided node and specified smiles)")
+  public boolean isSubstructure(@Name("candidate") Node candidate, @Name("substructure_smiles") String smiles) {
+    final String luri = (String) candidate.getProperty("luri", "<undefined>");
+    log.info("isSubstructure call based on candidate_luri=%s, substructure_smiles=%s", luri, smiles);
+
+    // todo: should I check fingerprint match first?
+
+    try (val query = RWMolCloseable.from(RWMol.MolFromSmiles(smiles))) {
+      query.updatePropertyCache(false);
+      final String candidateSmiles = (String) candidate.getProperty("canonical_smiles");
+      try (val candidateRWMol = RWMolCloseable.from(RWMol.MolFromSmiles(candidateSmiles, 0, false))) {
+        candidateRWMol.updatePropertyCache(false);
+        return candidateRWMol.hasSubstructMatch(query);
+      }
+    }
+  }
+
   /**
    * Class wraps result of substructure search
    */
@@ -128,5 +148,4 @@ public class SubstructureSearch extends BaseProcedure {
         .map(map -> new NodeSSSResult(map, luceneQuery.getPositiveBits()))
         .sorted(Comparator.comparingLong(n -> n.score));
   }
-
 }

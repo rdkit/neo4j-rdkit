@@ -10,7 +10,7 @@ import org.rdkit.fingerprint.FingerprintFactory;
 import org.rdkit.fingerprint.FingerprintSettings;
 import org.rdkit.fingerprint.FingerprintType;
 import org.rdkit.neo4j.models.LuceneQuery;
-import org.rdkit.neo4j.models.MolBlock;
+import org.rdkit.neo4j.models.NodeParameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,14 +63,14 @@ public class Converter {
   }
 
   /**
-   * Create MolBlock from SMILES
+   * Create NodeParameters from SMILES
    *
    * @param smiles not canonicalized
-   * @return MolBlock object
+   * @return NodeParameters object
    */
-  public MolBlock convertSmiles(final String smiles) {
+  public NodeParameters convertSmiles(final String smiles) {
     try (RWMolCloseable rwmol = RWMolCloseable.from(RWMol.MolFromSmiles(smiles))) {
-      final MolBlock block = createMolBlock(rwmol);
+      final NodeParameters block = createMolBlock(rwmol);
 
       final String rdkitSmiles = block.getCanonicalSmiles();
 
@@ -87,14 +87,14 @@ public class Converter {
   }
 
   /**
-   * Create MolBlock from string equivalent
+   * Create NodeParameters from string equivalent
    *
    * @param molBlock in string format
-   * @return MolBlock object
+   * @return NodeParameters object
    */
-  public MolBlock convertMolBlock(final String molBlock) {
+  public NodeParameters convertMolBlock(final String molBlock) {
     try (RWMolCloseable rwmol = RWMolCloseable.from(RWMol.MolFromMolBlock(molBlock))) {
-      MolBlock block = createMolBlock(rwmol);
+      NodeParameters block = createMolBlock(rwmol);
       block.setMolBlock(molBlock);
 
       return block;
@@ -171,12 +171,12 @@ public class Converter {
   }
 
   /**
-   * Method fulfills the MolBlock with parameters from rwmol object Used to extend properties of the node
+   * Method fulfills the NodeParameters with parameters from rwmol object Used to extend properties of the node
    *
    * @param rwmol object
-   * @return MolBlock with fields
+   * @return NodeParameters with fields
    */
-  private MolBlock createMolBlock(final RWMol rwmol) {
+  private NodeParameters createMolBlock(final RWMol rwmol) {
     logger.debug("Construct default molBlock fields");
     final String rdkitSmiles = RDKFuncs.MolToSmiles(rwmol);
     final String formula = RDKFuncs.calcMolFormula(rwmol);
@@ -190,6 +190,6 @@ public class Converter {
     final String fingerprintEncoded = luceneQuery.getLuceneQuery();
 
     logger.debug("Constructed fp encoded={}", fingerprintEncoded);
-    return new MolBlock(rdkitSmiles, formula, molecularWeight, inchi, fingerprintEncoded, fingerprintOnes);
+    return new NodeParameters(rdkitSmiles, formula, molecularWeight, inchi, fingerprintEncoded, fingerprintOnes);
   }
 }

@@ -74,7 +74,8 @@ Additional reserved property names:
     * Creates fulltext index on this property. 
     * Node is skipped if it's not possible to convert its smiles with this fingerprint type
     * It is __not allowed__ to use property name equal to predefined 
-
+9) User-defined function `org.rdkit.search.substructure.is(<node object>, '<smiles_string>')`
+    * Return boolean answer: does specified `node` object have substructure match provided by `smiles_string`.
 
 ## Useful links:
 - https://github.com/neo4j/neo4j  
