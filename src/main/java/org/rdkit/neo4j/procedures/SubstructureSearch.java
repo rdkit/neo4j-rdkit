@@ -1,5 +1,20 @@
 package org.rdkit.neo4j.procedures;
 
+/*-
+ * #%L
+ * RDKit-Neo4j
+ * %%
+ * Copyright (C) 2019 RDKit
+ * %%
+ * Copyright (C) 2019 Evgeny Sorokin
+ * @@ All Rights Reserved @@
+ * This file is part of the RDKit Neo4J integration.
+ * The contents are covered by the terms of the BSD license
+ * which is included in the file LICENSE, found at the root
+ * of the neo4j-rdkit source tree.
+ * #L%
+ */
+
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -18,9 +33,19 @@ import org.rdkit.neo4j.models.LuceneQuery;
 import org.rdkit.neo4j.utils.Converter;
 import org.rdkit.neo4j.utils.RWMolCloseable;
 
+/**
+ * Class SubstructureSearch implements org.rdkit.search.substructure.* procedures
+ * Also implements utils procedure `createIndex`, `destroyIndex`
+ * todo: remove destroyIndex ?
+ */
 public class SubstructureSearch extends BaseProcedure {
-  private static final Converter converter = Converter.createDefault();
+  private static final Converter converter = Converter.createDefault(); // default converter is used for SSS
 
+  /**
+   * Procedure builts property index for label {@link Constants#Chemical} on {@link #canonicalSmilesProperty} property
+   * Procedure builts fulltext index for specified labels on {@link #fingerprintProperty} property.
+   * @param labelNames - node labels
+   */
   @Procedure(name = "org.rdkit.search.createIndex", mode = Mode.SCHEMA)
   @Description("RDKit create a nodeIndex for specific field on top of fingerprint property")
   public void createIndex(@Name("label") List<String> labelNames) {
@@ -30,6 +55,9 @@ public class SubstructureSearch extends BaseProcedure {
     createFullTextIndex(indexName, labelNames, Collections.singletonList(fingerprintProperty));
   }
 
+  /**
+   * Procedure deletes fulltext index and property index created by procedure above {@link #createIndex(List)}
+   */
   @Procedure(name = "org.rdkit.search.dropIndex", mode = Mode.SCHEMA)
   @Description("Delete RDKit indexes")
   public void deleteIndex() {
@@ -39,16 +67,24 @@ public class SubstructureSearch extends BaseProcedure {
     db.execute("CALL db.index.fulltext.drop($index)", MapUtil.map("index", indexName));
   }
 
+  /**
+   * Procedure implements SSS based on `smiles` value
+   * Method converts specified smiles into fingerprint and uses its value as an input for fulltext search
+   * Default converter is used {@link Converter#createDefault()}
+   *
+   * @param labelNames - node labels to search on top of
+   * @param smiles - value to transform and use during SSS
+   * @return obtained nodes
+   */
   @Procedure(name = "org.rdkit.search.substructure.smiles", mode = Mode.READ)
   @Description("RDKit substructure search based on `smiles` value")
   public Stream<NodeSSSResult> substructureSearchSmiles(@Name("label") List<String> labelNames, @Name("smiles") String smiles) {
     log.info("Substructure search smiles started :: label=%s, smiles=%s", labelNames, smiles);
-    // todo: validate smiles is correct (possible)
     checkIndexExistence(labelNames, Constants.IndexName.getValue()); // if index exists, then the values are
 
     RWMol query;
     try {
-      query = RWMol.MolFromSmiles(smiles); // todo: memory problems here
+      query = RWMol.MolFromSmiles(smiles); // todo: it is unknown when the query object is freed
       if (query == null)
         throw new IllegalArgumentException("Unable to convert specified smiles");
     } catch (Exception e) {
@@ -57,6 +93,15 @@ public class SubstructureSearch extends BaseProcedure {
     return findSSCandidates(query);
   }
 
+  /**
+   * Procedure implements SSS based on `mol` value
+   * Method converts specified mol value into fingerprint and uses its value as an input for fulltext search
+   * Default converter is used {@link Converter#createDefault()}
+   *
+   * @param labelNames - node labels
+   * @param mol - mdlmol block value
+   * @return obtained nodes
+   */
   @Procedure(name = "org.rdkit.search.substructure.mol", mode = Mode.READ)
   @Description("RDKit substructure search based on `mol` value")
   public Stream<NodeSSSResult> substructureSearchMol(@Name("label") List<String> labelNames, @Name("mol") String mol) {
@@ -67,10 +112,9 @@ public class SubstructureSearch extends BaseProcedure {
     ROMol query;
     try {
       // todo: UPDATED HERE (removeHs)
-      query = RWMol.MolFromMolBlock(mol, true,false); // todo: memory problems here
+      query = RWMol.MolFromMolBlock(mol, true,false); // todo: it is unknown when the query object is freed
       if (query == null)
         throw new IllegalArgumentException("Unable to convert specified mol");
-
       query = query.mergeQueryHs();
     } catch (Exception e) {
       throw new IllegalArgumentException("Unable to convert specified mol");
@@ -79,13 +123,18 @@ public class SubstructureSearch extends BaseProcedure {
   }
 
 
+  /**
+   * User function which return boolean value - is there a substructure match between two chemical structures
+   *
+   * @param candidate - node object with {@link org.rdkit.neo4j.models.NodeFields} parameters
+   * @param smiles - to be converted into chemical structure and compared with
+   * @return existence substructure match
+   */
   @UserFunction(name = "org.rdkit.search.substructure.is")
   @Description("RDKit function checks substructure match between two chemical structures (provided node and specified smiles)")
   public boolean isSubstructure(@Name("candidate") Node candidate, @Name("substructure_smiles") String smiles) {
     final String luri = (String) candidate.getProperty("luri", "<undefined>");
     log.info("isSubstructure call based on candidate_luri=%s, substructure_smiles=%s", luri, smiles);
-
-    // todo: should I check fingerprint match first?
 
     try (val query = RWMolCloseable.from(RWMol.MolFromSmiles(smiles))) {
       query.updatePropertyCache(false);

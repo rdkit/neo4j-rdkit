@@ -1,5 +1,20 @@
 package org.rdkit.neo4j.utils;
 
+/*-
+ * #%L
+ * RDKit-Neo4j
+ * %%
+ * Copyright (C) 2019 RDKit
+ * %%
+ * Copyright (C) 2019 Evgeny Sorokin
+ * @@ All Rights Reserved @@
+ * This file is part of the RDKit Neo4J integration.
+ * The contents are covered by the terms of the BSD license
+ * which is included in the file LICENSE, found at the root
+ * of the neo4j-rdkit source tree.
+ * #L%
+ */
+
 import java.util.BitSet;
 import org.RDKit.RDKFuncs;
 import org.RDKit.ROMol;
@@ -14,6 +29,12 @@ import org.rdkit.neo4j.models.NodeParameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Converter class
+ * Provides functionality to create {@link org.rdkit.neo4j.models.NodeParameters} and {@link org.rdkit.neo4j.models.LuceneQuery} objects
+ * The content of LuceneQuery varies depending on FingerprintType used, which is defined during constructor.
+ * Default converter (with {@link org.rdkit.fingerprint.FingerprintType#pattern} is used for SSS
+ */
 public class Converter {
 
   /*  Static methods and fields  */
@@ -28,12 +49,10 @@ public class Converter {
       case pattern:
         break;
       case morgan:
-        settings = settings
-            .setRadius(2);
+        settings = settings.setRadius(2);
         break;
       case torsion:
-        settings = settings
-            .setTorsionPathLength(4);
+        settings = settings.setTorsionPathLength(4);
         break;
       default: break;
     }

@@ -1,5 +1,20 @@
 package org.rdkit.neo4j.procedures;
 
+/*-
+ * #%L
+ * RDKit-Neo4j
+ * %%
+ * Copyright (C) 2019 RDKit
+ * %%
+ * Copyright (C) 2019 Evgeny Sorokin
+ * @@ All Rights Reserved @@
+ * This file is part of the RDKit Neo4J integration.
+ * The contents are covered by the terms of the BSD license
+ * which is included in the file LICENSE, found at the root
+ * of the neo4j-rdkit source tree.
+ * #L%
+ */
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +35,10 @@ import org.neo4j.procedure.Context;
 import org.rdkit.neo4j.models.Constants;
 import org.rdkit.neo4j.models.NodeFields;
 
+/**
+ * BaseProcedure class
+ * Stores reusable objects and defines conventions of operations (property names and batch tasks)
+ */
 public abstract class BaseProcedure {
   static final String fingerprintProperty = NodeFields.FingerprintEncoded.getValue();
   static final String fingerprintOnesProperty = NodeFields.FingerprintOnes.getValue();
@@ -53,6 +72,12 @@ public abstract class BaseProcedure {
     }
   }
 
+  /**
+   * Method creates a fulltext index in a db
+   * @param indexName - name of the index
+   * @param labelNames - labels
+   * @param properties - properties to set index on top of
+   */
   void createFullTextIndex(final String indexName, final List<String> labelNames, final List<String> properties) {
     Map<String, Object> params = MapUtil.map(
         "index", indexName,
@@ -78,9 +103,16 @@ public abstract class BaseProcedure {
         .filter(node -> labels.stream().allMatch(node::hasLabel));
   }
 
-
-  // todo: requires great explanation
-  // todo: requires refactor (speed up)
+  /**
+   * Method allows to execute huge amount of transactions as a batch task.
+   * As it is a batch process, it must be executed in a separate transaction, so a separate thread is created.
+   * todo: refactor and speed up this process
+   *
+   * @param nodes - to make updates on top of
+   * @param batchSize - default 10_000
+   * @param nodeAction - Consumer on Node object
+   * @throws InterruptedException if the thread is interrupted
+   */
   void executeBatches(final Stream<Node> nodes, final int batchSize, Consumer<? super Node> nodeAction) throws InterruptedException {
     Iterator<Node> nodeIterator = nodes.iterator();
     final PagingIterator<Node> pagingIterator = new PagingIterator<>(nodeIterator, batchSize);

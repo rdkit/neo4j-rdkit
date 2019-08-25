@@ -1,5 +1,20 @@
 package org.rdkit.neo4j.handlers;
 
+/*-
+ * #%L
+ * RDKit-Neo4j
+ * %%
+ * Copyright (C) 2019 RDKit
+ * %%
+ * Copyright (C) 2019 Evgeny Sorokin
+ * @@ All Rights Reserved @@
+ * This file is part of the RDKit Neo4J integration.
+ * The contents are covered by the terms of the BSD license
+ * which is included in the file LICENSE, found at the root
+ * of the neo4j-rdkit source tree.
+ * #L%
+ */
+
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.kernel.extension.ExtensionType;
 import org.neo4j.kernel.extension.KernelExtensionFactory;
@@ -14,9 +29,16 @@ import org.rdkit.neo4j.handlers.RDKitEventHandlerExtensionFactory.Dependencies;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Class enables neo4j kernel to load custom event handler and loads native libraries
+ */
 public class RDKitEventHandlerExtensionFactory extends KernelExtensionFactory<Dependencies> {
   private static final Logger logger = LoggerFactory.getLogger(RDKitEventHandlerExtensionFactory.class);
 
+  /*
+   * Load native libraries here as this factory is retrieved first
+   * todo: what if libraries are not loaded?
+   */
   static {
     try {
       LibraryLoader.loadLibraries();
@@ -35,14 +57,14 @@ public class RDKitEventHandlerExtensionFactory extends KernelExtensionFactory<De
 
       @Override
       public void start() {
-        logger.debug("Starting canonical smiles trigger watcher");
+        logger.debug("Starting RDKit trigger watcher");
         handler = new RDKitEventHandler(dependencies.getGraphDatabaseService());
         dependencies.getGraphDatabaseService().registerTransactionEventHandler(handler);
       }
 
       @Override
       public void shutdown() {
-        logger.debug("Stopping canonical smiles trigger watcher");
+        logger.debug("Stopping RDKit trigger watcher");
         if (handler != null)
           dependencies.getGraphDatabaseService().unregisterTransactionEventHandler(handler);
       }
@@ -55,6 +77,6 @@ public class RDKitEventHandlerExtensionFactory extends KernelExtensionFactory<De
   }
 
   public RDKitEventHandlerExtensionFactory() {
-    super(ExtensionType.DATABASE, "canonicalSmilesEventHandler");
+    super(ExtensionType.DATABASE, "rdkitEventHandler");
   }
 }

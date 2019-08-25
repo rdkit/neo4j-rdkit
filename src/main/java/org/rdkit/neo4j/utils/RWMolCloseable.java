@@ -1,10 +1,28 @@
 package org.rdkit.neo4j.utils;
 
+/*-
+ * #%L
+ * RDKit-Neo4j
+ * %%
+ * Copyright (C) 2019 RDKit
+ * %%
+ * Copyright (C) 2019 Evgeny Sorokin
+ * @@ All Rights Reserved @@
+ * This file is part of the RDKit Neo4J integration.
+ * The contents are covered by the terms of the BSD license
+ * which is included in the file LICENSE, found at the root
+ * of the neo4j-rdkit source tree.
+ * #L%
+ */
+
 import java.io.Closeable;
 import org.RDKit.RWMol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Autocloseable wrapper for {@link RWMol} class
+ */
 public class RWMolCloseable extends RWMol implements Closeable {
   private static final Logger logger = LoggerFactory.getLogger(RWMolCloseable.class);
 

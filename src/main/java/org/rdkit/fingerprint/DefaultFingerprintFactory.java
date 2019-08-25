@@ -32,13 +32,27 @@
  */
 package org.rdkit.fingerprint;
 
+/*-
+ * #%L
+ * RDKit-Neo4j
+ * %%
+ * Copyright (C) 2019 RDKit
+ * %%
+ * Copyright (C) 2019 Evgeny Sorokin
+ * @@ All Rights Reserved @@
+ * This file is part of the RDKit Neo4J integration.
+ * The contents are covered by the terms of the BSD license
+ * which is included in the file LICENSE, found at the root
+ * of the neo4j-rdkit source tree.
+ * #L%
+ */
+
 import java.util.BitSet;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.val;
 import org.RDKit.ExplicitBitVect;
-import org.RDKit.RDKFuncs;
 import org.RDKit.ROMol;
 import org.RDKit.RWMol;
 import org.rdkit.neo4j.utils.RWMolCloseable;
