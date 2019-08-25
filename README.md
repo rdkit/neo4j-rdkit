@@ -3,8 +3,14 @@
 
 ***
 ## Abstract
-> The project will be focused on development of extension for neo4j graph database for querying knowledge graphs storing molecular and chemical information. That would be implemented on top of neo4j-java-driver.
+> Chemical and pharmaceutical R&D produce large amounts of data of completely different nature, such as chemical structures, recipe and process data, formulation data, and data from various application tests. Altogether these data rarely follow a schema. Consequently, relational data models and databases have frequetly disadvantages mapping these data appropriately. Here, chemical data frequently leads to rather abstract data models, which are difficult to develop, align, and maintain with the domain experts. Upon retrieval computationally expesive joins in not predetermined depths may cause issues.
+> Graph data models promise here advantages:
+>   • they can easily be understood by non IT experts from the research domains
+>   • due to their plasticity, they can easily be extended and refactored
+>   • graph databases such as neo4j are made for coping with arbitrary path lengths
+> Chemical data models usually require a database to be able to deal with chemical structures to be utilized for structure based queries to either identify records or as filtering criteria. 
 
+> The project will be focused on development of extension for neo4j graph database for querying knowledge graphs storing molecular and chemical information.
 > Task is to enable identification of entry points into the graph via exact/substructure/similarity searches (UC1). UC2 is closely related to UC1, but here the intention is to use chemical structures as limiting conditions in graph traversals originating from different entry points. Both use cases rely on the same integration of RDkit and Neo4j and will only differ in their CYPHER statements.
 
 __Mentors:__
@@ -27,6 +33,8 @@ mvn org.apache.maven.plugins:maven-install-plugin:2.3.1:install-file \
                          -Dpackaging=jar
   ```
 2) Generate .jar file with all dependencies with `mvn package`  
+3) Put generated .jar file into `plugins/` folder of your neo4j instance and start the server  
+4) By executing `CALL dbms.procedures()`, you are expected to see `org.rdkit.*` procedures  
 
 ## Extension functionality
 
@@ -47,36 +55,36 @@ mvn org.apache.maven.plugins:maven-install-plugin:2.3.1:install-file \
 2) Feed Neo4j DB  
 3) then `CALL org.rdkit.search.createIndex(['Structure', 'Chemical'])`  
 
-> Automated computation of additional properties (fp, etc.) and triggered index
-> Fp index automatically updated when new :Structure:Chemical records arrive
+> Automated computation of additional properties (fp, etc.) and triggered index  
+> Fp index automatically updated when new :Structure:Chemical records arrive  
 
 ##### way C (the most suitable)
 1) Plugin present
 2) `CALL org.rdkit.search.createIndex(['Structure', 'Chemical'])`
 3) Then feed Knime
 
-> Automated computation of additional properties (fp, etc.) and index
-> Empty Neo4j instance is prepared in advance
-> Whenever a new :Structure:Chemical entries comes, property calculation and fp index update are automatically conducted
+> Automated computation of additional properties (fp, etc.) and index  
+> Empty Neo4j instance is prepared in advance  
+> Whenever a new :Structure:Chemical entries comes, property calculation and fp index update are automatically conducted  
 
 #### Execution of exact search 
 _It is possible to check index existence with `CALL db.indexes`_
 
-0) It would strongly affect performance of exact search if `createIndex` procedure was called earlier (it creates a property index).
-1) `CALL org.rdkit.search.exact.smiles(['Chemical', 'Structure'], 'CC(=O)Nc1nnc(S(N)(=O)=O)s1')`
-2) `CALL org.rdkit.search.exact.mol(['Chemical', 'Structure'], '<mdlmol>')` (refer to tests for examples)
+0) It would strongly affect performance of exact search if `createIndex` procedure was called earlier (it creates a property index).  
+1) `CALL org.rdkit.search.exact.smiles(['Chemical', 'Structure'], 'CC(=O)Nc1nnc(S(N)(=O)=O)s1')`  
+2) `CALL org.rdkit.search.exact.mol(['Chemical', 'Structure'], '<mdlmol>')` (refer to tests for examples)  
 
 #### Execution of substructure search
 
-1) Make sure the fulltext index exists with `CALL db.indexes`, `fp_index` must exist. (It should be created with `createIndex` procedure)  
-2) `CALL org.rdkit.search.substructure.smiles(['Chemical', 'Structure'], 'CC(=O)Nc1nnc(S(N)(=O)=O)s1')`
-3) `CALL org.rdkit.search.substructure.mol(['Chemical', 'Structure'], '<mol value>')`
+1) Make sure the fulltext index exists with `CALL db.indexes`, `fp_index` must exist. (It should be created with `createIndex` procedure)    
+2) `CALL org.rdkit.search.substructure.smiles(['Chemical', 'Structure'], 'CC(=O)Nc1nnc(S(N)(=O)=O)s1')`  
+3) `CALL org.rdkit.search.substructure.mol(['Chemical', 'Structure'], '<mol value>')`  
 
 #### Execution of similarity search (currently slow)
 
-1) `CALL org.rdkit.fingerprint.create(['Chemical, 'Structure'], 'torsion_fp', 'torsion')` - new property `morgan_fp` is created
-2) `CALL org.rdkit.fingerprint.search.smiles(['Chemical', 'Structure'], 'CC(=O)Nc1nnc(S(N)(=O)=O)s1', 'torsion', 'torsion_fp', 0.4)`
-3) `CALL org.rdkit.fingerprint.search.smiles(['Chemical', 'Structure'], 'CC(=O)Nc1nnc(S(N)(=O)=O)s1', 'pattern', 'fp', 0.7)`
+1) `CALL org.rdkit.fingerprint.create(['Chemical, 'Structure'], 'torsion_fp', 'torsion')` - new property `torsion_fp` is created  
+2) `CALL org.rdkit.fingerprint.search.smiles(['Chemical', 'Structure'], 'CC(=O)Nc1nnc(S(N)(=O)=O)s1', 'torsion', 'torsion_fp', 0.4)`  
+3) `CALL org.rdkit.fingerprint.search.smiles(['Chemical', 'Structure'], 'CC(=O)Nc1nnc(S(N)(=O)=O)s1', 'pattern', 'fp', 0.7)`  
 
 #### Usage of `org.rdkit.search.substructure.is` function in complex queries
 
@@ -149,6 +157,27 @@ Additional reserved property names:
 10) User-defined function `org.rdkit.search.substructure.is(<node object>, '<smiles_string>')`
     * Return boolean answer: does specified `node` object have substructure match provided by `smiles_string`.
 
-## Useful links:
-- https://github.com/neo4j/neo4j  
-- https://github.com/rdkit/org.rdkit.lucene  
+---
+
+# Results overview 
+
+## What was achieved
+
+1) Implementation of exact search (100%)  
+2) Implementation of substructure search (90%, several minor bugs)  
+3) Implementation of condition based graph traversal - usage of function calls in complex queries (100%)
+4) Implementation of similarity search (70%, major performance issues)    
+5) Coverage with unit tests (80%, not all invalid arguments for procedures are tested)
+
+## What remains to be done
+
+<!-- 0) Query features in substructure search (blocking of position in molecule from further substitution; using atom lists on certain positions in molecule) -->
+1) Speed up batch tasks by utilizing several threads (currently waiting for resolving issue on native level)  
+2) Speed up the `similarity search` procedures  
+3) Solve minor bugs (todos) like unclosed `query` object during SSS  
+
+## What problems were encountered
+
+1) Compatability of native libraries for win64 (beginning of the development)  
+2) Lazy streams evaluation and not resolved issue with `query` object during SSS  
+3) Parallelization of stream evaluations    

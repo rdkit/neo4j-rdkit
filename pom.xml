@@ -161,10 +161,10 @@
           </execution>
         </executions>
       </plugin>
-      <plugin> <!-- TODO: requires maven >=3.5.4 -->
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>license-maven-plugin</artifactId>
-        <version>2.0.0</version>
+        <version>1.20</version>
         <configuration>
           <organizationName>RDKit</organizationName>
           <inceptionYear>2019</inceptionYear>
