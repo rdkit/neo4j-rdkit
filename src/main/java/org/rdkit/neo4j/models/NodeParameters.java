@@ -15,10 +15,14 @@ package org.rdkit.neo4j.models;
  * #L%
  */
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+
+/**
+ * Class stores built parameters from RDKit function call
+ * Used as an intermediate storage of parameters, later those are saved in a node object as properties
+ */
 
 @Data
 @ToString

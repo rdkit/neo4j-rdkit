@@ -20,6 +20,12 @@ import java.util.StringJoiner;
 import lombok.Getter;
 import lombok.ToString;
 
+/**
+ * Class stores a lucene-like object
+ * {@link #luceneQuery}: A fingerprint object is transformed into the string of numbers separated by `delimiter`
+ * {@link #positiveBits}: Amount of set bits in a fingerprint (stored in order to improve evaluation performance)
+ * {@link #delimiter}: Delimiter between numbers in `luceneQuery`
+ */
 @ToString
 public class LuceneQuery {
   @Getter

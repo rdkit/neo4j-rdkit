@@ -19,6 +19,9 @@ import java.util.Arrays;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Enum with property names for the node object
+ */
 @RequiredArgsConstructor
 public enum NodeFields {
 
@@ -29,7 +32,7 @@ public enum NodeFields {
   Formula("formula"),
   MolecularWeight("molecular_weight"),
   FingerprintEncoded("fp"),
-  FingerprintOnes("fp_ones");
+  FingerprintOnes("fp_ones"); // name is used for compatability with `similarity` searches
 
   public static NodeFields from(String val) {
     return Arrays.stream(NodeFields.values()).filter(nf -> nf.value.equals(val)).findFirst().orElseThrow(IllegalArgumentException::new);

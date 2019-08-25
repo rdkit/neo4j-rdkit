@@ -19,12 +19,16 @@ import java.util.Arrays;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Enum with necessary constants in the project
+ * Node, which can be utilized for most of the procedures must obtain two labels: Chemical & Structure
+ */
 @RequiredArgsConstructor
 public enum Constants {
 
   Chemical("Chemical"),
   Structure("Structure"),
-  IndexName("fp_index");
+  IndexName("fp_index"); // the name is `fp_index` in order to support compatability with `similarity` search on `fp` property
 
   public static Constants from(String val) {
     return Arrays.stream(Constants.values()).filter(nf -> nf.value.equals(val)).findFirst().orElseThrow(IllegalArgumentException::new);

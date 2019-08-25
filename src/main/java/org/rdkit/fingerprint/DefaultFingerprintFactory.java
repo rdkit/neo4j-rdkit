@@ -53,7 +53,6 @@ import lombok.Data;
 import lombok.NonNull;
 import lombok.val;
 import org.RDKit.ExplicitBitVect;
-import org.RDKit.RDKFuncs;
 import org.RDKit.ROMol;
 import org.RDKit.RWMol;
 import org.rdkit.neo4j.utils.RWMolCloseable;

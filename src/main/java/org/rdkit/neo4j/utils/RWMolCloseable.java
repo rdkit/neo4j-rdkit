@@ -20,6 +20,9 @@ import org.RDKit.RWMol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Autocloseable wrapper for {@link RWMol} class
+ */
 public class RWMolCloseable extends RWMol implements Closeable {
   private static final Logger logger = LoggerFactory.getLogger(RWMolCloseable.class);
 
