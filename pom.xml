@@ -7,7 +7,7 @@
   <groupId>org.neo4j.rdkit</groupId>
   <artifactId>rdkit-index</artifactId>
   <version>0.0.7</version>
-  <name>RDKit-Neo4j</name>
+  <name>RDKit-Neo4j plugin</name>
   <packaging>jar</packaging>
 
 
@@ -21,8 +21,9 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <license.licenseName>bsd_2</license.licenseName>
-    <license.descriptionTemplate>${project.baseUri}src/main/resources/license/license-header.ftl</license.descriptionTemplate> <!-- todo: does not work -->
+    <license.licenseName>evgerher_license</license.licenseName>
+    <license.licenseResolver>${project.baseUri}src/main/license</license.licenseResolver> <!-- todo: does not work -->
+    <!--<license.descriptionTemplate>${project.baseUri}src/main/resources/license/license-header.txt</license.descriptionTemplate> &lt;!&ndash; todo: does not work &ndash;&gt;-->
   </properties>
 
   <dependencyManagement>
@@ -167,6 +168,13 @@
         <configuration>
           <organizationName>RDKit</organizationName>
           <inceptionYear>2019</inceptionYear>
+          <!--<includes>-->
+            <!--<include>*.java</include>-->
+          <!--</includes>-->
+          <excludes>
+            <exclude>*.txt</exclude>
+            <exclude>*.properties</exclude>
+          </excludes>
         </configuration>
         <executions>
           <execution>
