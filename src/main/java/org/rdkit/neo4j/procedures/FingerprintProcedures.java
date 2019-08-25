@@ -72,7 +72,7 @@ public class FingerprintProcedures extends BaseProcedure {
 
     FingerprintType fingerprintType = FingerprintType.parseString(fpType);
     if (fingerprintType == null) {
-      throw new IllegalStateException(String.format("Fingerprint type=%s not found", fpType)); // todo: logically there should be thrown IllegalArgumentException...
+      throw new IllegalStateException(String.format("Fingerprint type=%s not found", fpType));
     }
     // END checking parameters
 
@@ -84,7 +84,6 @@ public class FingerprintProcedures extends BaseProcedure {
       final String smiles = (String) node.getProperty(canonicalSmilesProperty);
       try {
         final LuceneQuery fp = converter.getLuceneFingerprint(smiles);
-        // todo: save fp_type?
         node.setProperty(getPropertyOnes(propertyName), fp.getPositiveBits());
         node.setProperty(getPropertyType(propertyName), fingerprintType.toString());
         node.setProperty(propertyName, fp.getLuceneQuery());
@@ -93,7 +92,7 @@ public class FingerprintProcedures extends BaseProcedure {
       }
     });
 
-    final String propertyIndexName = getIndexName(propertyName); // todo: how should I name it each time unique, may be use property as a name for this index ?
+    final String propertyIndexName = getIndexName(propertyName);
     createFullTextIndex(propertyIndexName, labelNames, Collections.singletonList(propertyName));
 
   }
