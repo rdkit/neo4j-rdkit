@@ -70,30 +70,4 @@ public class EmbeddedTest extends BaseTest {
       tx.success();
     }
   }
-
-  @Test
-  public void loadIndexTest() {
-    val result = graphDb.execute("CALL db.index.fulltext.listAvailableAnalyzers() "
-        + "YIELD analyzer "
-        + "WHERE analyzer = \"rdkit\" RETURN analyzer");
-
-    Map<String, Object> analyzersList = GraphUtils.getFirstRow(result);
-    assertEquals("rdkit", analyzersList.get("analyzer"));
-    logger.info("Analyzer found");
-
-    String chemical = "create (:Chemical:Structure {mol_id: \"CHEMBL77517\", smiles: \"NS(=O)(=O)c1ccc(S(=O)(=O)Nc2cccc3c(Cl)c[nH]c32)cc1\"})";
-    graphDb.execute(chemical);
-
-    String createIndex = "CALL db.index.fulltext.createNodeIndex(\"rdkit\", [\"Chemical\", \"Structure\"], [\"smiles\"], {analyzer: \"rdkit\"})";
-    graphDb.execute(createIndex);
-
-    val indexExists = graphDb.execute("CALL db.indexes()");
-
-    Map<String, Object> columns = GraphUtils.getFirstRow(indexExists);
-    assertEquals("rdkit", columns.get("indexName"));
-    assertEquals("node_fulltext", columns.get("type"));
-    logger.info("Node Index created");
-
-    graphDb.execute("CALL db.index.fulltext.drop('rdkit')"); // otherwise we get an exception on shutdown
-  }
 }

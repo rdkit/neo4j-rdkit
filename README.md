@@ -3,12 +3,14 @@
 
 ***
 ## Abstract
-> Chemical and pharmaceutical R&D produce large amounts of data of completely different nature, such as chemical structures, recipe and process data, formulation data, and data from various application tests. Altogether these data rarely follow a schema. Consequently, relational data models and databases have frequetly disadvantages mapping these data appropriately. Here, chemical data frequently leads to rather abstract data models, which are difficult to develop, align, and maintain with the domain experts. Upon retrieval computationally expesive joins in not predetermined depths may cause issues.
-> Graph data models promise here advantages:
->   • they can easily be understood by non IT experts from the research domains
->   • due to their plasticity, they can easily be extended and refactored
->   • graph databases such as neo4j are made for coping with arbitrary path lengths
-> Chemical data models usually require a database to be able to deal with chemical structures to be utilized for structure based queries to either identify records or as filtering criteria. 
+> Chemical and pharmaceutical R&D produce large amounts of data of completely different nature, such as chemical structures, recipe and process data, formulation data, and data from various application tests. Altogether these data rarely follow a schema. Consequently, relational data models and databases have frequetly disadvantages mapping these data appropriately. Here, chemical data frequently leads to rather abstract data models, which are difficult to develop, align, and maintain with the domain experts. Upon retrieval computationally expesive joins in not predetermined depths may cause issues.  
+
+> Graph data models promise here advantages:  
+>  - they can easily be understood by non IT experts from the research domains  
+>  - due to their plasticity, they can easily be extended and refactored  
+>  - graph databases such as neo4j are made for coping with arbitrary path lengths  
+
+> Chemical data models usually require a database to be able to deal with chemical structures to be utilized for structure based queries to either identify records or as filtering criteria.   
 
 > The project will be focused on development of extension for neo4j graph database for querying knowledge graphs storing molecular and chemical information.
 > Task is to enable identification of entry points into the graph via exact/substructure/similarity searches (UC1). UC2 is closely related to UC1, but here the intention is to use chemical structures as limiting conditions in graph traversals originating from different entry points. Both use cases rely on the same integration of RDkit and Neo4j and will only differ in their CYPHER statements.
