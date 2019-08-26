@@ -1,5 +1,20 @@
 package org.rdkit.neo4j.bin;
 
+/*-
+ * #%L
+ * RDKit-Neo4j
+ * %%
+ * Copyright (C) 2019 RDKit
+ * %%
+ * Copyright (C) 2019 Evgeny Sorokin
+ * @@ All Rights Reserved @@
+ * This file is part of the RDKit Neo4J integration.
+ * The contents are covered by the terms of the BSD license
+ * which is included in the file LICENSE, found at the root
+ * of the neo4j-rdkit source tree.
+ * #L%
+ */
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,7 +86,7 @@ public class LibraryLoader {
     final List<String> missingLibraries = findLibraries(libraryNames);
 
     if (missingLibraries.size() > 0) {
-      logger.info("Missing libraries: {}", missingLibraries);
+      logger.debug("Missing libraries in PATH: {}", missingLibraries);
       LibraryMover.resolveMissingLibraries(missingLibraries, platform);
     }
 
@@ -166,7 +181,7 @@ public class LibraryLoader {
     // todo: what about optional path to load files from?
     for (String lib : libraries) {
       System.loadLibrary(lib);
-      logger.info("Successfully loaded library={}", lib);
+      logger.debug("Successfully loaded library={}", lib);
     }
   }
 

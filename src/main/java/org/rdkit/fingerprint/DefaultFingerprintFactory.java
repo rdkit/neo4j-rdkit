@@ -32,13 +32,27 @@
  */
 package org.rdkit.fingerprint;
 
+/*-
+ * #%L
+ * RDKit-Neo4j
+ * %%
+ * Copyright (C) 2019 RDKit
+ * %%
+ * Copyright (C) 2019 Evgeny Sorokin
+ * @@ All Rights Reserved @@
+ * This file is part of the RDKit Neo4J integration.
+ * The contents are covered by the terms of the BSD license
+ * which is included in the file LICENSE, found at the root
+ * of the neo4j-rdkit source tree.
+ * #L%
+ */
+
 import java.util.BitSet;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.val;
 import org.RDKit.ExplicitBitVect;
-import org.RDKit.RDKFuncs;
 import org.RDKit.ROMol;
 import org.RDKit.RWMol;
 import org.rdkit.neo4j.utils.RWMolCloseable;
@@ -126,7 +140,7 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
    * @param mol already opened RWMol object
    * @return Fingerprint as BitSet.
    */
-  public BitSet createQueryFingerprint(final RWMol mol) {
+  public BitSet createQueryFingerprint(final ROMol mol) {
     return createFingerprint(mol, settingsQuery);
   }
 
@@ -136,7 +150,7 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
    * @param mol already opened RWMol object
    * @return Fingerprint as BitSet.
    */
-  public BitSet createStructureFingerprint(final RWMol mol) {
+  public BitSet createStructureFingerprint(final ROMol mol) {
     return createFingerprint(mol, settingsStructure);
   }
 
@@ -170,7 +184,7 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
    * @param settings to build fingerprint from
    * @return BitSet from rwmol (fingerprint of `settings` type)
    */
-  private BitSet createFingerprint(final RWMol mol, final FingerprintSettings settings) {
+  private BitSet createFingerprint(final ROMol mol, final FingerprintSettings settings) {
     mol.updatePropertyCache();
 
     // Calculate fingerprint

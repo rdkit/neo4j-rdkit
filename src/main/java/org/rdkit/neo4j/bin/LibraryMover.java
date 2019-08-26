@@ -1,5 +1,20 @@
 package org.rdkit.neo4j.bin;
 
+/*-
+ * #%L
+ * RDKit-Neo4j
+ * %%
+ * Copyright (C) 2019 RDKit
+ * %%
+ * Copyright (C) 2019 Evgeny Sorokin
+ * @@ All Rights Reserved @@
+ * This file is part of the RDKit Neo4J integration.
+ * The contents are covered by the terms of the BSD license
+ * which is included in the file LICENSE, found at the root
+ * of the neo4j-rdkit source tree.
+ * #L%
+ */
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -26,6 +41,10 @@ import lombok.val;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Class provides functionality for moving native libraries from .jar and local folder into temporary folder (defined by OS).
+ * In order to enable loading files from temp folder, extends the java.library.path and forces jvm to reload it.
+ */
 class LibraryMover {
   private static final Logger logger = LoggerFactory.getLogger(LibraryMover.class);
 
@@ -46,7 +65,7 @@ class LibraryMover {
     }
 
     val tempFolderLibs = LibraryLoader.getLibrariesInFolder(temporaryDir.getAbsolutePath(), missingLibraries);
-    logger.warn("Libraries present in temp folder: {}", tempFolderLibs);
+    logger.debug("Libraries present in temp folder: {}", tempFolderLibs);
     missingLibraries = missingLibraries.stream()
         .filter(x -> !tempFolderLibs.contains(x))
         .collect(Collectors.toList());
@@ -56,7 +75,7 @@ class LibraryMover {
     }
   }
 
-  static void moveMissingLibraries(List<String> missingLibraries, String fromFolder, File temporaryDir) throws LoaderException {
+  private static void moveMissingLibraries(List<String> missingLibraries, String fromFolder, File temporaryDir) throws LoaderException {
     final File jarFile = new File(LibraryLoader.class.getProtectionDomain().getCodeSource().getLocation().getPath());
     final Map<String, InputStream> libStreams;
 
@@ -135,8 +154,7 @@ class LibraryMover {
    * @return map of Filenames & InputStreams
    * @throws IOException if jarFile was specified wrong
    */
-  private static Map<String,InputStream> getJarStreams(JarFile jar,
-      List<String> missingLibraries, String folder) throws IOException {
+  private static Map<String,InputStream> getJarStreams(JarFile jar, List<String> missingLibraries, String folder) throws IOException {
     TreeMap<String, InputStream> jarStreams = new TreeMap<>();
     Set<JarEntry> entriesSet = new HashSet<>();
 
@@ -175,8 +193,7 @@ class LibraryMover {
    * @param folder - folder with native libraries
    * @return map of Filenames & InputStreams
    */
-  private static Map<String,InputStream> getIdeStreams(List<String> missingLibraries,
-      String folder) {
+  private static Map<String,InputStream> getIdeStreams(List<String> missingLibraries, String folder) {
     Map<String, InputStream> ideStreams = new TreeMap<>();
     for (String libraryName: missingLibraries) {
       final String path = String.format("%s/%s", folder, libraryName);
@@ -223,8 +240,7 @@ class LibraryMover {
    * @param pathToAdd the path to add
    * @throws Exception if any
    */
-  private static void addLibraryPath(String pathToAdd)
-      throws NoSuchFieldException, IllegalAccessException {
+  private static void addLibraryPath(String pathToAdd) throws NoSuchFieldException, IllegalAccessException {
     final Field usrPathsField = ClassLoader.class.getDeclaredField("usr_paths");
     usrPathsField.setAccessible(true);
 

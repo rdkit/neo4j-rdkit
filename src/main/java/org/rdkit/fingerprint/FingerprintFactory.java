@@ -32,8 +32,23 @@
  */
 package org.rdkit.fingerprint;
 
+/*-
+ * #%L
+ * RDKit-Neo4j
+ * %%
+ * Copyright (C) 2019 RDKit
+ * %%
+ * Copyright (C) 2019 Evgeny Sorokin
+ * @@ All Rights Reserved @@
+ * This file is part of the RDKit Neo4J integration.
+ * The contents are covered by the terms of the BSD license
+ * which is included in the file LICENSE, found at the root
+ * of the neo4j-rdkit source tree.
+ * #L%
+ */
+
 import java.util.BitSet;
-import org.RDKit.RWMol;
+import org.RDKit.ROMol;
 
 /**
  * A fingerprint factory is an object that knows how to produce fingerprints for SMILES.
@@ -64,18 +79,18 @@ public interface FingerprintFactory {
   public BitSet createQueryFingerprint(final String strSmiles);
 
   /**
-   * Method for already opened RWMol to build fingerprint from Structure settings.
+   * Method for already opened ROMol to build fingerprint from Structure settings.
    *
-   * @param mol already opened RWMol object
+   * @param mol already opened ROMol object
    * @return Fingerprint as BitSet.
    */
-  public BitSet createStructureFingerprint(final RWMol mol);
+  public BitSet createStructureFingerprint(final ROMol mol);
 
   /**
-   * Method for already opened RWMol to build fingerprint from Query settings.
+   * Method for already opened ROMol to build fingerprint from Query settings.
    *
-   * @param mol already opened RWMol object
+   * @param mol already opened ROMol object
    * @return Fingerprint as BitSet.
    */
-  public BitSet createQueryFingerprint(final RWMol mol);
+  public BitSet createQueryFingerprint(final ROMol mol);
 }
