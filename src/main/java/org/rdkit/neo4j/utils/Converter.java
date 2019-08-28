@@ -16,6 +16,10 @@ package org.rdkit.neo4j.utils;
  */
 
 import java.util.BitSet;
+import lombok.val;
+import lombok.var;
+import org.RDKit.MolDraw2DSVG;
+import org.RDKit.MolSanitizeException;
 import org.RDKit.RDKFuncs;
 import org.RDKit.ROMol;
 import org.RDKit.RWMol;
@@ -59,6 +63,30 @@ public class Converter {
 
     FingerprintFactory factory = new DefaultFingerprintFactory(settings);
     return new Converter(factory, fpType);
+  }
+
+  public static String molToSVG(final RWMolCloseable molOrigin) {
+    val molCopy = RWMolCloseable.from(molOrigin);
+
+    RWMol mol;
+
+    try {
+      RDKFuncs.prepareMolForDrawing(molOrigin);
+      mol = molOrigin;
+    } catch(final MolSanitizeException ex) {
+      // skip kekulization. If this still fails we throw up our hands
+      RDKFuncs.prepareMolForDrawing(molCopy,false);
+      mol = molCopy;
+    }
+
+    final MolDraw2DSVG molDrawing = new MolDraw2DSVG(300, 300);
+    molDrawing.drawMolecule(mol);
+    molDrawing.finishDrawing();
+
+    // the svg namespace causes problems with the javascript table (github #29)
+    final String svg = molDrawing.getDrawingText().replaceAll("svg:", "").replaceAll("xmlns:svg=", "xmlns=");
+    logger.trace("Created svg={}", svg);
+    return svg;
   }
 
   private static final Logger logger = LoggerFactory.getLogger(Converter.class);
