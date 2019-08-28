@@ -6,7 +6,7 @@
 
   <groupId>org.neo4j.rdkit</groupId>
   <artifactId>rdkit-index</artifactId>
-  <version>0.0.7</version>
+  <version>0.0.8</version>
   <name>RDKit-Neo4j plugin</name>
   <packaging>jar</packaging>
 
