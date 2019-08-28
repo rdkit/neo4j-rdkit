@@ -99,6 +99,15 @@ MATCH (reaction)-[:HAS_INGREDIENT]->(c:Compound) where org.rdkit.search.substruc
 RETURN path
 ```
 
+#### Usage of `org.rdkit.utils.svg` function
+
+```$cypher
+CALL org.rdkit.search.exact.smiles(['Chemical', 'Structure'], 'CCCC(C(=O)Nc1ccc(S(N)(=O)=O)cc1)C(C)(C)C') 
+YIELD canonical_smiles 
+RETURN org.rdkit.utils.svg(canonical_smiles) as svg
+```
+
+
 ---
 ### Node labels: [`Chemical`, `Structure`] - strict rule (!)
 
@@ -158,6 +167,8 @@ Additional reserved property names:
     * _Current implementation uses single thread and on a huge database may take a lot of time (>3 minutes)_
 10) User-defined function `org.rdkit.search.substructure.is(<node object>, '<smiles_string>')`
     * Return boolean answer: does specified `node` object have substructure match provided by `smiles_string`.
+11) User-defined function `org.rdkit.utils.svg('<smiles_string>')`  
+    * Return svg image in text format from smiles  
 
 ---
 

@@ -20,7 +20,9 @@ import static org.rdkit.neo4j.utils.Converter.DELIMITER_AND;
 import static org.rdkit.neo4j.utils.Converter.DELIMITER_OR;
 import static org.rdkit.neo4j.utils.Converter.DELIMITER_WHITESPACE;
 
+import lombok.val;
 import org.RDKit.RWMol;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -342,5 +344,16 @@ public class ConverterTest {
 
     RWMol mol = RWMol.MolFromSmarts(expectedSmiles, 0, false);
     assertNull("RWMol from smiles = null", mol);
+  }
+
+  @Test
+  public void createSVGTest() {
+    final String smiles = "O=S(=O)(Cc1ccccc1)CS(=O)(=O)Cc1ccccc1";
+    try (val mol = RWMolCloseable.from(RWMol.MolFromSmiles(smiles))) {
+      final String svg = Converter.molToSVG(mol);
+      Assert.assertTrue(svg.contains("<svg"));
+      Assert.assertTrue(svg.contains("</svg>"));
+//      logger.info(svg);
+    }
   }
 }
