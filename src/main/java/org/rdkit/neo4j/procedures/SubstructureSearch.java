@@ -108,17 +108,7 @@ public class SubstructureSearch extends BaseProcedure {
     log.info("Substructure search smiles started :: label=%s, mdlmol=%s", labelNames, mol);
     checkIndexExistence(labelNames, Constants.IndexName.getValue()); // if index exists, then the values are
 
-
-    ROMol query;
-    try {
-      // todo: UPDATED HERE (removeHs)
-      query = RWMol.MolFromMolBlock(mol, true,false); // todo: it is unknown when the query object is freed
-      if (query == null)
-        throw new IllegalArgumentException("Unable to convert specified mol");
-      query = query.mergeQueryHs();
-    } catch (Exception e) {
-      throw new IllegalArgumentException("Unable to convert specified mol");
-    }
+    ROMol query = createBlockedROMolFromMol(mol);
     return findSSCandidates(query);
   }
 
@@ -130,9 +120,9 @@ public class SubstructureSearch extends BaseProcedure {
    * @param smiles - to be converted into chemical structure and compared with
    * @return existence substructure match
    */
-  @UserFunction(name = "org.rdkit.search.substructure.is")
+  @UserFunction(name = "org.rdkit.search.substructure.is.smiles")
   @Description("RDKit function checks substructure match between two chemical structures (provided node and specified smiles)")
-  public boolean isSubstructure(@Name("candidate") Node candidate, @Name("substructure_smiles") String smiles) {
+  public boolean isSubstructureSmiles(@Name("candidate") Node candidate, @Name("substructure_smiles") String smiles) {
     final String luri = (String) candidate.getProperty("luri", "<undefined>");
     log.info("isSubstructure call based on candidate_luri=%s, substructure_smiles=%s", luri, smiles);
 
@@ -143,6 +133,24 @@ public class SubstructureSearch extends BaseProcedure {
         candidateRWMol.updatePropertyCache(false);
         return candidateRWMol.hasSubstructMatch(query);
       }
+    }
+  }
+
+  @UserFunction(name = "org.rdkit.search.substructure.is.mol")
+  @Description("RDKit function checks substructure match between two chemical structures (provided node and specified mol block)")
+  public boolean isSubstructureMol(@Name("candidate") Node candidate, @Name("substructure_mol") String mol) {
+    final String luri = (String) candidate.getProperty("luri", "<undefined>");
+    log.info("isSubstructure call based on candidate_luri=%s, substructure_mol=%s", luri, mol);
+
+    ROMol query = createBlockedROMolFromMol(mol);
+    query.updatePropertyCache(false);
+
+    final String candidateSmiles = (String) candidate.getProperty("canonical_smiles");
+    try (val candidateRWMol = RWMolCloseable.from(RWMol.MolFromSmiles(candidateSmiles, 0, false))) {
+      candidateRWMol.updatePropertyCache(false);
+      return candidateRWMol.hasSubstructMatch(query);
+    } finally {
+      query.delete();
     }
   }
 
@@ -196,5 +204,23 @@ public class SubstructureSearch extends BaseProcedure {
 //        .parallel()
         .map(map -> new NodeSSSResult(map, luceneQuery.getPositiveBits()))
         .sorted(Comparator.comparingLong(n -> n.score));
+  }
+
+  /**
+   * Method creates `blocking` rwmol from mol block
+   * todo: currently MANUAL memory free!
+   * @param mol to create ROMol from
+   * @return ROMol with blocked H's
+   */
+  private ROMol createBlockedROMolFromMol(final String mol) {
+    ROMol query;
+    try {
+      query = RWMol.MolFromMolBlock(mol, true,false); // todo: it is unknown when the query object is freed
+      if (query == null)
+        throw new IllegalArgumentException("Unable to convert specified mol");
+      return query.mergeQueryHs();
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Unable to convert specified mol");
+    }
   }
 }
