@@ -88,7 +88,7 @@ _It is possible to check index existence with `CALL db.indexes`_
 2) `CALL org.rdkit.fingerprint.search.smiles(['Chemical', 'Structure'], 'CC(=O)Nc1nnc(S(N)(=O)=O)s1', 'torsion', 'torsion_fp', 0.4)`  
 3) `CALL org.rdkit.fingerprint.search.smiles(['Chemical', 'Structure'], 'CC(=O)Nc1nnc(S(N)(=O)=O)s1', 'pattern', 'fp', 0.7)`  
 
-#### Usage of `org.rdkit.search.substructure.is` function in complex queries
+#### Usage of `org.rdkit.search.substructure.is.smiles` function in complex queries
 
 ```$cypher
 CALL org.rdkit.search.exact.smiles(['Chemical', 'Structure'], 'CC(C)(C)OC(=O)N1CCC(COc2ccc(OCc3ccccc3)cc2)CC1') YIELD luri
@@ -98,6 +98,40 @@ WITH nodes(path)[-1] as reaction, path, (length(path)+1)/2 as depths
 MATCH (reaction)-[:HAS_INGREDIENT]->(c:Compound) where org.rdkit.search.substructure.is(c, 'CC(C)C(O)=O')
 RETURN path
 ```
+
+```$cypher
+CALL org.rdkit.search.exact.smiles(['Chemical', 'Structure'], 'CC(C)(C)OC(=O)N1CCC(COc2ccc(OCc3ccccc3)cc2)CC1') YIELD luri
+MATCH (finalProduct:Entity{luri:luri})
+CALL apoc.path.expand(finalProduct, "<HAS_PRODUCT,>HAS_INGREDIENT", ">Reaction", 0, 4) yield path
+WITH nodes(path)[-1] AS reaction, path, (length(path)+1)/2 AS depths
+MATCH (reaction)-[:HAS_INGREDIENT]->(c:Compound)
+WITH path, COLLECT(c) as compounds
+WHERE ANY( x IN compounds where org.rdkit.search.substructure.is.mol(x, '
+  Ketcher  9 71921 82D 1   1.00000     0.00000     0
+  6  5  0     0  0            999 V2000
+  8.9170  -12.3000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+  9.7830  -11.8000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+  10.6490  -12.3000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+  9.7830  -10.8000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+  10.6490  -10.3000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+  8.9170  -10.3000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0     0  0
+  2  3  1  0     0  0
+  2  4  1  0     0  0
+  4  5  1  0     0  0
+  4  6  2  0     0  0
+  M  END'))
+RETURN path
+```
+
+#### Usage of `org.rdkit.utils.svg` function
+
+```$cypher
+CALL org.rdkit.search.exact.smiles(['Chemical', 'Structure'], 'CCCC(C(=O)Nc1ccc(S(N)(=O)=O)cc1)C(C)(C)C') 
+YIELD canonical_smiles 
+RETURN org.rdkit.utils.svg(canonical_smiles) as svg
+```
+
 
 ---
 ### Node labels: [`Chemical`, `Structure`] - strict rule (!)
@@ -156,10 +190,15 @@ Additional reserved property names:
     * Smiles value is converted into specfied _fingerprint type_ (if possible) and compared with nodes which have _property_ (`'fp'` in this case)  
     * Threshold is a lower bound for the score value  
     * _Current implementation uses single thread and on a huge database may take a lot of time (>3 minutes)_
-10) User-defined function `org.rdkit.search.substructure.is(<node object>, '<smiles_string>')`
-    * Return boolean answer: does specified `node` object have substructure match provided by `smiles_string`.
+10) User-defined functions 
+    * `org.rdkit.search.substructure.is.smiles(<node object>, '<smiles_string>')`
+    * `org.rdkit.search.substructure.is.mol(<node object>, '<mol_string>')`
+    * Return boolean answer: does specified `node` object have substructure match provided by `smiles_string` or `mol_string`.
+11) User-defined function `org.rdkit.utils.svg('<smiles_string>')`  
+    * Return svg image in text format from smiles  
 
 ---
+
 # Results overview 
 
 ## What was achieved
@@ -172,9 +211,16 @@ Additional reserved property names:
 
 ## What remains to be done
 
+<!-- 0) Query features in substructure search (blocking of position in molecule from further substitution; using atom lists on certain positions in molecule) -->
 1) Speed up batch tasks by utilizing several threads (currently waiting for resolving issue on native level)  
 2) Speed up the `similarity search` procedures  
 3) Solve minor bugs (todos) like unclosed `query` object during SSS  
+
+## What problems were encountered
+
+1) Compatability of native libraries for win64 (beginning of the development)  
+2) Lazy streams evaluation and not resolved issue with `query` object during SSS  
+3) Parallelization of stream evaluations    
 
 ## Java requirements
 

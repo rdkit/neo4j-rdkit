@@ -161,7 +161,7 @@ public class SubstructureSearchTest extends BaseTest {
   }
 
   @Test
-  public void callIsSubstructureTest() throws Throwable {
+  public void callIsSmilesSubstructureTest() throws Throwable {
     final String querySmiles = "c1ccccc1";
     final String[] candidateSmiles = new String[]{
         "OB(O)c1ccccc1",
@@ -177,8 +177,56 @@ public class SubstructureSearchTest extends BaseTest {
 
     for (int i = 0; i < candidateSmiles.length; i++) {
       val result = graphDb.execute(
-          "MATCH (n:Chemical:Structure) WHERE n.smiles = $candidate_smiles RETURN n.smiles as smiles, org.rdkit.search.substructure.is(n, $query) as bool",
+          "MATCH (n:Chemical:Structure) WHERE n.smiles = $candidate_smiles RETURN n.smiles as smiles, org.rdkit.search.substructure.is.smiles(n, $query) as bool",
           MapUtil.map("query", querySmiles, "candidate_smiles", candidateSmiles[i]));
+
+      val map = result.next();
+      Assert.assertEquals(substructMatches[i], map.get("bool"));
+      Assert.assertEquals(candidateSmiles[i], map.get("smiles"));
+    }
+
+    graphDb.execute("CALL org.rdkit.search.dropIndex()"); // otherwise we get an exception on shutdown
+  }
+
+  @Test
+  public void callIsMolSubstructureTest() throws Throwable {
+    final String queryMol = "\n"
+        + "  Mrv1810 07051914202D          \n"
+        + "\n"
+        + "  8  8  0  0  0  0            999 V2000\n"
+        + "   -4.4436   -2.5359    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        + "   -5.1581   -2.9484    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        + "   -5.1581   -3.7734    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        + "   -4.4436   -4.1859    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        + "   -3.7291   -3.7734    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        + "   -3.7291   -2.9484    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        + "   -3.0147   -2.5359    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        + "   -3.0147   -1.7109    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        + "  1  2  1  0  0  0  0\n"
+        + "  2  3  2  0  0  0  0\n"
+        + "  3  4  1  0  0  0  0\n"
+        + "  4  5  2  0  0  0  0\n"
+        + "  5  6  1  0  0  0  0\n"
+        + "  1  6  2  0  0  0  0\n"
+        + "  6  7  1  0  0  0  0\n"
+        + "  7  8  1  0  0  0  0\n"
+        + "M  END\n";
+    final String[] candidateSmiles = new String[]{
+        "COc1ccccc1",
+        "C=C(C)CC1CC(O)[C@]2(C)OC3CC4OC5C[C@]6(C)O[C@]7(C)CCC8OC9C[C@]%10(C)OC%11C(C)=CC(=O)OC%11CC%10OC9C[C@H](C)C8OC7CC6O[C@]5(C)CC=CC4OC3CC2O1"
+    };
+    final boolean[] substructMatches = new boolean[]{true, false};
+
+    try (val tx = graphDb.beginTx()) {
+      for (String smiles: candidateSmiles)
+        graphDb.execute("CREATE (n:Chemical:Structure {smiles:$smiles})", MapUtil.map("smiles", smiles));
+      tx.success();
+    }
+
+    for (int i = 0; i < candidateSmiles.length; i++) {
+      val result = graphDb.execute(
+          "MATCH (n:Chemical:Structure) WHERE n.smiles = $candidate_smiles RETURN n.smiles as smiles, org.rdkit.search.substructure.is.mol(n, $query) as bool",
+          MapUtil.map("query", queryMol, "candidate_smiles", candidateSmiles[i]));
 
       val map = result.next();
       Assert.assertEquals(substructMatches[i], map.get("bool"));
