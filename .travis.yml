@@ -36,12 +36,12 @@ matrix:
     language: java
     dist: trusty
     jdk: oraclejdk8
-  - os: osx
-    language: java
-    osx_image: xcode9.3 # Further versions use jdk 10+
-  - os: osx
-    language: java
-    osx_image: xcode10
+#  - os: osx
+#    language: java
+#    osx_image: xcode9.3 # Further versions use jdk 10+
+#  - os: osx
+#    language: java
+#    osx_image: xcode10
 
 install:
 - mvn org.apache.maven.plugins:maven-install-plugin:2.3.1:install-file -Dfile=${TRAVIS_BUILD_DIR}/lib/org.RDKit.jar -DgroupId=org.rdkit -DartifactId=rdkit -Dversion=1.0.0 -Dpackaging=jar
