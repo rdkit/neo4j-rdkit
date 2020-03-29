@@ -65,18 +65,20 @@ public interface FingerprintFactory {
    *
    * @param strSmiles SMILES structure, preferably canonicalized by RDKit before. Must not be null.
    *
+   * @param sanitize
    * @return Fingerprint as BitSet.
    */
-  public BitSet createStructureFingerprint(final String strSmiles);
+  public BitSet createStructureFingerprint(final String strSmiles, boolean sanitize);
 
   /**
    * Creates a structure fingerprint based on the passed in SMILES.
    *
    * @param strSmiles SMILES structure, preferably canonicalized by RDKit before. Must not be null.
    *
+   * @param sanitize
    * @return Fingerprint as BitSet.
    */
-  public BitSet createQueryFingerprint(final String strSmiles);
+  public BitSet createQueryFingerprint(final String strSmiles, boolean sanitize);
 
   /**
    * Method for already opened ROMol to build fingerprint from Structure settings.

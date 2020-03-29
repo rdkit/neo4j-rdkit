@@ -140,7 +140,7 @@ public class ConverterTest {
     final int expectedPositive = 269;
 
     Converter converter = Converter.createConverter(FingerprintType.pattern);
-    LuceneQuery luceneQuery = converter.getLuceneSSSQuery("O=S(=O)(Cc1ccccc1)CS(=O)(=O)Cc1ccccc1");
+    LuceneQuery luceneQuery = converter.getLuceneSSSQuery("O=S(=O)(Cc1ccccc1)CS(=O)(=O)Cc1ccccc1", true);
 
     assertEquals(expectedPositive, luceneQuery.getPositiveBits());
     assertEquals(expectedLuceneQuery, luceneQuery.getLuceneQuery());
@@ -154,7 +154,7 @@ public class ConverterTest {
     final int expectedPositive = -1;
 
     Converter converter = Converter.createConverter(FingerprintType.morgan);
-    LuceneQuery luceneQuery = converter.getLuceneSSSQuery("COc1cc2c(cc1Br)C(C)CNCC2"); // todo: why fails?
+    LuceneQuery luceneQuery = converter.getLuceneSSSQuery("COc1cc2c(cc1Br)C(C)CNCC2", true); // todo: why fails?
 
     assertEquals(expectedPositive, luceneQuery.getPositiveBits());
     assertEquals(expectedLuceneQuery, luceneQuery.getLuceneQuery());
@@ -167,8 +167,8 @@ public class ConverterTest {
     final String smiles = "O=S(=O)(Cc1ccccc1)CS(=O)(=O)Cc1ccccc1";
     Converter converterTorsion = Converter.createConverter(FingerprintType.torsion);
     Converter converterPattern = Converter.createConverter(FingerprintType.pattern);
-    LuceneQuery patternQuery = converterPattern.getLuceneFingerprint(smiles);
-    LuceneQuery torsionQuery = converterTorsion.getLuceneFingerprint(smiles);
+    LuceneQuery patternQuery = converterPattern.getLuceneFingerprint(smiles, true);
+    LuceneQuery torsionQuery = converterTorsion.getLuceneFingerprint(smiles, true);
 
     assertEquals(DELIMITER_WHITESPACE, patternQuery.getDelimiter());
     assertEquals(DELIMITER_WHITESPACE, torsionQuery.getDelimiter());

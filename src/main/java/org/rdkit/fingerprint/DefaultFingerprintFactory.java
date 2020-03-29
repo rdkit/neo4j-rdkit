@@ -116,22 +116,24 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
    * Creates a fingerprint based on the passed in SMILES.
    *
    * @param strSmiles SMILES structure, preferably canonicalized by RDKit before. Must not be null.
+   * @param sanitize
    * @return Fingerprint as BitSet.
    */
   @Override
-  public BitSet createStructureFingerprint(final String strSmiles) {
-    return createFingerprint(strSmiles, settingsStructure);
+  public BitSet createStructureFingerprint(final String strSmiles, boolean sanitize) {
+    return createFingerprint(strSmiles, settingsStructure, sanitize);
   }
 
   /**
    * Creates a fingerprint based on the passed in SMILES.
    *
    * @param strSmiles SMILES structure, preferably canonicalized by RDKit before. Must not be null.
+   * @param sanitize
    * @return Fingerprint as BitSet.
    */
   @Override
-  public BitSet createQueryFingerprint(final String strSmiles) {
-    return createFingerprint(strSmiles, settingsQuery);
+  public BitSet createQueryFingerprint(final String strSmiles, boolean sanitize) {
+    return createFingerprint(strSmiles, settingsQuery, sanitize);
   }
 
   /**
@@ -163,9 +165,10 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
    *
    * @param strSmiles SMILES structure, preferably canonicalized by RDKit before. Must not be null. ! EXPECTED CANONICALIZED SMILES !
    * @param settings Fingerprint settings to be used.
+   * @param sanitize
    * @return Fingerprint as BitSet.
    */
-  private BitSet createFingerprint(@NonNull final String strSmiles, final FingerprintSettings settings) {
+  private BitSet createFingerprint(@NonNull final String strSmiles, final FingerprintSettings settings, boolean sanitize) {
 
     // todo: update code if other types are used
 
@@ -173,7 +176,7 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
     // Create an ROMol object
 
     // Performance trick, if SMILES is already canonicalized
-    try (val mol = RWMolCloseable.from(RWMol.MolFromSmiles(strSmiles, 0, false))) {
+    try (val mol = RWMolCloseable.from(RWMol.MolFromSmiles(strSmiles, 0, sanitize))) {
       return createFingerprint(mol, settings);
     }
   }

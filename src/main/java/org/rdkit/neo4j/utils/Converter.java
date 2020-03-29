@@ -159,9 +159,9 @@ public class Converter {
     }
   }
 
-  public LuceneQuery getLuceneFingerprint(String smiles) {
+  public LuceneQuery getLuceneFingerprint(String smiles, boolean sanitize) {
     logger.debug("Get Lucene fingerprint from smiles={}", smiles);
-    return getLuceneQuery(smiles, DELIMITER_WHITESPACE);
+    return getLuceneQuery(smiles, DELIMITER_WHITESPACE, sanitize);
   }
 
   public LuceneQuery getLuceneFingerprint(RWMol mol) {
@@ -169,9 +169,9 @@ public class Converter {
     return getLuceneQuery(mol, DELIMITER_WHITESPACE);
   }
 
-  public LuceneQuery getLuceneSimilarityQuery(String smiles) {
+  public LuceneQuery getLuceneSimilarityQuery(String smiles, boolean sanitize) {
     logger.debug("Get Lucene similairy query for smiles={}", smiles);
-    return getLuceneQuery(smiles, DELIMITER_OR);
+    return getLuceneQuery(smiles, DELIMITER_OR, sanitize);
   }
 
   public LuceneQuery getLuceneSimilarityQuery(RWMol mol) {
@@ -183,11 +183,12 @@ public class Converter {
    * Return encoded query object with string for lucene fulltext query and count of set bits
    *
    * @param smiles to convert for further LuceneQuery
+   * @param sanitize
    * @return ex.: { str="3 AND 5 AND 14 AND 256 AND 258", int=5 }
    */
-  public LuceneQuery getLuceneSSSQuery(String smiles) {
+  public LuceneQuery getLuceneSSSQuery(String smiles, boolean sanitize) {
     logger.debug("Get Lucene fp query for smiles={}", smiles);
-    return getLuceneQuery(smiles, DELIMITER_AND);
+    return getLuceneQuery(smiles, DELIMITER_AND, sanitize);
   }
 
   /**
@@ -206,8 +207,8 @@ public class Converter {
     return getLuceneQuery(fp, delimiter);
   }
 
-  private LuceneQuery getLuceneQuery(String smiles, final String delimiter) {
-    final BitSet fp = fingerprintFactory.createStructureFingerprint(smiles);
+  private LuceneQuery getLuceneQuery(String smiles, final String delimiter, boolean sanitize) {
+    final BitSet fp = fingerprintFactory.createStructureFingerprint(smiles, sanitize);
     return getLuceneQuery(fp, delimiter);
   }
 

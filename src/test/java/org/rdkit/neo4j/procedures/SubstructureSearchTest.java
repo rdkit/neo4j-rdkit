@@ -19,6 +19,7 @@ import static org.neo4j.graphdb.DependencyResolver.SelectionStrategy.FIRST;
 
 import java.util.Map;
 import lombok.val;
+import org.RDKit.RWMol;
 import org.junit.Assert;
 import org.junit.Test;
 import org.neo4j.graphdb.QueryExecutionException;
@@ -235,4 +236,5 @@ public class SubstructureSearchTest extends BaseTest {
 
     graphDb.execute("CALL org.rdkit.search.dropIndex()"); // otherwise we get an exception on shutdown
   }
+
 }

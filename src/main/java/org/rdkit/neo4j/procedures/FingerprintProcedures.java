@@ -55,8 +55,9 @@ public class FingerprintProcedures extends BaseProcedure {
    * {@link #getIndexName(String)}
    *
    * @param labelNames - node labels
-   * @param fpType - type of the fingerprint, must exist in {@link org.rdkit.neo4j.models.NodeFields}
+   * @param fpType - type of the fingerprint, must exist in {@link NodeFields}
    * @param propertyName - a new property name, which will be created with specified fingerprint
+   * @param sanitize
    * @throws InterruptedException if any during the batch task
    */
   @Procedure(name = "org.rdkit.fingerprint.create", mode = Mode.SCHEMA)
@@ -64,7 +65,7 @@ public class FingerprintProcedures extends BaseProcedure {
       + "Creates a fulltext index on that property. \n"
       + "Possible values for `fpType`: ['morgan', 'topological', 'pattern']. \n"
       + "Restriction for `propertyName`: it must not be equal to rdkit properties of nodes.")
-  public void createFingerprintProperty(@Name("label") List<String> labelNames, @Name("fingerprintType") String fpType, @Name("propertyName") String propertyName) throws InterruptedException {
+  public void createFingerprintProperty(@Name("label") List<String> labelNames, @Name("fingerprintType") String fpType, @Name("propertyName") String propertyName, @Name(value="sanitize", defaultValue="true") boolean sanitize) throws InterruptedException {
     log.info("Create fingerprint property with parameters: labelsNames=%s, propertyName=%s, fingerprintType=%s", labelNames, propertyName, fpType);
 
     // START checking parameters
@@ -83,7 +84,7 @@ public class FingerprintProcedures extends BaseProcedure {
     executeBatches(nodes, PAGE_SIZE, node -> {
       final String smiles = (String) node.getProperty(canonicalSmilesProperty);
       try {
-        final LuceneQuery fp = converter.getLuceneFingerprint(smiles);
+        final LuceneQuery fp = converter.getLuceneFingerprint(smiles, sanitize);
         node.setProperty(getPropertyOnes(propertyName), fp.getPositiveBits());
         node.setProperty(getPropertyType(propertyName), fingerprintType.toString());
         node.setProperty(propertyName, fp.getLuceneQuery());
@@ -103,9 +104,10 @@ public class FingerprintProcedures extends BaseProcedure {
    *
    * @param labelNames - node labels
    * @param smiles - to be converted into fingerprint and compared
-   * @param fpTypeString - type of the fingerprint, must exist in {@link org.rdkit.neo4j.models.NodeFields}
+   * @param fpTypeString - type of the fingerprint, must exist in {@link NodeFields}
    * @param propertyName - to be compared with, must exist
    * @param threshold - lower bound of result to be in the result list
+   * @param sanitize
    * @return a stream of obtained nodes
    */
   @Procedure(name = "org.rdkit.fingerprint.similarity.smiles", mode = Mode.READ)
@@ -113,10 +115,11 @@ public class FingerprintProcedures extends BaseProcedure {
       + "(which is created of type=`fingerprintType`, from `smiles`) and "
       + "fingerprints placed under proprty=`propertyName`. Values below `threshold` are discarded.")
   public Stream<SimilarityResult> similaritySearch(@Name("label") List<String> labelNames,
-      @Name("smiles") String smiles,
-      @Name("fingerprintType") String fpTypeString,
-      @Name("propertyName") String propertyName,
-      @Name("threshold") Double threshold) {
+                                                   @Name("smiles") String smiles,
+                                                   @Name("fingerprintType") String fpTypeString,
+                                                   @Name("propertyName") String propertyName,
+                                                   @Name("threshold") Double threshold,
+                                                   @Name(value="sanitize", defaultValue="true") boolean sanitize) {
     log.info("Call similaritySearch labelNames=%s, smiles=%s, fptype=%s, propertyName=%s, threshold=%s", labelNames, smiles, fpTypeString, propertyName, threshold);
     String indexName = getIndexName(propertyName);
 
@@ -129,7 +132,7 @@ public class FingerprintProcedures extends BaseProcedure {
 
     LuceneQuery similarityQuery;
     try {
-      similarityQuery = converter.getLuceneSimilarityQuery(smiles);
+      similarityQuery = converter.getLuceneSimilarityQuery(smiles, sanitize);
     } catch (RuntimeException e) {
       throw new IllegalArgumentException(String.format("Unable to convert smiles=%s with specified fingerprintType=%s", smiles, fpType));
     }

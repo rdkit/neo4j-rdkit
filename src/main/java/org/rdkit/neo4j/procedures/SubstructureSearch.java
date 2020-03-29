@@ -74,23 +74,25 @@ public class SubstructureSearch extends BaseProcedure {
    *
    * @param labelNames - node labels to search on top of
    * @param smiles - value to transform and use during SSS
+   * @param sanitize
    * @return obtained nodes
    */
   @Procedure(name = "org.rdkit.search.substructure.smiles", mode = Mode.READ)
   @Description("RDKit substructure search based on `smiles` value")
-  public Stream<NodeSSSResult> substructureSearchSmiles(@Name("label") List<String> labelNames, @Name("smiles") String smiles) {
+  public Stream<NodeSSSResult> substructureSearchSmiles(@Name("label") List<String> labelNames, @Name("smiles") String smiles,
+                                                        @Name(value="sanitize", defaultValue="true") boolean sanitize) {
     log.info("Substructure search smiles started :: label=%s, smiles=%s", labelNames, smiles);
     checkIndexExistence(labelNames, Constants.IndexName.getValue()); // if index exists, then the values are
 
     RWMol query;
     try {
-      query = RWMol.MolFromSmiles(smiles); // todo: it is unknown when the query object is freed
+      query = RWMol.MolFromSmiles(smiles,0, sanitize); // todo: it is unknown when the query object is freed
       if (query == null)
         throw new IllegalArgumentException("Unable to convert specified smiles");
     } catch (Exception e) {
       throw new IllegalArgumentException("Unable to convert specified smiles");
     }
-    return findSSCandidates(query);
+    return findSSCandidates(query, sanitize);
   }
 
   /**
@@ -104,7 +106,8 @@ public class SubstructureSearch extends BaseProcedure {
    */
   @Procedure(name = "org.rdkit.search.substructure.mol", mode = Mode.READ)
   @Description("RDKit substructure search based on `mol` value")
-  public Stream<NodeSSSResult> substructureSearchMol(@Name("label") List<String> labelNames, @Name("mol") String mol) {
+  public Stream<NodeSSSResult> substructureSearchMol(@Name("label") List<String> labelNames, @Name("mol") String mol,
+                                                     @Name(value="sanitize", defaultValue="true") boolean sanitize) {
     log.info("Substructure search smiles started :: label=%s, mdlmol=%s", labelNames, mol);
     checkIndexExistence(labelNames, Constants.IndexName.getValue()); // if index exists, then the values are
 
@@ -122,14 +125,16 @@ public class SubstructureSearch extends BaseProcedure {
    */
   @UserFunction(name = "org.rdkit.search.substructure.is.smiles")
   @Description("RDKit function checks substructure match between two chemical structures (provided node and specified smiles)")
+  public boolean isSubstructure(@Name("candidate") Node candidate, @Name("substructure_smiles") String smiles,
+                                @Name(value="sanitize", defaultValue="true") boolean sanitize) {
   public boolean isSubstructureSmiles(@Name("candidate") Node candidate, @Name("substructure_smiles") String smiles) {
     final String luri = (String) candidate.getProperty("luri", "<undefined>");
     log.info("isSubstructure call based on candidate_luri=%s, substructure_smiles=%s", luri, smiles);
 
-    try (val query = RWMolCloseable.from(RWMol.MolFromSmiles(smiles))) {
+    try (val query = RWMolCloseable.from(RWMol.MolFromSmiles(smiles, 0, sanitize))) {
       query.updatePropertyCache(false);
       final String candidateSmiles = (String) candidate.getProperty("canonical_smiles");
-      try (val candidateRWMol = RWMolCloseable.from(RWMol.MolFromSmiles(candidateSmiles, 0, false))) {
+      try (val candidateRWMol = RWMolCloseable.from(RWMol.MolFromSmiles(candidateSmiles, 0, sanitize))) {
         candidateRWMol.updatePropertyCache(false);
         return candidateRWMol.hasSubstructMatch(query);
       }
@@ -175,9 +180,10 @@ public class SubstructureSearch extends BaseProcedure {
   /**
    * Method queries fulltext index, returns fingerprint matches and filters by substruct match
    * @param query RWMol
+   * @param sanitize
    * @return stream of chemical structures with substruct match
    */
-  private Stream<NodeSSSResult> findSSCandidates(ROMol query) {
+  private Stream<NodeSSSResult> findSSCandidates(ROMol query, boolean sanitize) {
     query.updatePropertyCache();
     final LuceneQuery luceneQuery = converter.getLuceneSSSQuery(query);
 
@@ -189,7 +195,7 @@ public class SubstructureSearch extends BaseProcedure {
     return result.stream()
         .filter(map -> {
           final String smiles = (String) map.get("canonical_smiles");
-          try (RWMolCloseable candidate = RWMolCloseable.from(RWMol.MolFromSmiles(smiles, 0, false))) {
+          try (RWMolCloseable candidate = RWMolCloseable.from(RWMol.MolFromSmiles(smiles, 0, sanitize))) {
             candidate.updatePropertyCache(false);
             return candidate.hasSubstructMatch(query);
           } catch (Exception e) {
