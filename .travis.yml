@@ -2,32 +2,9 @@ cache:
   directories:
   - $HOME/.m2
 
-#env:
-#  - GRAVIS="https://raw.githubusercontent.com/DanySK/Gravis-CI/master/"
-
 matrix:
   include:
-#  - os: windows
-#    language: bash
-#    before_install:
-#    - curl "${GRAVIS}.install-jdk-travis.sh" --output .install-jdk-travis.sh
-#    - source ~/.install-jdk-travis.sh
-#    - curl "${GRAVIS}.install-maven-travis.sh" --output .install-maven-travis.sh
-#    - source ~/.install-maven-travis.sh
-#
-##    - choco install jdk8 maven
-##    - export JAVA_HOME="C:\Program Files\Java\jdk1.8.0_211"
-##    - export PATH=$PATH:"C:\Program Files\Java\jdk1.8.0_211\bin\":"C:\ProgramData\chocolatey\lib\maven\"
-#    before_cache:
-#    - curl "${GRAVIS}.clean_gradle_cache.sh" --output .clean_gradle_cache.sh
-#    - bash .clean_gradle_cache.sh
-#    cache:
-#      directories:
-#      # This avoids re-downloading the JDK every time, but Travis recommends not to do it
-#      # - $HOME/.jabba/
-#      # If you use Gradle, you may want to save some time with caching
-#      - $HOME/.gradle/caches/
-#      - $HOME/.gradle/wrapper/
+  # Travis poorly supports windows with jdk
   - os: linux
     language: java
     dist: trusty
@@ -36,12 +13,17 @@ matrix:
     language: java
     dist: trusty
     jdk: oraclejdk8
-#  - os: osx
-#    language: java
-#    osx_image: xcode9.3 # Further versions use jdk 10+
-#  - os: osx
-#    language: java
-#    osx_image: xcode10
+  - os: linux
+    language: java
+    dist: trusty
+    jdk: openjdk11
+  - os: linux
+    language: java
+    dist: trusty
+    jdk: oraclejdk11
+  - os: osx
+    language: java
+    osx_image: xcode9.3 # Further versions use java 13+
 
 install:
 - mvn org.apache.maven.plugins:maven-install-plugin:2.3.1:install-file -Dfile=${TRAVIS_BUILD_DIR}/lib/org.RDKit.jar -DgroupId=org.rdkit -DartifactId=rdkit -Dversion=1.0.0 -Dpackaging=jar
