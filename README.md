@@ -160,6 +160,16 @@ Additional reserved property names:
     * Return boolean answer: does specified `node` object have substructure match provided by `smiles_string`.
 
 ---
+# Results overview 
+
+## What was achieved
+
+1) Implementation of exact search (100%)  
+2) Implementation of substructure search (90%, several minor bugs)  
+3) Implementation of condition based graph traversal - usage of function calls in complex queries (100%)
+4) Implementation of similarity search (70%, major performance issues)    
+5) Coverage with unit tests (80%, not all invalid arguments for procedures are tested)
+
 ## What remains to be done
 
 1) Speed up batch tasks by utilizing several threads (currently waiting for resolving issue on native level)  
