@@ -55,13 +55,7 @@ public class LibraryLoader {
         new String[]{"boost_serialization-vc140-mt-1_65_1",
             "GraphMolWrap"});
     LIBRARIES.put(OS_WIN32 + "." + ARCH_X86_64,
-        new String[]{
-            "boost_serialization-vc140-mt-x64-1_67",
-            "boost_zlib-vc140-mt-x64-1_67",
-            "boost_bzip2-vc140-mt-x64-1_67",
-            "boost_iostreams-vc140-mt-x64-1_67",
-            "GraphMolWrap",
-        });
+        new String[]{"GraphMolWrap"});
     LIBRARIES.put("linux.",
         new String[]{"GraphMolWrap"});
     LIBRARIES.put(OS_LINUX + "." + ARCH_X86_64,
