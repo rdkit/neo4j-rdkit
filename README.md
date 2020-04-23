@@ -160,7 +160,6 @@ Additional reserved property names:
     * Return boolean answer: does specified `node` object have substructure match provided by `smiles_string`.
 
 ---
-
 # Results overview 
 
 ## What was achieved
@@ -173,13 +172,11 @@ Additional reserved property names:
 
 ## What remains to be done
 
-<!-- 0) Query features in substructure search (blocking of position in molecule from further substitution; using atom lists on certain positions in molecule) -->
 1) Speed up batch tasks by utilizing several threads (currently waiting for resolving issue on native level)  
 2) Speed up the `similarity search` procedures  
 3) Solve minor bugs (todos) like unclosed `query` object during SSS  
 
-## What problems were encountered
+## Java requirements
 
-1) Compatability of native libraries for win64 (beginning of the development)  
-2) Lazy streams evaluation and not resolved issue with `query` object during SSS  
-3) Parallelization of stream evaluations    
+Plugin supports openjdk and oraclejdk java versions (< 12).  
+Further versions upgraded _security sensitive fields_ [policy](https://bugs.openjdk.java.net/browse/JDK-8210496), those are currently not supported.  
