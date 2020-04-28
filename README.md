@@ -79,14 +79,14 @@ _It is possible to check index existence with `CALL db.indexes`_
 #### Execution of substructure search
 
 1) Make sure the fulltext index exists with `CALL db.indexes`, `fp_index` must exist. (It should be created with `createIndex` procedure)    
-2) `CALL org.rdkit.search.substructure.smiles(['Chemical', 'Structure'], 'CC(=O)Nc1nnc(S(N)(=O)=O)s1')`  
-3) `CALL org.rdkit.search.substructure.mol(['Chemical', 'Structure'], '<mol value>')`  
+2) `CALL org.rdkit.search.substructure.smiles(['Chemical', 'Structure'], 'CC(=O)Nc1nnc(S(N)(=O)=O)s1', <santize> (true/false))`  
+3) `CALL org.rdkit.search.substructure.mol(['Chemical', 'Structure'], '<mol value>', <santize> (true/false))`  
 
 #### Execution of similarity search (currently slow)
 
-1) `CALL org.rdkit.fingerprint.create(['Chemical, 'Structure'], 'torsion_fp', 'torsion')` - new property `torsion_fp` is created  
-2) `CALL org.rdkit.fingerprint.search.smiles(['Chemical', 'Structure'], 'CC(=O)Nc1nnc(S(N)(=O)=O)s1', 'torsion', 'torsion_fp', 0.4)`  
-3) `CALL org.rdkit.fingerprint.search.smiles(['Chemical', 'Structure'], 'CC(=O)Nc1nnc(S(N)(=O)=O)s1', 'pattern', 'fp', 0.7)`  
+1) `CALL org.rdkit.fingerprint.create(['Chemical, 'Structure'], 'torsion_fp', 'torsion', <santize> (true/false))` - new property `torsion_fp` is created  
+2) `CALL org.rdkit.fingerprint.search.smiles(['Chemical', 'Structure'], 'CC(=O)Nc1nnc(S(N)(=O)=O)s1', 'torsion', 'torsion_fp', 0.4, <santize> (true/false))`  
+3) `CALL org.rdkit.fingerprint.search.smiles(['Chemical', 'Structure'], 'CC(=O)Nc1nnc(S(N)(=O)=O)s1', 'pattern', 'fp', 0.7, <santize> (true/false))`  
 
 #### Usage of `org.rdkit.search.substructure.is.smiles` function in complex queries
 
