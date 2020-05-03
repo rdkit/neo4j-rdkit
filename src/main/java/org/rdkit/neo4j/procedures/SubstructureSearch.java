@@ -112,7 +112,7 @@ public class SubstructureSearch extends BaseProcedure {
     checkIndexExistence(labelNames, Constants.IndexName.getValue()); // if index exists, then the values are
 
     ROMol query = createBlockedROMolFromMol(mol);
-    return findSSCandidates(query);
+    return findSSCandidates(query, sanitize);
   }
 
 
@@ -127,7 +127,6 @@ public class SubstructureSearch extends BaseProcedure {
   @Description("RDKit function checks substructure match between two chemical structures (provided node and specified smiles)")
   public boolean isSubstructure(@Name("candidate") Node candidate, @Name("substructure_smiles") String smiles,
                                 @Name(value="sanitize", defaultValue="true") boolean sanitize) {
-  public boolean isSubstructureSmiles(@Name("candidate") Node candidate, @Name("substructure_smiles") String smiles) {
     final String luri = (String) candidate.getProperty("luri", "<undefined>");
     log.info("isSubstructure call based on candidate_luri=%s, substructure_smiles=%s", luri, smiles);
 
