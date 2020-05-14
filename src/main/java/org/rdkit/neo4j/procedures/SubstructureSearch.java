@@ -184,7 +184,7 @@ public class SubstructureSearch extends BaseProcedure {
    */
   private Stream<NodeSSSResult> findSSCandidates(ROMol query, boolean sanitize) {
     query.updatePropertyCache();
-    final LuceneQuery luceneQuery = converter.getLuceneSSSQuery(query);
+    final LuceneQuery luceneQuery = converter.getLuceneSSSQuery(query, sanitize);
 
     // added mdlmol as a returned item as sometimes it fails (probably reduces speed)
     Result result = db.execute("CALL db.index.fulltext.queryNodes($index, $query) "

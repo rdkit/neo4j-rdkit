@@ -17,7 +17,6 @@ package org.rdkit.neo4j.utils;
 
 import java.util.BitSet;
 import lombok.val;
-import lombok.var;
 import org.RDKit.MolDraw2DSVG;
 import org.RDKit.MolSanitizeException;
 import org.RDKit.RDKFuncs;
@@ -113,11 +112,13 @@ public class Converter {
    * Create NodeParameters from SMILES
    *
    * @param smiles not canonicalized
+   * @param sanitize
    * @return NodeParameters object
    */
-  public NodeParameters convertSmiles(final String smiles) {
-    try (RWMolCloseable rwmol = RWMolCloseable.from(RWMol.MolFromSmiles(smiles))) {
-      final NodeParameters block = createMolBlock(rwmol);
+  public NodeParameters convertSmiles(final String smiles, boolean sanitize) {
+    try (RWMolCloseable rwmol = RWMolCloseable.from(RWMol.MolFromSmiles(smiles, 0, sanitize))) {
+//    try (RWMolCloseable rwmol = RWMolCloseable.from(RWMol.MolFromSmiles(smiles))) {
+      final NodeParameters block = createMolBlock(rwmol, sanitize);
 
       final String rdkitSmiles = block.getCanonicalSmiles();
 
@@ -137,11 +138,12 @@ public class Converter {
    * Create NodeParameters from string equivalent
    *
    * @param molBlock in string format
+   * @param sanitize
    * @return NodeParameters object
    */
-  public NodeParameters convertMolBlock(final String molBlock) {
+  public NodeParameters convertMolBlock(final String molBlock, boolean sanitize) {
     try (RWMolCloseable rwmol = RWMolCloseable.from(RWMol.MolFromMolBlock(molBlock))) {
-      NodeParameters block = createMolBlock(rwmol);
+      NodeParameters block = createMolBlock(rwmol, sanitize);
       block.setMolBlock(molBlock);
 
       return block;
@@ -164,9 +166,9 @@ public class Converter {
     return getLuceneQuery(smiles, DELIMITER_WHITESPACE, sanitize);
   }
 
-  public LuceneQuery getLuceneFingerprint(RWMol mol) {
+  public LuceneQuery getLuceneFingerprint(RWMol mol, boolean sanitize) {
     logger.debug("Get Lucene fingerprint from mol");
-    return getLuceneQuery(mol, DELIMITER_WHITESPACE);
+    return getLuceneQuery(mol, DELIMITER_WHITESPACE, sanitize);
   }
 
   public LuceneQuery getLuceneSimilarityQuery(String smiles, boolean sanitize) {
@@ -174,9 +176,9 @@ public class Converter {
     return getLuceneQuery(smiles, DELIMITER_OR, sanitize);
   }
 
-  public LuceneQuery getLuceneSimilarityQuery(RWMol mol) {
+  public LuceneQuery getLuceneSimilarityQuery(RWMol mol, boolean sanitize) {
     logger.debug("Get Lucene similairy query for mol");
-    return getLuceneQuery(mol, DELIMITER_OR);
+    return getLuceneQuery(mol, DELIMITER_OR, sanitize);
   }
 
   /**
@@ -195,15 +197,16 @@ public class Converter {
    * Return encoded query object with string for lucene fulltext query and count of set bits
    *
    * @param mol to user for further construction LuceneQuery
+   * @param sanitize
    * @return ex.: { str="3 AND 5 AND 14 AND 256 AND 258", int=5 }
    */
-  public LuceneQuery getLuceneSSSQuery(ROMol mol) {
+  public LuceneQuery getLuceneSSSQuery(ROMol mol, boolean sanitize) {
     logger.debug("Get Lucene fp query for mol");
-    return getLuceneQuery(mol, DELIMITER_AND);
+    return getLuceneQuery(mol, DELIMITER_AND, sanitize);
   }
 
-  private LuceneQuery getLuceneQuery(ROMol mol, final String delimiter) {
-    final BitSet fp = fingerprintFactory.createStructureFingerprint(mol);
+  private LuceneQuery getLuceneQuery(ROMol mol, final String delimiter, boolean sanitize) {
+    final BitSet fp = fingerprintFactory.createStructureFingerprint(mol, sanitize);
     return getLuceneQuery(fp, delimiter);
   }
 
@@ -222,17 +225,19 @@ public class Converter {
    * Method fulfills the NodeParameters with parameters from rwmol object Used to extend properties of the node
    *
    * @param rwmol object
+   * @param sanitize
    * @return NodeParameters with fields
    */
-  private NodeParameters createMolBlock(final RWMol rwmol) {
+  private NodeParameters createMolBlock(final RWMol rwmol, boolean sanitize) {
     logger.debug("Construct default molBlock fields");
     final String rdkitSmiles = RDKFuncs.MolToSmiles(rwmol);
+    rwmol.updatePropertyCache(sanitize);
     final String formula = RDKFuncs.calcMolFormula(rwmol);
     final double molecularWeight = RDKFuncs.calcExactMW(rwmol);
     final String inchi = RDKFuncs.MolToInchiKey(rwmol);
 
     logger.debug("Construct structure fingerprint for lucene");
-    LuceneQuery luceneQuery = getLuceneQuery(rwmol, DELIMITER_WHITESPACE);
+    LuceneQuery luceneQuery = getLuceneQuery(rwmol, DELIMITER_WHITESPACE, sanitize);
 
     final long fingerprintOnes = luceneQuery.getPositiveBits();
     final String fingerprintEncoded = luceneQuery.getLuceneQuery();

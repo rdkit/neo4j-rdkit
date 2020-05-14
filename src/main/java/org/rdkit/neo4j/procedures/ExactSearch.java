@@ -62,10 +62,11 @@ public class ExactSearch extends BaseProcedure {
    */
   @Procedure(name = "org.rdkit.search.exact.mol", mode = Mode.READ)
   @Description("RDKit exact search on `mdlmol` property")
-  public Stream<NodeWrapper> exactSearchMol(@Name("labels") List<String> labelNames, @Name("mol") String molBlock) {
+  public Stream<NodeWrapper> exactSearchMol(@Name("labels") List<String> labelNames, @Name("mol") String molBlock,
+                                            @Name(value = "sanitize", defaultValue = "true") boolean sanitize) {
     log.info("Exact search mol :: label=%s, molBlock=%s", labelNames, molBlock);
 
-    final String rdkitSmiles = converter.convertMolBlock(molBlock).getCanonicalSmiles();
+    final String rdkitSmiles = converter.convertMolBlock(molBlock, sanitize).getCanonicalSmiles();
     return findLabeledNodes(labelNames, NodeFields.CanonicalSmiles.getValue(), rdkitSmiles);
   }
 
@@ -79,13 +80,13 @@ public class ExactSearch extends BaseProcedure {
    */
   @Procedure(name = "org.rdkit.update", mode = Mode.WRITE)
   @Description("RDKit update procedure, allows to construct ['formula', 'molecular_weight', 'canonical_smiles'] values from 'mdlmol' property")
-  public Stream<NodeWrapper> createProperties(@Name("labels") List<String> labelNames) throws InterruptedException {
+  public Stream<NodeWrapper> createProperties(@Name("labels") List<String> labelNames, @Name(value = "sanitize", defaultValue = "true") boolean sanitize) throws InterruptedException {
     log.info("Update nodes with labels=%s, create additional fields", labelNames);
     // todo: add functionality to skip nodes that already have required properties
     executeBatches(getLabeledNodes(labelNames), PAGE_SIZE, node -> {
       final String mol = (String) node.getProperty("mdlmol");
       try {
-        final NodeParameters block = converter.convertMolBlock(mol);
+        final NodeParameters block = converter.convertMolBlock(mol, sanitize);
         RDKitEventHandler.addProperties(node, block);
       } catch (Exception e) {
         final String luri = (String) node.getProperty("luri", "<undefined>");

@@ -140,20 +140,22 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
    * Method for already opened RWMol to build fingerprint from Query settings.
    *
    * @param mol already opened RWMol object
+   * @param sanitize
    * @return Fingerprint as BitSet.
    */
-  public BitSet createQueryFingerprint(final ROMol mol) {
-    return createFingerprint(mol, settingsQuery);
+  public BitSet createQueryFingerprint(final ROMol mol, boolean sanitize) {
+    return createFingerprint(mol, settingsQuery, sanitize);
   }
 
   /**
    * Method for already opened RWMol to build fingerprint from Structure settings.
    *
    * @param mol already opened RWMol object
+   * @param sanitize
    * @return Fingerprint as BitSet.
    */
-  public BitSet createStructureFingerprint(final ROMol mol) {
-    return createFingerprint(mol, settingsStructure);
+  public BitSet createStructureFingerprint(final ROMol mol, boolean sanitize) {
+    return createFingerprint(mol, settingsStructure, sanitize);
   }
 
   //
@@ -177,7 +179,7 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
 
     // Performance trick, if SMILES is already canonicalized
     try (val mol = RWMolCloseable.from(RWMol.MolFromSmiles(strSmiles, 0, sanitize))) {
-      return createFingerprint(mol, settings);
+      return createFingerprint(mol, settings, sanitize);
     }
   }
 
@@ -185,10 +187,11 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
    * Method for already opened RWMol
    * @param mol - canonicalized
    * @param settings to build fingerprint from
+   * @param sanitize
    * @return BitSet from rwmol (fingerprint of `settings` type)
    */
-  private BitSet createFingerprint(final ROMol mol, final FingerprintSettings settings) {
-    mol.updatePropertyCache();
+  private BitSet createFingerprint(final ROMol mol, final FingerprintSettings settings, boolean sanitize) {
+    mol.updatePropertyCache(sanitize);
 
     // Calculate fingerprint
     return convert(settings.getRdkitFingerprintType().calculate(mol, settings));

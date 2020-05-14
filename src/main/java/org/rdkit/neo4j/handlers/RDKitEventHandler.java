@@ -68,10 +68,11 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
   public Object beforeCommit(TransactionData data) throws Exception {
     // Obtain nodes with `mdlmol` property
     val nodesMol = getNodes(data, NodeFields.MdlMol.getValue());
+    boolean sanitize = false; //TODO: move to config option
 
     for (Node node: nodesMol) {
       final String mol = (String) node.getProperty(NodeFields.MdlMol.getValue());
-      final NodeParameters block = converter.convertMolBlock(mol);
+      final NodeParameters block = converter.convertMolBlock(mol, sanitize);
 
       addProperties(node, block);
     }
@@ -82,7 +83,7 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
 
     for (Node node: nodesSmiles) {
       final String smiles = (String) node.getProperty(NodeFields.Smiles.getValue());
-      final NodeParameters block = converter.convertSmiles(smiles);
+      final NodeParameters block = converter.convertSmiles(smiles, sanitize);
 
       addProperties(node, block);
     }

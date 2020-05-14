@@ -84,15 +84,17 @@ public interface FingerprintFactory {
    * Method for already opened ROMol to build fingerprint from Structure settings.
    *
    * @param mol already opened ROMol object
+   * @param sanitize
    * @return Fingerprint as BitSet.
    */
-  public BitSet createStructureFingerprint(final ROMol mol);
+  public BitSet createStructureFingerprint(final ROMol mol, boolean sanitize);
 
   /**
    * Method for already opened ROMol to build fingerprint from Query settings.
    *
    * @param mol already opened ROMol object
+   * @param sanitize
    * @return Fingerprint as BitSet.
    */
-  public BitSet createQueryFingerprint(final ROMol mol);
+  public BitSet createQueryFingerprint(final ROMol mol, boolean sanitize);
 }
