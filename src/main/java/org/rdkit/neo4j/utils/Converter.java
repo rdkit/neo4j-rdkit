@@ -142,7 +142,7 @@ public class Converter {
    * @return NodeParameters object
    */
   public NodeParameters convertMolBlock(final String molBlock, boolean sanitize) {
-    try (RWMolCloseable rwmol = RWMolCloseable.from(RWMol.MolFromMolBlock(molBlock))) {
+    try (RWMolCloseable rwmol = RWMolCloseable.from(RWMol.MolFromMolBlock(molBlock, sanitize))) {
       NodeParameters block = createMolBlock(rwmol, sanitize);
       block.setMolBlock(molBlock);
 

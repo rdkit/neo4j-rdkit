@@ -107,7 +107,8 @@ public class SmilesEventHandlerTest extends BaseTest {
         + "M  END\n";
 
     final String query = String.format("CREATE (c:Chemical:Structure {mdlmol: '%s'}) RETURN id(c) as id", mol);
-    final String canonicalSmiles = "COc1ccccc1";
+//    final String canonicalSmiles = "COc1ccccc1";
+    final String canonicalSmiles = "COC1=CC=CC=C1";
     final String formula = "C7H8O";
     final String inchi = "RDOXTESZEPMUJZ-UHFFFAOYSA-N";
     final double molecularWeight = 108.057514876;
@@ -128,5 +129,28 @@ public class SmilesEventHandlerTest extends BaseTest {
   @Test
   public void testInvalidSmiles() {
     graphDb.execute("CREATE (n:Entity:Chemical:Compound:Structure { luri: 'test3', tag:'<test3>', preferred_name: 'aabbcc3', smiles: 'Cl[C](C)(C)(C)Br'})");
+  }
+
+  @Test
+  public void testInvalidMdMol() {
+    String invalidMolBlock = "\n" +
+            "     RDKit          2D\n\n" +
+            "  6  5  0  0  0  0  0  0  0  0999 V2000\n" +
+            "    2.5981    1.5000    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    1.2990    0.7500    0.0000 C   0  0  0  0  0  5  0  0  0  0  0  0\n" +
+            "    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    2.5981   -0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    1.2990    2.2500    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    0.0000    1.5000    0.0000 Br  0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "  1  2  1  0\n" +
+            "  2  3  1  0\n" +
+            "  2  4  1  0\n" +
+            "  2  5  1  0\n" +
+            "  2  6  1  0\n" +
+            "M  END\n";
+
+    graphDb.execute(
+            " CREATE (n:Entity:Chemical:Compound:Structure { luri: 'test5', tag:'<test5>', preferred_name: 'aabbcc5', mdlmol: $molBlock})",
+            Collections.singletonMap("molBlock", invalidMolBlock));
   }
 }

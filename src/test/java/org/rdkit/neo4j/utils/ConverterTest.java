@@ -356,4 +356,40 @@ public class ConverterTest {
 //      logger.info(svg);
     }
   }
+
+  @Test
+  public void testConvertMolBlock() {
+    String validMolBlock = "\n" +
+            "     RDKit          2D\n\n" +
+            "  5  4  0  0  0  0  0  0  0  0999 V2000\n" +
+            "    1.5000    0.0000    0.0000 F   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "   -1.5000    0.0000    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    0.0000    1.5000    0.0000 Br  0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "   -0.0000   -1.5000    0.0000 I   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "  1  2  1  0\n" +
+            "  2  3  1  0\n" +
+            "  2  4  1  0\n" +
+            "  2  5  1  0\n" +
+            "M  END\n";
+    String invalidMolBlock = "\n" +
+            "     RDKit          2D\n\n" +
+            "  6  5  0  0  0  0  0  0  0  0999 V2000\n" +
+            "    2.5981    1.5000    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    1.2990    0.7500    0.0000 C   0  0  0  0  0  5  0  0  0  0  0  0\n" +
+            "    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    2.5981   -0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    1.2990    2.2500    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    0.0000    1.5000    0.0000 Br  0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "  1  2  1  0\n" +
+            "  2  3  1  0\n" +
+            "  2  4  1  0\n" +
+            "  2  5  1  0\n" +
+            "  2  6  1  0\n" +
+            "M  END\n";
+    NodeParameters parameters = Converter.createDefault().convertMolBlock(validMolBlock, false);
+    assertEquals("FC(Cl)(Br)I", parameters.getCanonicalSmiles());
+    parameters = Converter.createDefault().convertMolBlock(invalidMolBlock, false);
+    assertEquals("CC(C)(C)(Cl)Br", parameters.getCanonicalSmiles());
+  }
 }

@@ -106,14 +106,13 @@ public class ExactSearchTest extends BaseTest {
         + "  7  8  1  0  0  0  0\n"
         + "M  END\n";
 
-    try (org.neo4j.graphdb.Transaction tx = graphDb.beginTx()) {
-      graphDb.execute("CREATE (node:Chemical:Structure {mdlmol: $mol})", MapUtil.map("mol", mol));
-      tx.success();
-    }
+    graphDb.execute("CREATE (node:Chemical:Structure {mdlmol: $mol})", MapUtil.map("mol", mol));
 
-    final String expectedSmiles = "COc1ccccc1";
+    final String expectedSmiles = "COC1=CC=CC=C1";
     try (val tx = graphDb.beginTx()) {
-      val result = graphDb.execute("CALL org.rdkit.search.exact.mol($labels, $mol)", MapUtil.map("labels", defaultLabels, "mol", mol));
+      val result = graphDb.execute("CALL org.rdkit.search.exact.mol($labels, $mol, false)", MapUtil.map("labels", defaultLabels, "mol", mol));
+      // TODO: read sanitize flag from config
+//      val result = graphDb.execute("CALL org.rdkit.search.exact.mol($labels, $mol)", MapUtil.map("labels", defaultLabels, "mol", mol));
       val item = result.next();
       String smiles = (String) item.get("canonical_smiles");
       assertEquals(expectedSmiles, smiles);
