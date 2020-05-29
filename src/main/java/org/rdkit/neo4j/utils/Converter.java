@@ -65,7 +65,7 @@ public class Converter {
   }
 
   public static String molToSVG(final RWMolCloseable molOrigin) {
-    val molCopy = RWMolCloseable.from(molOrigin);
+    /*val molCopy = RWMolCloseable.from(molOrigin);
 
     RWMol mol;
 
@@ -76,10 +76,13 @@ public class Converter {
       // skip kekulization. If this still fails we throw up our hands
       RDKFuncs.prepareMolForDrawing(molCopy,false);
       mol = molCopy;
-    }
+    }*/
+
+    molOrigin.updatePropertyCache(false);
+    RDKFuncs.prepareMolForDrawing(molOrigin); //,false);
 
     final MolDraw2DSVG molDrawing = new MolDraw2DSVG(300, 300);
-    molDrawing.drawMolecule(mol);
+    molDrawing.drawMolecule(molOrigin);
     molDrawing.finishDrawing();
 
     // the svg namespace causes problems with the javascript table (github #29)

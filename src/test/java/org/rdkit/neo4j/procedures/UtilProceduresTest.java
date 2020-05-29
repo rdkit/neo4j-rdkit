@@ -17,10 +17,15 @@ package org.rdkit.neo4j.procedures;
 
 import static org.neo4j.graphdb.DependencyResolver.SelectionStrategy.FIRST;
 
+import java.util.Collections;
 import java.util.Map;
 import lombok.val;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.neo4j.graphdb.QueryExecutionException;
+import org.neo4j.helpers.collection.Iterators;
 import org.neo4j.helpers.collection.MapUtil;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.impl.proc.Procedures;
@@ -29,6 +34,9 @@ import org.rdkit.neo4j.index.utils.BaseTest;
 import org.rdkit.neo4j.index.utils.GraphUtils;
 
 public class UtilProceduresTest extends BaseTest {
+
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
 
   @Override
   public void prepareTestDatabase() {
@@ -48,14 +56,28 @@ public class UtilProceduresTest extends BaseTest {
   public void functionCreateSvgTest() {
     final String smiles = "O=S(=O)(Cc1ccccc1)CS(=O)(=O)Cc1ccccc1";
 
-    try (val tx = graphDb.beginTx()) {
-      graphDb.execute("CREATE (n:Chemical {smiles: $smiles})", MapUtil.map("smiles", smiles));
-      tx.success();
-    }
+    val result = Iterators.single(graphDb.execute("return org.rdkit.utils.svg($smiles) as svg", Collections.singletonMap("smiles", smiles)));
+    final String svg = (String) result.get("svg");
 
-    val result = graphDb.execute("MATCH (n:Chemical) return org.rdkit.utils.svg(n.smiles) as svg");
-    Map<String, Object> map = result.next();
-    final String svg = (String) map.get("svg");
+    Assert.assertTrue(svg.contains("<svg"));
+    Assert.assertTrue(svg.contains("</svg>"));
+  }
+
+  @Test
+  public void invalidSmilesSvgTest() {
+    thrown.expect(QueryExecutionException.class);
+    thrown.expectMessage("MolSanitizeException");
+    final String smiles = "Cl[C](C)(C)(C)Br";
+
+    Iterators.single(graphDb.execute("return org.rdkit.utils.svg($smiles) as svg", Collections.singletonMap("smiles", smiles)));
+  }
+
+  @Test
+  public void invalidSmilesWithFlagSvgTest() {
+    final String smiles = "Cl[C](C)(C)(C)Br";
+
+    val result = Iterators.single(graphDb.execute("return org.rdkit.utils.svg($smiles, false) as svg", Collections.singletonMap("smiles", smiles)));
+    final String svg = (String) result.get("svg");
 
     Assert.assertTrue(svg.contains("<svg"));
     Assert.assertTrue(svg.contains("</svg>"));
