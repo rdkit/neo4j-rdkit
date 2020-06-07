@@ -47,17 +47,14 @@ package org.rdkit.fingerprint;
  * #L%
  */
 
-import java.util.BitSet;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NonNull;
-import lombok.val;
 import org.RDKit.ExplicitBitVect;
 import org.RDKit.ROMol;
 import org.RDKit.RWMol;
 import org.rdkit.neo4j.utils.RWMolCloseable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.BitSet;
 
 /**
  * A fingerprint factory is an object that knows how to produce fingerprints for SMILES. It is used to calculate fingerprints for the search index as
@@ -67,8 +64,6 @@ import org.slf4j.LoggerFactory;
  * @author Manuel Schwarze
  */
 
-@Data
-@AllArgsConstructor
 public class DefaultFingerprintFactory implements FingerprintFactory {
 
   //
@@ -104,7 +99,7 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
    *
    * @param settings Fingerprint settings. Must not be null.
    */
-  public DefaultFingerprintFactory(@NonNull final FingerprintSettings settings) {
+  public DefaultFingerprintFactory(final FingerprintSettings settings) {
     settingsStructure = settingsQuery = settings;
   }
 
@@ -170,7 +165,7 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
    * @param sanitize
    * @return Fingerprint as BitSet.
    */
-  private BitSet createFingerprint(@NonNull final String strSmiles, final FingerprintSettings settings, boolean sanitize) {
+  private BitSet createFingerprint(final String strSmiles, final FingerprintSettings settings, boolean sanitize) {
 
     // todo: update code if other types are used
 
@@ -178,7 +173,7 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
     // Create an ROMol object
 
     // Performance trick, if SMILES is already canonicalized
-    try (val mol = RWMolCloseable.from(RWMol.MolFromSmiles(strSmiles, 0, sanitize))) {
+    try ( RWMolCloseable mol = RWMolCloseable.from(RWMol.MolFromSmiles(strSmiles, 0, sanitize))) {
       return createFingerprint(mol, settings, sanitize);
     }
   }

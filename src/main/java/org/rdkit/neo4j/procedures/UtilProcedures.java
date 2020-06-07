@@ -15,7 +15,6 @@ package org.rdkit.neo4j.procedures;
  * #L%
  */
 
-import lombok.val;
 import org.RDKit.RWMol;
 import org.neo4j.procedure.Description;
 import org.neo4j.procedure.Name;
@@ -28,7 +27,7 @@ public class UtilProcedures extends BaseProcedure {
   @UserFunction(name = "org.rdkit.utils.svg")
   @Description("RDKit function converts smiles into svg image as text")
   public String createSvg(@Name("smiles") final String smiles, @Name(value = "sanitize", defaultValue = "true") boolean sanitize) {
-    try (val mol = RWMolCloseable.from(RWMol.MolFromSmiles(smiles, 0, sanitize))) { // todo: add possibility to provide trusted (canonical) smiles
+    try (RWMolCloseable mol = RWMolCloseable.from(RWMol.MolFromSmiles(smiles, 0, sanitize))) { // todo: add possibility to provide trusted (canonical) smiles
       return Converter.molToSVG(mol);
     }
   }

@@ -15,10 +15,7 @@ package org.rdkit.neo4j.utils;
  * #L%
  */
 
-import java.util.BitSet;
-import lombok.val;
 import org.RDKit.MolDraw2DSVG;
-import org.RDKit.MolSanitizeException;
 import org.RDKit.RDKFuncs;
 import org.RDKit.ROMol;
 import org.RDKit.RWMol;
@@ -31,6 +28,8 @@ import org.rdkit.neo4j.models.LuceneQuery;
 import org.rdkit.neo4j.models.NodeParameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.BitSet;
 
 /**
  * Converter class

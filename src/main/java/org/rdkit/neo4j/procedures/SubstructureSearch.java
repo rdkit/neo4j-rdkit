@@ -15,23 +15,27 @@ package org.rdkit.neo4j.procedures;
  * #L%
  */
 
+import org.RDKit.ROMol;
+import org.RDKit.RWMol;
+import org.neo4j.graphdb.Label;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Result;
+import org.neo4j.helpers.collection.MapUtil;
+import org.neo4j.procedure.Description;
+import org.neo4j.procedure.Mode;
+import org.neo4j.procedure.Name;
+import org.neo4j.procedure.Procedure;
+import org.neo4j.procedure.UserFunction;
+import org.rdkit.neo4j.models.Constants;
+import org.rdkit.neo4j.models.LuceneQuery;
+import org.rdkit.neo4j.utils.Converter;
+import org.rdkit.neo4j.utils.RWMolCloseable;
+
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-
-import lombok.val;
-import org.RDKit.ROMol;
-import org.RDKit.RWMol;
-import org.neo4j.graphdb.*;
-import org.neo4j.helpers.collection.MapUtil;
-import org.neo4j.procedure.*;
-
-import org.rdkit.neo4j.models.Constants;
-import org.rdkit.neo4j.models.LuceneQuery;
-import org.rdkit.neo4j.utils.Converter;
-import org.rdkit.neo4j.utils.RWMolCloseable;
 
 /**
  * Class SubstructureSearch implements org.rdkit.search.substructure.* procedures
@@ -130,10 +134,10 @@ public class SubstructureSearch extends BaseProcedure {
     final String luri = (String) candidate.getProperty("luri", "<undefined>");
     log.info("isSubstructure call based on candidate_luri=%s, substructure_smiles=%s", luri, smiles);
 
-    try (val query = RWMolCloseable.from(RWMol.MolFromSmiles(smiles, 0, sanitize))) {
+    try (RWMolCloseable query = RWMolCloseable.from(RWMol.MolFromSmiles(smiles, 0, sanitize))) {
       query.updatePropertyCache(false);
       final String candidateSmiles = (String) candidate.getProperty("canonical_smiles");
-      try (val candidateRWMol = RWMolCloseable.from(RWMol.MolFromSmiles(candidateSmiles, 0, sanitize))) {
+      try (RWMolCloseable candidateRWMol = RWMolCloseable.from(RWMol.MolFromSmiles(candidateSmiles, 0, sanitize))) {
         candidateRWMol.updatePropertyCache(false);
         return candidateRWMol.hasSubstructMatch(query);
       }
@@ -150,7 +154,7 @@ public class SubstructureSearch extends BaseProcedure {
     query.updatePropertyCache(false);
 
     final String candidateSmiles = (String) candidate.getProperty("canonical_smiles");
-    try (val candidateRWMol = RWMolCloseable.from(RWMol.MolFromSmiles(candidateSmiles, 0, false))) {
+    try (RWMolCloseable candidateRWMol = RWMolCloseable.from(RWMol.MolFromSmiles(candidateSmiles, 0, false))) {
       candidateRWMol.updatePropertyCache(false);
       return candidateRWMol.hasSubstructMatch(query);
     } finally {

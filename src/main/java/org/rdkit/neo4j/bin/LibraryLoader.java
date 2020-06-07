@@ -15,19 +15,18 @@ package org.rdkit.neo4j.bin;
  * #L%
  */
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import lombok.val;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Class loads native libraries depending on os & arch
@@ -130,15 +129,15 @@ public class LibraryLoader {
     // Check file in existing java.library.path(s)
     final String[] libraryPaths = getLibraryPaths();
     for (final String strPath : libraryPaths) {
-      val found = getLibrariesInFolder(strPath, libraryNames);
+      List<String> found = getLibrariesInFolder(strPath, libraryNames);
       existingLibraries.addAll(found);
     }
 
-    val counted = existingLibraries.stream()
-        .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
-        .entrySet()
-        .stream()
-        .collect(Collectors.toList());
+    List<Entry<String, Long>> counted = existingLibraries.stream()
+            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+            .entrySet()
+            .stream()
+            .collect(Collectors.toList());
 
     for (Entry<String, Long> item : counted) {
       if (item.getValue() >= 2) {

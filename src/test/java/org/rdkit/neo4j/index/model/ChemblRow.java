@@ -15,11 +15,6 @@ package org.rdkit.neo4j.index.model;
  * #L%
  */
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-
-@Data
-@AllArgsConstructor
 public class ChemblRow {
   private String molId;
   private String docId;

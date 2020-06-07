@@ -16,9 +16,10 @@ package org.rdkit.neo4j.procedures;
  */
 
 
-import lombok.val;
 import org.junit.Before;
 import org.junit.Test;
+import org.neo4j.graphdb.Result;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.factory.GraphDatabaseBuilder;
 import org.neo4j.helpers.collection.MapUtil;
 import org.rdkit.neo4j.config.RDKitSettings;
@@ -46,9 +47,9 @@ public class ExactSearchTest extends BaseTest {
     insertChemblRows();
 
     final String expectedSmiles = "COc1cc2c(cc1Br)C(C)CNCC2";
-    try (val tx = graphDb.beginTx()) {
-      val result = graphDb.execute("CALL org.rdkit.search.exact.smiles($labels, $smiles)",
-          MapUtil.map("labels", defaultLabels, "smiles", expectedSmiles));
+    try (Transaction tx = graphDb.beginTx()) {
+      Result result = graphDb.execute("CALL org.rdkit.search.exact.smiles($labels, $smiles)",
+              MapUtil.map("labels", defaultLabels, "smiles", expectedSmiles));
 
       final String[] chembls = new String[]{"CHEMBL180815", "CHEMBL182184", "CHEMBL180867"};
 
@@ -89,9 +90,9 @@ public class ExactSearchTest extends BaseTest {
     graphDb.execute("CREATE (node:Chemical:Structure {mdlmol: $mol})", MapUtil.map("mol", mol));
 
     final String expectedSmiles = "COC1=CC=CC=C1";
-    try (val tx = graphDb.beginTx()) {
-      val result = graphDb.execute("CALL org.rdkit.search.exact.mol($labels, $mol, false)", MapUtil.map("labels", defaultLabels, "mol", mol));
-      val item = result.next();
+    try (Transaction tx = graphDb.beginTx()) {
+      Result result = graphDb.execute("CALL org.rdkit.search.exact.mol($labels, $mol, false)", MapUtil.map("labels", defaultLabels, "mol", mol));
+      Map<String, Object> item = result.next();
       String smiles = (String) item.get("canonical_smiles");
       assertEquals(expectedSmiles, smiles);
     }

@@ -15,12 +15,6 @@ package org.rdkit.neo4j.utils;
  * #L%
  */
 
-import static org.junit.Assert.*;
-import static org.rdkit.neo4j.utils.Converter.DELIMITER_AND;
-import static org.rdkit.neo4j.utils.Converter.DELIMITER_OR;
-import static org.rdkit.neo4j.utils.Converter.DELIMITER_WHITESPACE;
-
-import lombok.val;
 import org.RDKit.RWMol;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -32,6 +26,13 @@ import org.rdkit.neo4j.models.LuceneQuery;
 import org.rdkit.neo4j.models.NodeParameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.rdkit.neo4j.utils.Converter.DELIMITER_AND;
+import static org.rdkit.neo4j.utils.Converter.DELIMITER_OR;
+import static org.rdkit.neo4j.utils.Converter.DELIMITER_WHITESPACE;
 
 public class ConverterTest {
   private static final Logger logger = LoggerFactory.getLogger(ConverterTest.class);
@@ -349,7 +350,7 @@ public class ConverterTest {
   @Test
   public void createSVGTest() {
     final String smiles = "O=S(=O)(Cc1ccccc1)CS(=O)(=O)Cc1ccccc1";
-    try (val mol = RWMolCloseable.from(RWMol.MolFromSmiles(smiles))) {
+    try (RWMolCloseable mol = RWMolCloseable.from(RWMol.MolFromSmiles(smiles))) {
       final String svg = Converter.molToSVG(mol);
       Assert.assertTrue(svg.contains("<svg"));
       Assert.assertTrue(svg.contains("</svg>"));

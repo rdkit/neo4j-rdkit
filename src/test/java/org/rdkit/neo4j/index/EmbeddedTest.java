@@ -15,18 +15,18 @@ package org.rdkit.neo4j.index;
  * #L%
  */
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+import org.neo4j.graphdb.Result;
+import org.neo4j.graphdb.Transaction;
+import org.rdkit.neo4j.index.utils.BaseTest;
+import org.rdkit.neo4j.index.utils.ChemicalStructureParser;
+import org.rdkit.neo4j.index.utils.TestUtils;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.val;
 
-import org.junit.Test;
-
-import org.rdkit.neo4j.index.utils.BaseTest;
-import org.rdkit.neo4j.index.utils.ChemicalStructureParser;
-import org.rdkit.neo4j.index.utils.TestUtils;
+import static org.junit.Assert.assertEquals;
 
 
 public class EmbeddedTest extends BaseTest {
@@ -39,28 +39,28 @@ public class EmbeddedTest extends BaseTest {
     parameters.put("rows", structures);
 
     // Insert objects
-    try (val tx = graphDb.beginTx()) {
-      val r = graphDb.execute(
-          "UNWIND {rows} as row "
-              + "MERGE (from:Chemical:Structure {smiles: row.smiles, mol_id: row.mol_id}) "
-              + "MERGE (to:Doc{doc_id: row.doc_id}) "
-              + "MERGE (from) -[:PUBLISHED]-> (to)", parameters);
+    try (Transaction tx = graphDb.beginTx()) {
+      Result r = graphDb.execute(
+              "UNWIND {rows} AS row "
+                      + "MERGE (from:Chemical:Structure {smiles: row.smiles, mol_id: row.mol_id}) "
+                      + "MERGE (to:Doc{doc_id: row.doc_id}) "
+                      + "MERGE (from) -[:PUBLISHED]-> (to)", parameters);
 
       logger.info("{}", r.resultAsString());
       tx.success();
     }
 
-    try (val tx = graphDb.beginTx()) {
-      val result1 = graphDb.execute("MATCH (c:Doc) RETURN count(*) as docs");
+    try (Transaction tx = graphDb.beginTx()) {
+      Result result1 = graphDb.execute("MATCH (c:Doc) RETURN count(*) as docs");
       long docsAmount = (Long) TestUtils.getFirstRow(result1).get("docs");
       assertEquals(56L, docsAmount);
 
-      val result2 = graphDb.execute("MATCH (a:Chemical) RETURN count(*) as chemicals");
+      Result result2 = graphDb.execute("MATCH (a:Chemical) RETURN count(*) as chemicals");
 
       long chemicalsAmount = (Long) TestUtils.getFirstRow(result2).get("chemicals");
       assertEquals(940L, chemicalsAmount);
 
-      val result3 = graphDb.execute("MATCH (a:Chemical) -[b:PUBLISHED]-> (c:Doc) RETURN count(*) as relations");
+      Result result3 = graphDb.execute("MATCH (a:Chemical) -[b:PUBLISHED]-> (c:Doc) RETURN count(*) as relations");
 
       long relationsCount = (Long) TestUtils.getFirstRow(result3).get("relations");
       assertEquals(1111L, relationsCount);

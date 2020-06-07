@@ -6,18 +6,15 @@
 
   <groupId>org.neo4j.rdkit</groupId>
   <artifactId>rdkit-index</artifactId>
-  <version>0.1.0</version>
+  <version>3.5-1.0.0</version>
   <name>RDKit-Neo4j plugin</name>
   <packaging>jar</packaging>
 
-
   <properties>
     <mockito.version>2.27.0</mockito.version>
-    <neo4j.version>3.5.6</neo4j.version>
+    <neo4j.version>3.5.17</neo4j.version>
     <slf4j.version>1.7.25</slf4j.version>
     <junit.version>5.2.0</junit.version>
-    <lombok.version>1.18.8</lombok.version>
-    <apoc.version>3.5.0.2</apoc.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
@@ -34,12 +31,14 @@
         <version>${neo4j.version}</version>
         <scope>provided</scope>
       </dependency>
+<!--
       <dependency>
         <groupId>org.neo4j.driver</groupId>
         <artifactId>neo4j-java-driver</artifactId>
         <version>1.7.5</version>
         <scope>test</scope>
       </dependency>
+-->
       <dependency>
         <groupId>org.neo4j.community</groupId>
         <artifactId>it-test-support</artifactId>
@@ -73,10 +72,12 @@
       <artifactId>neo4j</artifactId>
     </dependency>
 
+<!--
     <dependency>
       <groupId>org.neo4j.driver</groupId>
       <artifactId>neo4j-java-driver</artifactId>
     </dependency>
+-->
 
     <dependency>
       <groupId>org.neo4j.test</groupId>
@@ -95,11 +96,13 @@
       <version>${slf4j.version}</version>
     </dependency>
 
+<!--
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <version>${lombok.version}</version>
     </dependency>
+-->
 
 
     <!-- Tests -->

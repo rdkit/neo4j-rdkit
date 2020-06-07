@@ -17,8 +17,6 @@ package org.rdkit.neo4j.models;
 
 import java.util.BitSet;
 import java.util.StringJoiner;
-import lombok.Getter;
-import lombok.ToString;
 
 /**
  * Class stores a lucene-like object
@@ -26,13 +24,9 @@ import lombok.ToString;
  * {@link #positiveBits}: Amount of set bits in a fingerprint (stored in order to improve evaluation performance)
  * {@link #delimiter}: Delimiter between numbers in `luceneQuery`
  */
-@ToString
 public class LuceneQuery {
-  @Getter
   private final String luceneQuery;
-  @Getter
   private final long positiveBits;
-  @Getter
   private final String delimiter;
 
   /**
@@ -54,5 +48,17 @@ public class LuceneQuery {
     this.luceneQuery = joiner.toString();
     this.positiveBits = counter;
     this.delimiter = delimiter;
+  }
+
+  public String getLuceneQuery() {
+    return luceneQuery;
+  }
+
+  public long getPositiveBits() {
+    return positiveBits;
+  }
+
+  public String getDelimiter() {
+    return delimiter;
   }
 }

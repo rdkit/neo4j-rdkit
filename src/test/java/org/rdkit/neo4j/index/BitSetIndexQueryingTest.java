@@ -15,21 +15,20 @@ package org.rdkit.neo4j.index;
  * #L%
  */
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import lombok.val;
 import org.junit.Test;
 import org.neo4j.graphdb.Result;
 import org.neo4j.helpers.collection.MapUtil;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.rdkit.neo4j.index.utils.BaseTest;
 import org.rdkit.neo4j.models.LuceneQuery;
 import org.rdkit.neo4j.utils.Converter;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class BitSetIndexQueryingTest extends BaseTest {
 
@@ -98,25 +97,25 @@ public class BitSetIndexQueryingTest extends BaseTest {
     final String queryString = query.getLuceneQuery();
     final Set<String> smiles1BitPositions = new HashSet<>(Arrays.asList(queryString.split(query.getDelimiter())));
 
-    val result = graphDb.execute("CALL db.index.fulltext.queryNodes('bitset', $query) "
-            + "YIELD node "
-            + "RETURN node.smiles, node.fp, node.fp_ones",
-        MapUtil.map("query", queryString))
-        .stream()
-        .map(candidate -> {
-          long counter = 0;
-          for (String position: ((String) candidate.get("node.fp")).split("\\s")) {
-            if (smiles1BitPositions.contains(position)) counter++;
-          }
+    List<Map<String, Object>> result = graphDb.execute("CALL db.index.fulltext.queryNodes('bitset', $query) "
+                    + "YIELD node "
+                    + "RETURN node.smiles, node.fp, node.fp_ones",
+            MapUtil.map("query", queryString))
+            .stream()
+            .map(candidate -> {
+              long counter = 0;
+              for (String position : ((String) candidate.get("node.fp")).split("\\s")) {
+                if (smiles1BitPositions.contains(position)) counter++;
+              }
 
-          long queryPositiveBits = query.getPositiveBits();
-          long candidatePositiveBits = (Long) candidate.get("node.fp_ones");
-          double similarity = 1.0d * counter / (queryPositiveBits + candidatePositiveBits - counter);
+              long queryPositiveBits = query.getPositiveBits();
+              long candidatePositiveBits = (Long) candidate.get("node.fp_ones");
+              double similarity = 1.0d * counter / (queryPositiveBits + candidatePositiveBits - counter);
 
-          return MapUtil.map("similarity", similarity, "smiles", candidate.get("node.smiles"));
-        })
-        .sorted((m1, m2) -> Double.compare((Double) m2.get("similarity"), (Double) m1.get("similarity")))
-        .collect(Collectors.toList());
+              return MapUtil.map("similarity", similarity, "smiles", candidate.get("node.smiles"));
+            })
+            .sorted((m1, m2) -> Double.compare((Double) m2.get("similarity"), (Double) m1.get("similarity")))
+            .collect(Collectors.toList());
 
     result.forEach(map -> {
       logger.info("Map={}", map);

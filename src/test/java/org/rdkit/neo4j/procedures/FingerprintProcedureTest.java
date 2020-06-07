@@ -15,25 +15,22 @@ package org.rdkit.neo4j.procedures;
  * #L%
  */
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.neo4j.graphdb.DependencyResolver.SelectionStrategy.FIRST;
-
-import java.util.Map;
-import lombok.val;
 import org.junit.Before;
 import org.junit.Test;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.QueryExecutionException;
+import org.neo4j.graphdb.Result;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.helpers.collection.MapUtil;
-import org.neo4j.internal.kernel.api.exceptions.KernelException;
-import org.neo4j.kernel.impl.proc.Procedures;
-import org.neo4j.kernel.internal.GraphDatabaseAPI;
-import org.neo4j.test.TestGraphDatabaseFactory;
 import org.rdkit.fingerprint.FingerprintType;
 import org.rdkit.neo4j.index.utils.BaseTest;
 import org.rdkit.neo4j.index.utils.TestUtils;
 import org.rdkit.neo4j.models.NodeFields;
+
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class FingerprintProcedureTest extends BaseTest {
 
@@ -55,7 +52,7 @@ public class FingerprintProcedureTest extends BaseTest {
         "fptype", fptype
     ));
 
-    try (val tx = graphDb.beginTx()) {
+    try (Transaction tx = graphDb.beginTx()) {
       final String positiveBitsAmount = propertyName + "_ones";
       final String fpTypeProperty = propertyName + "_type";
       graphDb.findNodes(Label.label(defaultLabels.get(0))).stream().allMatch(node -> {
@@ -118,12 +115,12 @@ public class FingerprintProcedureTest extends BaseTest {
         "fptype", fptype
     ));
 
-    val result = graphDb.execute("CALL org.rdkit.fingerprint.similarity.smiles($labels, $smiles, $fptype, $propertyName, $threshold)", MapUtil.map(
-      "labels", defaultLabels,
-        "smiles", initialSmiles,
-        "fptype", fptype,
-        "propertyName", propertyName,
-        "threshold", 0.7d
+    Result result = graphDb.execute("CALL org.rdkit.fingerprint.similarity.smiles($labels, $smiles, $fptype, $propertyName, $threshold)", MapUtil.map(
+            "labels", defaultLabels,
+            "smiles", initialSmiles,
+            "fptype", fptype,
+            "propertyName", propertyName,
+            "threshold", 0.7d
     ));
 
     final int items = 2;

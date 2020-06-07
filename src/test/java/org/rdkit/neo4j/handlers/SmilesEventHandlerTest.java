@@ -15,14 +15,11 @@ package org.rdkit.neo4j.handlers;
  * #L%
  */
 
-import static org.junit.Assert.assertEquals;
-
-import lombok.val;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.NotFoundException;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.TransactionFailureException;
 import org.neo4j.graphdb.factory.GraphDatabaseBuilder;
 import org.neo4j.helpers.collection.Iterators;
@@ -31,6 +28,8 @@ import org.rdkit.neo4j.config.RDKitSettings;
 import org.rdkit.neo4j.index.utils.BaseTest;
 
 import java.util.Collections;
+
+import static org.junit.Assert.assertEquals;
 
 public class SmilesEventHandlerTest extends BaseTest {
 
@@ -48,7 +47,7 @@ public class SmilesEventHandlerTest extends BaseTest {
   public void emptySmilesTest() {
     final String query = "CREATE (c:Chemical:Structure {smiles: ''})";
     logger.info("{}", query);
-    try (val tx = graphDb.beginTx()) {
+    try (Transaction tx = graphDb.beginTx()) {
       graphDb.execute(query);
       tx.success();
     } catch (TransactionFailureException e) {
@@ -62,7 +61,7 @@ public class SmilesEventHandlerTest extends BaseTest {
     final String query = "CREATE (c:Chemical:Structure {mol_id: '1244_65'})";
     logger.info("{}", query);
 
-    try (val tx = graphDb.beginTx()) {
+    try (Transaction tx = graphDb.beginTx()) {
       graphDb.execute(query);
       tx.success();
     } catch (TransactionFailureException e) {
@@ -81,7 +80,7 @@ public class SmilesEventHandlerTest extends BaseTest {
 
     graphDb.execute(query, Collections.singletonMap("smiles", smiles));
 
-    try (val tx = graphDb.beginTx()) {
+    try (Transaction tx = graphDb.beginTx()) {
       Node node = graphDb.getNodeById(0);
       assertEquals(node.getProperty("smiles"), smiles);
       assertEquals(node.getProperty("canonical_smiles"), canonicalSmiles);
@@ -122,7 +121,7 @@ public class SmilesEventHandlerTest extends BaseTest {
 
     long id = (long) Iterators.single(graphDb.execute(query)).get("id");
 
-    try (val tx = graphDb.beginTx()) {
+    try (Transaction tx = graphDb.beginTx()) {
       Node node = graphDb.getNodeById(id);
 
       assertEquals(canonicalSmiles, node.getProperty("canonical_smiles"));

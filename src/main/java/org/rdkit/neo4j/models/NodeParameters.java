@@ -15,18 +15,11 @@ package org.rdkit.neo4j.models;
  * #L%
  */
 
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
-
 /**
  * Class stores built parameters from RDKit function call
  * Used as an intermediate storage of parameters, later those are saved in a node object as properties
  */
 
-@Data
-@ToString
-@RequiredArgsConstructor
 public class NodeParameters {
   private final String canonicalSmiles;
   private final String formula;
@@ -36,4 +29,53 @@ public class NodeParameters {
   private final long fingerpintOnes;
   private String molBlock;
   private String smiles;
+
+  public NodeParameters(String canonicalSmiles, String formula, double molecularWeight, String inchiKey, String fingerprintEncoded, long fingerpintOnes) {
+    this.canonicalSmiles = canonicalSmiles;
+    this.formula = formula;
+    this.molecularWeight = molecularWeight;
+    this.inchiKey = inchiKey;
+    this.fingerprintEncoded = fingerprintEncoded;
+    this.fingerpintOnes = fingerpintOnes;
+  }
+
+  public String getCanonicalSmiles() {
+    return canonicalSmiles;
+  }
+
+  public String getFormula() {
+    return formula;
+  }
+
+  public double getMolecularWeight() {
+    return molecularWeight;
+  }
+
+  public String getInchiKey() {
+    return inchiKey;
+  }
+
+  public String getFingerprintEncoded() {
+    return fingerprintEncoded;
+  }
+
+  public long getFingerpintOnes() {
+    return fingerpintOnes;
+  }
+
+  public String getMolBlock() {
+    return molBlock;
+  }
+
+  public String getSmiles() {
+    return smiles;
+  }
+
+  public void setMolBlock(String molBlock) {
+    this.molBlock = molBlock;
+  }
+
+  public void setSmiles(String smiles) {
+    this.smiles = smiles;
+  }
 }

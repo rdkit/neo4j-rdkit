@@ -15,30 +15,16 @@ package org.rdkit.neo4j.index.utils;
  * #L%
  */
 
-import org.neo4j.driver.v1.AuthTokens;
-import org.neo4j.driver.v1.Config;
-import org.neo4j.driver.v1.Driver;
-import org.neo4j.driver.v1.GraphDatabase;
-import org.neo4j.driver.v1.Logging;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Result;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
-import org.rdkit.neo4j.procedures.SubstructureSearch;
 
 import java.util.Map;
 
-import static org.neo4j.graphdb.DependencyResolver.SelectionStrategy.FIRST;
-
 public class TestUtils {
-  public static Driver getDriver() {
-    Config config = Config.builder()
-        .withLogging( Logging.slf4j() )
-        .build();
-    String uri = "bolt://localhost:7687";
-    return GraphDatabase.driver(uri, AuthTokens.basic("neo4j", "test"), config);
-  }
+
 
   public static Map<String, Object> getFirstRow(Result result) {
     return result.next();

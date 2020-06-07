@@ -15,6 +15,9 @@ package org.rdkit.neo4j.bin;
  * #L%
  */
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -23,9 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
-
 import java.nio.file.Files;
-
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -35,11 +36,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-
 import java.util.stream.Collectors;
-import lombok.val;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Class provides functionality for moving native libraries from .jar and local folder into temporary folder (defined by OS).
@@ -64,7 +61,7 @@ class LibraryMover {
       throw new LoaderException("Unable to initialize temp folder", e);
     }
 
-    val tempFolderLibs = LibraryLoader.getLibrariesInFolder(temporaryDir.getAbsolutePath(), missingLibraries);
+    List<String> tempFolderLibs = LibraryLoader.getLibrariesInFolder(temporaryDir.getAbsolutePath(), missingLibraries);
     logger.debug("Libraries present in temp folder: {}", tempFolderLibs);
     missingLibraries = missingLibraries.stream()
         .filter(x -> !tempFolderLibs.contains(x))
