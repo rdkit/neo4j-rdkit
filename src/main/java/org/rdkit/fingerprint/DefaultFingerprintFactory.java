@@ -116,42 +116,46 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
    * Creates a fingerprint based on the passed in SMILES.
    *
    * @param strSmiles SMILES structure, preferably canonicalized by RDKit before. Must not be null.
+   * @param sanitize
    * @return Fingerprint as BitSet.
    */
   @Override
-  public BitSet createStructureFingerprint(final String strSmiles) {
-    return createFingerprint(strSmiles, settingsStructure);
+  public BitSet createStructureFingerprint(final String strSmiles, boolean sanitize) {
+    return createFingerprint(strSmiles, settingsStructure, sanitize);
   }
 
   /**
    * Creates a fingerprint based on the passed in SMILES.
    *
    * @param strSmiles SMILES structure, preferably canonicalized by RDKit before. Must not be null.
+   * @param sanitize
    * @return Fingerprint as BitSet.
    */
   @Override
-  public BitSet createQueryFingerprint(final String strSmiles) {
-    return createFingerprint(strSmiles, settingsQuery);
+  public BitSet createQueryFingerprint(final String strSmiles, boolean sanitize) {
+    return createFingerprint(strSmiles, settingsQuery, sanitize);
   }
 
   /**
    * Method for already opened RWMol to build fingerprint from Query settings.
    *
    * @param mol already opened RWMol object
+   * @param sanitize
    * @return Fingerprint as BitSet.
    */
-  public BitSet createQueryFingerprint(final ROMol mol) {
-    return createFingerprint(mol, settingsQuery);
+  public BitSet createQueryFingerprint(final ROMol mol, boolean sanitize) {
+    return createFingerprint(mol, settingsQuery, sanitize);
   }
 
   /**
    * Method for already opened RWMol to build fingerprint from Structure settings.
    *
    * @param mol already opened RWMol object
+   * @param sanitize
    * @return Fingerprint as BitSet.
    */
-  public BitSet createStructureFingerprint(final ROMol mol) {
-    return createFingerprint(mol, settingsStructure);
+  public BitSet createStructureFingerprint(final ROMol mol, boolean sanitize) {
+    return createFingerprint(mol, settingsStructure, sanitize);
   }
 
   //
@@ -163,9 +167,10 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
    *
    * @param strSmiles SMILES structure, preferably canonicalized by RDKit before. Must not be null. ! EXPECTED CANONICALIZED SMILES !
    * @param settings Fingerprint settings to be used.
+   * @param sanitize
    * @return Fingerprint as BitSet.
    */
-  private BitSet createFingerprint(@NonNull final String strSmiles, final FingerprintSettings settings) {
+  private BitSet createFingerprint(@NonNull final String strSmiles, final FingerprintSettings settings, boolean sanitize) {
 
     // todo: update code if other types are used
 
@@ -173,8 +178,8 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
     // Create an ROMol object
 
     // Performance trick, if SMILES is already canonicalized
-    try (val mol = RWMolCloseable.from(RWMol.MolFromSmiles(strSmiles, 0, false))) {
-      return createFingerprint(mol, settings);
+    try (val mol = RWMolCloseable.from(RWMol.MolFromSmiles(strSmiles, 0, sanitize))) {
+      return createFingerprint(mol, settings, sanitize);
     }
   }
 
@@ -182,10 +187,11 @@ public class DefaultFingerprintFactory implements FingerprintFactory {
    * Method for already opened RWMol
    * @param mol - canonicalized
    * @param settings to build fingerprint from
+   * @param sanitize
    * @return BitSet from rwmol (fingerprint of `settings` type)
    */
-  private BitSet createFingerprint(final ROMol mol, final FingerprintSettings settings) {
-    mol.updatePropertyCache();
+  private BitSet createFingerprint(final ROMol mol, final FingerprintSettings settings, boolean sanitize) {
+    mol.updatePropertyCache(sanitize);
 
     // Calculate fingerprint
     return convert(settings.getRdkitFingerprintType().calculate(mol, settings));

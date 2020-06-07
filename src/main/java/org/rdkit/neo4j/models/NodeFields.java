@@ -28,7 +28,7 @@ public enum NodeFields {
   MdlMol("mdlmol"),
   Smiles("smiles"),
   CanonicalSmiles("canonical_smiles"),
-  Inchi("inchi"),
+  InchiKey("inchi_key"),
   Formula("formula"),
   MolecularWeight("molecular_weight"),
   FingerprintEncoded("fp"),

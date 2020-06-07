@@ -1,46 +1,71 @@
 package org.rdkit.neo4j.procedures;
 
-import static org.neo4j.graphdb.DependencyResolver.SelectionStrategy.FIRST;
+/*-
+ * #%L
+ * RDKit-Neo4j plugin
+ * %%
+ * Copyright (C) 2019 - 2020 RDKit
+ * %%
+ * Copyright (C) 2019 Evgeny Sorokin
+ * @@ All Rights Reserved @@
+ * This file is part of the RDKit Neo4J integration.
+ * The contents are covered by the terms of the BSD license
+ * which is included in the file LICENSE, found at the root
+ * of the neo4j-rdkit source tree.
+ * #L%
+ */
 
-import java.util.Map;
 import lombok.val;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.neo4j.graphdb.QueryExecutionException;
+import org.neo4j.helpers.collection.Iterators;
 import org.neo4j.helpers.collection.MapUtil;
-import org.neo4j.internal.kernel.api.exceptions.KernelException;
-import org.neo4j.kernel.impl.proc.Procedures;
-import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.rdkit.neo4j.index.utils.BaseTest;
-import org.rdkit.neo4j.index.utils.GraphUtils;
+import org.rdkit.neo4j.index.utils.TestUtils;
+
+import java.util.Collections;
+import java.util.Map;
 
 public class UtilProceduresTest extends BaseTest {
 
-  @Override
-  public void prepareTestDatabase() {
-    graphDb = GraphUtils.getTestDatabase();
-    Procedures proceduresService = ((GraphDatabaseAPI) graphDb).getDependencyResolver().resolveDependency(Procedures.class, FIRST);
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
 
-    try {
-      proceduresService.registerProcedure(ExactSearch.class, true);
-      proceduresService.registerFunction(UtilProcedures.class, true);
-    } catch (KernelException e) {
-      e.printStackTrace();
-      logger.error("Not success :(");
-    }
+  @Before
+  public void registerProcedures() {
+    TestUtils.registerProcedures(graphDb, ExactSearch.class, UtilProcedures.class);
   }
 
   @Test
   public void functionCreateSvgTest() {
     final String smiles = "O=S(=O)(Cc1ccccc1)CS(=O)(=O)Cc1ccccc1";
 
-    try (val tx = graphDb.beginTx()) {
-      graphDb.execute("CREATE (n:Chemical {smiles: $smiles})", MapUtil.map("smiles", smiles));
-      tx.success();
-    }
+    val result = Iterators.single(graphDb.execute("return org.rdkit.utils.svg($smiles) as svg", Collections.singletonMap("smiles", smiles)));
+    final String svg = (String) result.get("svg");
 
-    val result = graphDb.execute("MATCH (n:Chemical) return org.rdkit.utils.svg(n.smiles) as svg");
-    Map<String, Object> map = result.next();
-    final String svg = (String) map.get("svg");
+    Assert.assertTrue(svg.contains("<svg"));
+    Assert.assertTrue(svg.contains("</svg>"));
+  }
+
+  @Test
+  public void invalidSmilesSvgTest() {
+    thrown.expect(QueryExecutionException.class);
+    thrown.expectMessage("MolSanitizeException");
+    final String smiles = "Cl[C](C)(C)(C)Br";
+
+    Iterators.single(graphDb.execute("return org.rdkit.utils.svg($smiles) as svg", Collections.singletonMap("smiles", smiles)));
+  }
+
+  @Test
+  public void invalidSmilesWithFlagSvgTest() {
+    final String smiles = "Cl[C](C)(C)(C)Br";
+
+    val result = Iterators.single(graphDb.execute("return org.rdkit.utils.svg($smiles, false) as svg", Collections.singletonMap("smiles", smiles)));
+    final String svg = (String) result.get("svg");
 
     Assert.assertTrue(svg.contains("<svg"));
     Assert.assertTrue(svg.contains("</svg>"));

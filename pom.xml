@@ -6,7 +6,7 @@
 
   <groupId>org.neo4j.rdkit</groupId>
   <artifactId>rdkit-index</artifactId>
-  <version>0.0.9</version>
+  <version>0.1.0</version>
   <name>RDKit-Neo4j plugin</name>
   <packaging>jar</packaging>
 
@@ -135,15 +135,22 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.0.0-M3</version>
+        <version>3.0.0-M4</version>
         <configuration>
           <argLine>-Xmx1024m</argLine>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-report-plugin</artifactId>
+        <version>3.0.0-M4</version>
+      </plugin>
 
       <!-- todo: add building jar and running tests as a phase execution -->
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
+        <version>3.2.4</version>
         <executions>
           <execution>
             <phase>package</phase>

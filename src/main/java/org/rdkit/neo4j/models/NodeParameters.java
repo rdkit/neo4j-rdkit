@@ -31,7 +31,7 @@ public class NodeParameters {
   private final String canonicalSmiles;
   private final String formula;
   private final double molecularWeight;
-  private final String inchi;
+  private final String inchiKey;
   private final String fingerprintEncoded;
   private final long fingerpintOnes;
   private String molBlock;

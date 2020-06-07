@@ -48,8 +48,8 @@ public class ConverterTest {
     final String smiles1 = "O=S(=O)(Cc1ccccc1)CS(=O)(=O)Cc1ccccc1";
     final String smiles2 = "O=S(=O)(CC1=CC=CC=C1)CS(=O)(=O)CC1=CC=CC=C1";
 
-    NodeParameters block1 = converter.convertSmiles(smiles1);
-    NodeParameters block2 = converter.convertSmiles(smiles2);
+    NodeParameters block1 = converter.convertSmiles(smiles1, true);
+    NodeParameters block2 = converter.convertSmiles(smiles2, true);
 
     String rdkitSmiles1 = block1.getCanonicalSmiles();
     String rdkitSmiles2 = block2.getCanonicalSmiles();
@@ -63,7 +63,7 @@ public class ConverterTest {
   @Test(expected = IllegalArgumentException.class)
   public void smilesFailureTest() {
     final String smiles = "nonvalid";
-    NodeParameters block = converter.convertSmiles(smiles);
+    NodeParameters block = converter.convertSmiles(smiles, true);
     String rdkitSmiles = block.getCanonicalSmiles();
 
     logger.error(rdkitSmiles);
@@ -125,12 +125,12 @@ public class ConverterTest {
     final String inchi = "DKXNMYFLQWZCGD-UHFFFAOYSA-N";
     final double molecularWeight = 324.049000992;
 
-    NodeParameters block = converter.convertMolBlock(molBlock);
+    NodeParameters block = converter.convertMolBlock(molBlock, true);
     logger.info("{}", block);
 
     assertEquals(smiles, block.getCanonicalSmiles());
     assertEquals(formula, block.getFormula());
-    assertEquals(inchi, block.getInchi());
+    assertEquals(inchi, block.getInchiKey());
     assertEquals(molecularWeight, block.getMolecularWeight(), 1e-4);
   }
 
@@ -140,7 +140,7 @@ public class ConverterTest {
     final int expectedPositive = 269;
 
     Converter converter = Converter.createConverter(FingerprintType.pattern);
-    LuceneQuery luceneQuery = converter.getLuceneSSSQuery("O=S(=O)(Cc1ccccc1)CS(=O)(=O)Cc1ccccc1");
+    LuceneQuery luceneQuery = converter.getLuceneSSSQuery("O=S(=O)(Cc1ccccc1)CS(=O)(=O)Cc1ccccc1", true);
 
     assertEquals(expectedPositive, luceneQuery.getPositiveBits());
     assertEquals(expectedLuceneQuery, luceneQuery.getLuceneQuery());
@@ -154,7 +154,7 @@ public class ConverterTest {
     final int expectedPositive = -1;
 
     Converter converter = Converter.createConverter(FingerprintType.morgan);
-    LuceneQuery luceneQuery = converter.getLuceneSSSQuery("COc1cc2c(cc1Br)C(C)CNCC2"); // todo: why fails?
+    LuceneQuery luceneQuery = converter.getLuceneSSSQuery("COc1cc2c(cc1Br)C(C)CNCC2", true); // todo: why fails?
 
     assertEquals(expectedPositive, luceneQuery.getPositiveBits());
     assertEquals(expectedLuceneQuery, luceneQuery.getLuceneQuery());
@@ -167,8 +167,8 @@ public class ConverterTest {
     final String smiles = "O=S(=O)(Cc1ccccc1)CS(=O)(=O)Cc1ccccc1";
     Converter converterTorsion = Converter.createConverter(FingerprintType.torsion);
     Converter converterPattern = Converter.createConverter(FingerprintType.pattern);
-    LuceneQuery patternQuery = converterPattern.getLuceneFingerprint(smiles);
-    LuceneQuery torsionQuery = converterTorsion.getLuceneFingerprint(smiles);
+    LuceneQuery patternQuery = converterPattern.getLuceneFingerprint(smiles, true);
+    LuceneQuery torsionQuery = converterTorsion.getLuceneFingerprint(smiles, true);
 
     assertEquals(DELIMITER_WHITESPACE, patternQuery.getDelimiter());
     assertEquals(DELIMITER_WHITESPACE, torsionQuery.getDelimiter());
@@ -338,7 +338,7 @@ public class ConverterTest {
         + "M  CHG  2   1  -1   2   1\n"
         + "M  END\n";
 
-    NodeParameters block = converter.convertMolBlock(mdlmol);
+    NodeParameters block = converter.convertMolBlock(mdlmol, true);
     final String expectedSmiles = "[Cl-].c1ccc(Oc2ccc3c4[nH]c([nH]c5c6ccc(Oc7ccccc7)cc6c6[nH]c7[nH]c([nH]c8c9ccc(Oc%10ccccc%10)cc9c([nH]4)n8[al+]n56)c4cc(Oc5ccccc5)ccc74)c3c2)cc1";
     assertEquals("RWMol from mdlmol block creates canonical smiles", expectedSmiles, block.getCanonicalSmiles());
 
@@ -355,5 +355,41 @@ public class ConverterTest {
       Assert.assertTrue(svg.contains("</svg>"));
 //      logger.info(svg);
     }
+  }
+
+  @Test
+  public void testConvertMolBlock() {
+    String validMolBlock = "\n" +
+            "     RDKit          2D\n\n" +
+            "  5  4  0  0  0  0  0  0  0  0999 V2000\n" +
+            "    1.5000    0.0000    0.0000 F   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "   -1.5000    0.0000    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    0.0000    1.5000    0.0000 Br  0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "   -0.0000   -1.5000    0.0000 I   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "  1  2  1  0\n" +
+            "  2  3  1  0\n" +
+            "  2  4  1  0\n" +
+            "  2  5  1  0\n" +
+            "M  END\n";
+    String invalidMolBlock = "\n" +
+            "     RDKit          2D\n\n" +
+            "  6  5  0  0  0  0  0  0  0  0999 V2000\n" +
+            "    2.5981    1.5000    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    1.2990    0.7500    0.0000 C   0  0  0  0  0  5  0  0  0  0  0  0\n" +
+            "    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    2.5981   -0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    1.2990    2.2500    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    0.0000    1.5000    0.0000 Br  0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "  1  2  1  0\n" +
+            "  2  3  1  0\n" +
+            "  2  4  1  0\n" +
+            "  2  5  1  0\n" +
+            "  2  6  1  0\n" +
+            "M  END\n";
+    NodeParameters parameters = Converter.createDefault().convertMolBlock(validMolBlock, false);
+    assertEquals("FC(Cl)(Br)I", parameters.getCanonicalSmiles());
+    parameters = Converter.createDefault().convertMolBlock(invalidMolBlock, false);
+    assertEquals("CC(C)(C)(Cl)Br", parameters.getCanonicalSmiles());
   }
 }

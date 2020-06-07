@@ -16,49 +16,29 @@ package org.rdkit.neo4j.procedures;
  */
 
 
-import static org.junit.Assert.assertEquals;
-import static org.neo4j.graphdb.DependencyResolver.SelectionStrategy.FIRST;
+import lombok.val;
+import org.junit.Before;
+import org.junit.Test;
+import org.neo4j.graphdb.factory.GraphDatabaseBuilder;
+import org.neo4j.helpers.collection.MapUtil;
+import org.rdkit.neo4j.config.RDKitSettings;
+import org.rdkit.neo4j.index.utils.BaseTest;
+import org.rdkit.neo4j.index.utils.TestUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import lombok.val;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import org.neo4j.driver.v1.Config;
-import org.neo4j.driver.v1.Driver;
-import org.neo4j.driver.v1.GraphDatabase;
-import org.neo4j.driver.v1.Session;
-import org.neo4j.driver.v1.Transaction;
-import org.neo4j.graphdb.Node;
-import org.neo4j.harness.junit.Neo4jRule;
-import org.neo4j.helpers.collection.MapUtil;
-import org.neo4j.internal.kernel.api.exceptions.KernelException;
-import org.neo4j.kernel.impl.proc.Procedures;
-import org.neo4j.kernel.internal.GraphDatabaseAPI;
-import org.rdkit.neo4j.index.utils.BaseTest;
-import org.rdkit.neo4j.index.utils.ChemicalStructureParser;
-import org.rdkit.neo4j.index.utils.GraphUtils;
-
+import static org.junit.Assert.assertEquals;
 
 public class ExactSearchTest extends BaseTest {
 
-  public Neo4jRule neo4j = new Neo4jRule()
-      .withProcedure(ExactSearch.class);
+  @Before
+  public void registerProcedures() {
+    TestUtils.registerProcedures(graphDb, ExactSearch.class);
+  }
 
   @Override
-  public void prepareTestDatabase() {
-    graphDb = GraphUtils.getTestDatabase();
-    Procedures proceduresService = ((GraphDatabaseAPI) graphDb).getDependencyResolver().resolveDependency(Procedures.class, FIRST);
-    try {
-      proceduresService.registerProcedure(ExactSearch.class, true);
-    } catch (KernelException e) {
-      e.printStackTrace();
-      logger.error("Not success :(");
-    }
+  protected void prepareDatabase(GraphDatabaseBuilder builder) {
+    builder.setConfig(RDKitSettings.indexSanitize, "false");
   }
 
   @Test
@@ -106,14 +86,11 @@ public class ExactSearchTest extends BaseTest {
         + "  7  8  1  0  0  0  0\n"
         + "M  END\n";
 
-    try (org.neo4j.graphdb.Transaction tx = graphDb.beginTx()) {
-      graphDb.execute("CREATE (node:Chemical:Structure {mdlmol: $mol})", MapUtil.map("mol", mol));
-      tx.success();
-    }
+    graphDb.execute("CREATE (node:Chemical:Structure {mdlmol: $mol})", MapUtil.map("mol", mol));
 
-    final String expectedSmiles = "COc1ccccc1";
+    final String expectedSmiles = "COC1=CC=CC=C1";
     try (val tx = graphDb.beginTx()) {
-      val result = graphDb.execute("CALL org.rdkit.search.exact.mol($labels, $mol)", MapUtil.map("labels", defaultLabels, "mol", mol));
+      val result = graphDb.execute("CALL org.rdkit.search.exact.mol($labels, $mol, false)", MapUtil.map("labels", defaultLabels, "mol", mol));
       val item = result.next();
       String smiles = (String) item.get("canonical_smiles");
       assertEquals(expectedSmiles, smiles);

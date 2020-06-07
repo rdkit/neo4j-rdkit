@@ -24,14 +24,24 @@ import org.junit.Test;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.NotFoundException;
 import org.neo4j.graphdb.TransactionFailureException;
+import org.neo4j.graphdb.factory.GraphDatabaseBuilder;
+import org.neo4j.helpers.collection.Iterators;
 import org.rdkit.neo4j.bin.LibraryLoader;
+import org.rdkit.neo4j.config.RDKitSettings;
 import org.rdkit.neo4j.index.utils.BaseTest;
+
+import java.util.Collections;
 
 public class SmilesEventHandlerTest extends BaseTest {
 
   @BeforeClass
   public static void loadLibraries() throws Exception {
     LibraryLoader.loadLibraries();
+  }
+
+  @Override
+  protected void prepareDatabase(GraphDatabaseBuilder builder) {
+    builder.setConfig(RDKitSettings.indexSanitize, "false");
   }
 
   @Test
@@ -65,14 +75,11 @@ public class SmilesEventHandlerTest extends BaseTest {
   public void insertCanonicalSmilesTest() {
     final String smiles = "C(F)(F)F";
     final String canonicalSmiles = "FC(F)F";
-    final String query = String.format("CREATE (c:Chemical:Structure {smiles: '%s'})", smiles);
+    final String query = "CREATE (c:Chemical:Structure {smiles: $smiles})";
 
     logger.info("{}, expected canonical={}", query, canonicalSmiles);
 
-    try (val tx = graphDb.beginTx()) {
-      graphDb.execute(query);
-      tx.success();
-    }
+    graphDb.execute(query, Collections.singletonMap("smiles", smiles));
 
     try (val tx = graphDb.beginTx()) {
       Node node = graphDb.getNodeById(0);
@@ -106,25 +113,51 @@ public class SmilesEventHandlerTest extends BaseTest {
         + "  7  8  1  0  0  0  0\n"
         + "M  END\n";
 
-    final String query = String.format("CREATE (c:Chemical:Structure {mdlmol: '%s'})", mol);
-    final String canonicalSmiles = "COc1ccccc1";
+    final String query = String.format("CREATE (c:Chemical:Structure {mdlmol: '%s'}) RETURN id(c) as id", mol);
+//    final String canonicalSmiles = "COc1ccccc1";
+    final String canonicalSmiles = "COC1=CC=CC=C1";
     final String formula = "C7H8O";
-    final String inchi = "RDOXTESZEPMUJZ-UHFFFAOYSA-N";
+    final String inchi_key = "RDOXTESZEPMUJZ-UHFFFAOYSA-N";
     final double molecularWeight = 108.057514876;
 
-    try (val tx = graphDb.beginTx()) {
-      graphDb.execute(query);
-      tx.success();
-    }
+    long id = (long) Iterators.single(graphDb.execute(query)).get("id");
 
     try (val tx = graphDb.beginTx()) {
-      Node node = graphDb.getNodeById(0);
+      Node node = graphDb.getNodeById(id);
 
       assertEquals(canonicalSmiles, node.getProperty("canonical_smiles"));
       assertEquals(formula, node.getProperty("formula"));
-      assertEquals(inchi, node.getProperty("inchi"));
+      assertEquals(inchi_key, node.getProperty("inchi_key"));
       assertEquals(molecularWeight, (Double) node.getProperty("molecular_weight"), 1e-3);
       tx.success();
     }
+  }
+
+  @Test
+  public void testInvalidSmiles() {
+    graphDb.execute("CREATE (n:Entity:Chemical:Compound:Structure { luri: 'test3', tag:'<test3>', preferred_name: 'aabbcc3', smiles: 'Cl[C](C)(C)(C)Br'})");
+  }
+
+  @Test
+  public void testInvalidMdMol() {
+    String invalidMolBlock = "\n" +
+            "     RDKit          2D\n\n" +
+            "  6  5  0  0  0  0  0  0  0  0999 V2000\n" +
+            "    2.5981    1.5000    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    1.2990    0.7500    0.0000 C   0  0  0  0  0  5  0  0  0  0  0  0\n" +
+            "    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    2.5981   -0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    1.2990    2.2500    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    0.0000    1.5000    0.0000 Br  0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "  1  2  1  0\n" +
+            "  2  3  1  0\n" +
+            "  2  4  1  0\n" +
+            "  2  5  1  0\n" +
+            "  2  6  1  0\n" +
+            "M  END\n";
+
+    graphDb.execute(
+            " CREATE (n:Entity:Chemical:Compound:Structure { luri: 'test5', tag:'<test5>', preferred_name: 'aabbcc5', mdlmol: $molBlock})",
+            Collections.singletonMap("molBlock", invalidMolBlock));
   }
 }

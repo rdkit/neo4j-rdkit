@@ -21,6 +21,7 @@ import static org.neo4j.graphdb.DependencyResolver.SelectionStrategy.FIRST;
 
 import java.util.Map;
 import lombok.val;
+import org.junit.Before;
 import org.junit.Test;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.QueryExecutionException;
@@ -28,24 +29,17 @@ import org.neo4j.helpers.collection.MapUtil;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
+import org.neo4j.test.TestGraphDatabaseFactory;
 import org.rdkit.fingerprint.FingerprintType;
 import org.rdkit.neo4j.index.utils.BaseTest;
-import org.rdkit.neo4j.index.utils.GraphUtils;
+import org.rdkit.neo4j.index.utils.TestUtils;
 import org.rdkit.neo4j.models.NodeFields;
 
 public class FingerprintProcedureTest extends BaseTest {
 
-  @Override
-  public void prepareTestDatabase() {
-    graphDb = GraphUtils.getTestDatabase();
-    Procedures proceduresService = ((GraphDatabaseAPI) graphDb).getDependencyResolver().resolveDependency(Procedures.class, FIRST);
-    try {
-      proceduresService.registerProcedure(SubstructureSearch.class, true);
-      proceduresService.registerProcedure(FingerprintProcedures.class, true);
-    } catch (KernelException e) {
-      e.printStackTrace();
-      logger.error("Not success :(");
-    }
+  @Before
+  public void registerProcedures() {
+    TestUtils.registerProcedures(graphDb, SubstructureSearch.class, FingerprintProcedures.class);
     graphDb.execute("CALL org.rdkit.search.createIndex($labels)", MapUtil.map("labels", defaultLabels));
   }
 

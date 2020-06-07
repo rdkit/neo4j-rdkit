@@ -16,6 +16,7 @@ package org.rdkit.neo4j.handlers;
  */
 
 import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.extension.ExtensionType;
 import org.neo4j.kernel.extension.KernelExtensionFactory;
 import org.neo4j.kernel.impl.spi.KernelContext;
@@ -25,6 +26,7 @@ import org.neo4j.logging.internal.LogService;
 
 import org.rdkit.neo4j.bin.LibraryLoader;
 import org.rdkit.neo4j.bin.LoaderException;
+import org.rdkit.neo4j.config.RDKitSettings;
 import org.rdkit.neo4j.handlers.RDKitEventHandlerExtensionFactory.Dependencies;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +60,9 @@ public class RDKitEventHandlerExtensionFactory extends KernelExtensionFactory<De
       @Override
       public void start() {
         logger.debug("Starting RDKit trigger watcher");
-        handler = new RDKitEventHandler(dependencies.getGraphDatabaseService());
+        boolean sanitize = dependencies.config().get(RDKitSettings.indexSanitize);
+        logger.debug("sanitize = %s", sanitize);
+        handler = new RDKitEventHandler(dependencies.getGraphDatabaseService(), sanitize);
         dependencies.getGraphDatabaseService().registerTransactionEventHandler(handler);
       }
 
@@ -74,6 +78,7 @@ public class RDKitEventHandlerExtensionFactory extends KernelExtensionFactory<De
   interface Dependencies {
     GraphDatabaseService getGraphDatabaseService();
     LogService log();
+    Config config();
   }
 
   public RDKitEventHandlerExtensionFactory() {
