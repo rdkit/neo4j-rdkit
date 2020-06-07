@@ -36,7 +36,8 @@ mvn org.apache.maven.plugins:maven-install-plugin:2.3.1:install-file \
   ```
 2) Generate .jar file with all dependencies with `mvn package`  
 3) Put generated .jar file into `plugins/` folder of your neo4j instance and start the server  
-4) By executing `CALL dbms.procedures()`, you are expected to see `org.rdkit.*` procedures  
+4) add `rdkit.index.sanitize=false` to `neo4j.conf`if you want to switch of sanitizing for indexing. If not provided `true` is assumed as default.
+5) By executing `CALL dbms.procedures()`, you are expected to see `org.rdkit.*` procedures  
 
 ## Extension functionality
 

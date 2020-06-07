@@ -23,5 +23,5 @@ import static org.neo4j.kernel.configuration.Settings.TRUE;
 import static org.neo4j.kernel.configuration.Settings.setting;
 
 public class RDKitSettings implements LoadableConfig {
-    public static final Setting<Boolean> indexSanitize = setting("rdkit.index.sanitzie", BOOLEAN, TRUE);
+    public static final Setting<Boolean> indexSanitize = setting("rdkit.index.sanitize", BOOLEAN, TRUE);
 }
