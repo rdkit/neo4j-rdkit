@@ -110,7 +110,7 @@ public class SmilesEventHandlerTest extends BaseTest {
 //    final String canonicalSmiles = "COc1ccccc1";
     final String canonicalSmiles = "COC1=CC=CC=C1";
     final String formula = "C7H8O";
-    final String inchi = "RDOXTESZEPMUJZ-UHFFFAOYSA-N";
+    final String inchi_key = "RDOXTESZEPMUJZ-UHFFFAOYSA-N";
     final double molecularWeight = 108.057514876;
 
     long id = (long) Iterators.single(graphDb.execute(query)).get("id");
@@ -120,7 +120,7 @@ public class SmilesEventHandlerTest extends BaseTest {
 
       assertEquals(canonicalSmiles, node.getProperty("canonical_smiles"));
       assertEquals(formula, node.getProperty("formula"));
-      assertEquals(inchi, node.getProperty("inchi"));
+      assertEquals(inchi_key, node.getProperty("inchi_key"));
       assertEquals(molecularWeight, (Double) node.getProperty("molecular_weight"), 1e-3);
       tx.success();
     }

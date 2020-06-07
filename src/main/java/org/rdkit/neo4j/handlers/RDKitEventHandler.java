@@ -110,7 +110,7 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
   public static void addProperties(final Node node, final NodeParameters block) {
     logger.debug("Node={} adding properties: {}", node, block);
     node.setProperty(NodeFields.CanonicalSmiles.getValue(), block.getCanonicalSmiles());
-    node.setProperty(NodeFields.Inchi.getValue(), block.getInchi());
+    node.setProperty(NodeFields.InchiKey.getValue(), block.getInchiKey());
     node.setProperty(NodeFields.Formula.getValue(), block.getFormula());
     node.setProperty(NodeFields.MolecularWeight.getValue(), block.getMolecularWeight());
     node.setProperty(NodeFields.FingerprintEncoded.getValue(), block.getFingerprintEncoded());

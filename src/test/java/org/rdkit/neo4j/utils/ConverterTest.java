@@ -130,7 +130,7 @@ public class ConverterTest {
 
     assertEquals(smiles, block.getCanonicalSmiles());
     assertEquals(formula, block.getFormula());
-    assertEquals(inchi, block.getInchi());
+    assertEquals(inchi, block.getInchiKey());
     assertEquals(molecularWeight, block.getMolecularWeight(), 1e-4);
   }
 
