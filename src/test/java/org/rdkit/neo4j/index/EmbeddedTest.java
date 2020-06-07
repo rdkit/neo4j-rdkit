@@ -22,13 +22,11 @@ import java.util.List;
 import java.util.Map;
 import lombok.val;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-import org.rdkit.neo4j.bin.LibraryLoader;
 import org.rdkit.neo4j.index.utils.BaseTest;
 import org.rdkit.neo4j.index.utils.ChemicalStructureParser;
-import org.rdkit.neo4j.index.utils.GraphUtils;
+import org.rdkit.neo4j.index.utils.TestUtils;
 
 
 public class EmbeddedTest extends BaseTest {
@@ -54,17 +52,17 @@ public class EmbeddedTest extends BaseTest {
 
     try (val tx = graphDb.beginTx()) {
       val result1 = graphDb.execute("MATCH (c:Doc) RETURN count(*) as docs");
-      long docsAmount = (Long) GraphUtils.getFirstRow(result1).get("docs");
+      long docsAmount = (Long) TestUtils.getFirstRow(result1).get("docs");
       assertEquals(56L, docsAmount);
 
       val result2 = graphDb.execute("MATCH (a:Chemical) RETURN count(*) as chemicals");
 
-      long chemicalsAmount = (Long) GraphUtils.getFirstRow(result2).get("chemicals");
+      long chemicalsAmount = (Long) TestUtils.getFirstRow(result2).get("chemicals");
       assertEquals(940L, chemicalsAmount);
 
       val result3 = graphDb.execute("MATCH (a:Chemical) -[b:PUBLISHED]-> (c:Doc) RETURN count(*) as relations");
 
-      long relationsCount = (Long) GraphUtils.getFirstRow(result3).get("relations");
+      long relationsCount = (Long) TestUtils.getFirstRow(result3).get("relations");
       assertEquals(1111L, relationsCount);
 
       tx.success();

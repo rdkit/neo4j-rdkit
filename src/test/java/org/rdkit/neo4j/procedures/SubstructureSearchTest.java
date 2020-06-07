@@ -17,33 +17,23 @@ package org.rdkit.neo4j.procedures;
 
 import static org.neo4j.graphdb.DependencyResolver.SelectionStrategy.FIRST;
 
+import java.util.HashMap;
 import java.util.Map;
-import lombok.val;
-import org.RDKit.RWMol;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.neo4j.graphdb.QueryExecutionException;
+import org.neo4j.graphdb.Result;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.helpers.collection.MapUtil;
-import org.neo4j.internal.kernel.api.exceptions.KernelException;
-import org.neo4j.kernel.impl.proc.Procedures;
-import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.rdkit.neo4j.index.utils.BaseTest;
-import org.rdkit.neo4j.index.utils.GraphUtils;
+import org.rdkit.neo4j.index.utils.TestUtils;
 
 public class SubstructureSearchTest extends BaseTest {
 
-  @Override
-  public void prepareTestDatabase() {
-    graphDb = GraphUtils.getTestDatabase();
-    Procedures proceduresService = ((GraphDatabaseAPI) graphDb).getDependencyResolver().resolveDependency(Procedures.class, FIRST);
-
-    try {
-      proceduresService.registerProcedure(SubstructureSearch.class, true);
-      proceduresService.registerFunction(SubstructureSearch.class, true);
-    } catch (KernelException e) {
-      e.printStackTrace();
-      logger.error("Not success :(");
-    }
+  @Before
+  public void setupTestDatabase() {
+    TestUtils.registerProcedures(graphDb, SubstructureSearch.class);
     graphDb.execute("CALL org.rdkit.search.createIndex($labels)", MapUtil.map("labels", defaultLabels));
   }
 
@@ -53,12 +43,12 @@ public class SubstructureSearchTest extends BaseTest {
 
     final String sssSmiles = "c1ccccc1";
 
-    try (val tx = graphDb.beginTx()) {
-      val result = graphDb.execute("CALL org.rdkit.search.substructure.smiles($labels, $smiles)", MapUtil.map(
+    try (Transaction tx = graphDb.beginTx()) {
+      Result result = graphDb.execute("CALL org.rdkit.search.substructure.smiles($labels, $smiles)", MapUtil.map(
           "labels", defaultLabels,
           "smiles", sssSmiles
       ));
-      Map<String, Object> row = GraphUtils.getFirstRow(result);
+      Map<String, Object> row = TestUtils.getFirstRow(result);
 
       String smiles = (String) row.get("canonical_smiles");
       long score = (Long) row.get("score");
@@ -75,17 +65,17 @@ public class SubstructureSearchTest extends BaseTest {
   public void fingerprintMatchEqualTest() {
     final String smiles = "c1ccccc1";
 
-    try (val tx = graphDb.beginTx()) {
+    try (Transaction tx = graphDb.beginTx()) {
       graphDb.execute("create (n:Structure:Chemical {smiles: $smiles}) return n", MapUtil.map("smiles", smiles));
       tx.success();
     }
 
-    try (val tx = graphDb.beginTx()) {
-      val result = graphDb.execute("CALL org.rdkit.search.substructure.smiles($labels, $smiles)", MapUtil.map(
+    try (Transaction tx = graphDb.beginTx()) {
+      Result result = graphDb.execute("CALL org.rdkit.search.substructure.smiles($labels, $smiles)", MapUtil.map(
           "labels", defaultLabels,
           "smiles", smiles
       ));
-      Map<String, Object> columns = GraphUtils.getFirstRow(result);
+      Map<String, Object> columns = TestUtils.getFirstRow(result);
       final String canonical = (String) columns.get("canonical_smiles");
       final long score = (Long) columns.get("score");
 
@@ -124,17 +114,17 @@ public class SubstructureSearchTest extends BaseTest {
 
     final String smiles = "COc1ccccc1";
 
-    try (val tx = graphDb.beginTx()) {
+    try (Transaction tx = graphDb.beginTx()) {
       graphDb.execute("create (n:Structure:Chemical {smiles: $smiles}) return n", MapUtil.map("smiles", smiles));
       tx.success();
     }
 
-    try (val tx = graphDb.beginTx()) {
-      val result = graphDb.execute("CALL org.rdkit.search.substructure.mol($labels, $mol)", MapUtil.map(
+    try (Transaction tx = graphDb.beginTx()) {
+      Result result = graphDb.execute("CALL org.rdkit.search.substructure.mol($labels, $mol)", MapUtil.map(
           "labels", defaultLabels,
           "mol", mol
       ));
-      Map<String, Object> columns = GraphUtils.getFirstRow(result);
+      Map<String, Object> columns = TestUtils.getFirstRow(result);
       final String canonical = (String) columns.get("canonical_smiles");
       final long score = (Long) columns.get("score");
 
@@ -150,7 +140,7 @@ public class SubstructureSearchTest extends BaseTest {
   public void smilesNullRWMolTest() throws Throwable {
     final String smiles = "[H]C1O[C@@H](C(=O)[O-])[C@H](O)[C@@H](O)[C@H]10";
 
-    try (val tx = graphDb.beginTx()) {
+    try (Transaction tx = graphDb.beginTx()) {
       graphDb.execute("CALL org.rdkit.search.substructure.smiles($labels, $smiles)", MapUtil.map(
           "labels", defaultLabels,
           "smiles", smiles
@@ -170,18 +160,18 @@ public class SubstructureSearchTest extends BaseTest {
     };
     final boolean[] substructMatches = new boolean[]{true, false};
 
-    try (val tx = graphDb.beginTx()) {
+    try (Transaction tx = graphDb.beginTx()) {
       for (String smiles: candidateSmiles)
         graphDb.execute("CREATE (n:Chemical:Structure {smiles:$smiles})", MapUtil.map("smiles", smiles));
       tx.success();
     }
 
     for (int i = 0; i < candidateSmiles.length; i++) {
-      val result = graphDb.execute(
+      Result result = graphDb.execute(
           "MATCH (n:Chemical:Structure) WHERE n.smiles = $candidate_smiles RETURN n.smiles as smiles, org.rdkit.search.substructure.is.smiles(n, $query) as bool",
           MapUtil.map("query", querySmiles, "candidate_smiles", candidateSmiles[i]));
 
-      val map = result.next();
+      Map<String, Object> map = result.next();
       Assert.assertEquals(substructMatches[i], map.get("bool"));
       Assert.assertEquals(candidateSmiles[i], map.get("smiles"));
     }
@@ -218,18 +208,18 @@ public class SubstructureSearchTest extends BaseTest {
     };
     final boolean[] substructMatches = new boolean[]{true, false};
 
-    try (val tx = graphDb.beginTx()) {
+    try (Transaction tx = graphDb.beginTx()) {
       for (String smiles: candidateSmiles)
         graphDb.execute("CREATE (n:Chemical:Structure {smiles:$smiles})", MapUtil.map("smiles", smiles));
       tx.success();
     }
 
     for (int i = 0; i < candidateSmiles.length; i++) {
-      val result = graphDb.execute(
-          "MATCH (n:Chemical:Structure) WHERE n.smiles = $candidate_smiles RETURN n.smiles as smiles, org.rdkit.search.substructure.is.mol(n, $query) as bool",
-          MapUtil.map("query", queryMol, "candidate_smiles", candidateSmiles[i]));
+      Result result = graphDb.execute(
+              "MATCH (n:Chemical:Structure) WHERE n.smiles = $candidate_smiles RETURN n.smiles AS smiles, org.rdkit.search.substructure.is.mol(n, $query) AS bool",
+              MapUtil.map("query", queryMol, "candidate_smiles", candidateSmiles[i]));
 
-      val map = result.next();
+      Map<String, Object> map = result.next();
       Assert.assertEquals(substructMatches[i], map.get("bool"));
       Assert.assertEquals(candidateSmiles[i], map.get("smiles"));
     }

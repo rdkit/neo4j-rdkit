@@ -15,41 +15,29 @@ package org.rdkit.neo4j.procedures;
  * #L%
  */
 
-import static org.neo4j.graphdb.DependencyResolver.SelectionStrategy.FIRST;
-
-import java.util.Collections;
-import java.util.Map;
 import lombok.val;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.graphdb.QueryExecutionException;
 import org.neo4j.helpers.collection.Iterators;
 import org.neo4j.helpers.collection.MapUtil;
-import org.neo4j.internal.kernel.api.exceptions.KernelException;
-import org.neo4j.kernel.impl.proc.Procedures;
-import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.rdkit.neo4j.index.utils.BaseTest;
-import org.rdkit.neo4j.index.utils.GraphUtils;
+import org.rdkit.neo4j.index.utils.TestUtils;
+
+import java.util.Collections;
+import java.util.Map;
 
 public class UtilProceduresTest extends BaseTest {
 
   @Rule
   public ExpectedException thrown = ExpectedException.none();
 
-  @Override
-  public void prepareTestDatabase() {
-    graphDb = GraphUtils.getTestDatabase();
-    Procedures proceduresService = ((GraphDatabaseAPI) graphDb).getDependencyResolver().resolveDependency(Procedures.class, FIRST);
-
-    try {
-      proceduresService.registerProcedure(ExactSearch.class, true);
-      proceduresService.registerFunction(UtilProcedures.class, true);
-    } catch (KernelException e) {
-      e.printStackTrace();
-      logger.error("Not success :(");
-    }
+  @Before
+  public void registerProcedures() {
+    TestUtils.registerProcedures(graphDb, ExactSearch.class, UtilProcedures.class);
   }
 
   @Test

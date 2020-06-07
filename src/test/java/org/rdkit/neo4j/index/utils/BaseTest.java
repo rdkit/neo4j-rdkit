@@ -19,10 +19,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.val;
 import org.junit.After;
 import org.junit.Before;
 import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.factory.GraphDatabaseBuilder;
+import org.neo4j.test.TestGraphDatabaseFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,8 +35,14 @@ public class BaseTest {
   protected List<String> defaultLabels = Arrays.asList("Chemical", "Structure");
 
   @Before
-  public void prepareTestDatabase() {
-    graphDb = GraphUtils.getTestDatabase();
+  public void createTestDatabase() {
+    GraphDatabaseBuilder builder = new TestGraphDatabaseFactory().newImpermanentDatabaseBuilder();
+    prepareDatabase(builder);
+    graphDb = builder.newGraphDatabase();
+  }
+
+  protected void prepareDatabase(GraphDatabaseBuilder builder) {
+    // intentionally empty, to be overridden in derived classes
   }
 
   @After
@@ -43,7 +51,7 @@ public class BaseTest {
   }
 
   protected void insertChemblRows() throws Exception {
-    try (val tx = graphDb.beginTx()) {
+    try (Transaction tx = graphDb.beginTx()) {
       List<Map<String, Object>> structures = ChemicalStructureParser.getChemicalRows();
       Map<String, Object> parameters = new HashMap<>();
 

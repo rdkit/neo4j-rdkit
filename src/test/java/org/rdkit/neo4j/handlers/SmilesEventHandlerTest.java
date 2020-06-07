@@ -24,8 +24,10 @@ import org.junit.Test;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.NotFoundException;
 import org.neo4j.graphdb.TransactionFailureException;
+import org.neo4j.graphdb.factory.GraphDatabaseBuilder;
 import org.neo4j.helpers.collection.Iterators;
 import org.rdkit.neo4j.bin.LibraryLoader;
+import org.rdkit.neo4j.config.RDKitSettings;
 import org.rdkit.neo4j.index.utils.BaseTest;
 
 import java.util.Collections;
@@ -35,6 +37,11 @@ public class SmilesEventHandlerTest extends BaseTest {
   @BeforeClass
   public static void loadLibraries() throws Exception {
     LibraryLoader.loadLibraries();
+  }
+
+  @Override
+  protected void prepareDatabase(GraphDatabaseBuilder builder) {
+    builder.setConfig(RDKitSettings.indexSanitize, "false");
   }
 
   @Test
