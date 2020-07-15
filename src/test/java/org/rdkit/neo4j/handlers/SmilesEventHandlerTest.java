@@ -113,8 +113,7 @@ public class SmilesEventHandlerTest extends BaseTest {
         + "M  END\n";
 
     final String query = String.format("CREATE (c:Chemical:Structure {mdlmol: '%s'}) RETURN id(c) as id", mol);
-//    final String canonicalSmiles = "COc1ccccc1";
-    final String canonicalSmiles = "COC1=CC=CC=C1";
+    final String canonicalSmiles = "COc1ccccc1";
     final String formula = "C7H8O";
     final String inchi_key = "RDOXTESZEPMUJZ-UHFFFAOYSA-N";
     final double molecularWeight = 108.057514876;
@@ -158,5 +157,76 @@ public class SmilesEventHandlerTest extends BaseTest {
     graphDb.execute(
             " CREATE (n:Entity:Chemical:Compound:Structure { luri: 'test5', tag:'<test5>', preferred_name: 'aabbcc5', mdlmol: $molBlock})",
             Collections.singletonMap("molBlock", invalidMolBlock));
+  }
+
+  @Test
+  public void testBuggyMolBlock() {
+    // this is a molblock causing an error directly in RDKIT if used with santize=false
+    String buggyMolBlock="\n" +
+            "    RDKit          2D\n" +
+            "\n" +
+            " 27 30  0  0  0  0  0  0  0  0999 V2000\n" +
+            "    8.2500   -3.8971    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    7.5000   -2.5981    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    8.2500   -1.2990    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    6.0000   -2.5981    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    5.2500   -1.2990    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    3.7500   -1.2990    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    3.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    3.7500    1.2990    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    1.5000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    0.7500   -1.2990    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "   -0.7500   -1.2990    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "   -1.5000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "   -0.7500    1.2990    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "   -1.5000    2.5981    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "   -0.7500    3.8971    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "   -1.5000    5.1962    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "   -0.7500    6.4952    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    0.7500    6.4952    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    1.5000    7.7942    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    3.0000    7.7942    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    3.7500    9.0933    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    3.7500    6.4952    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    3.0000    5.1962    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    1.5000    5.1962    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    0.7500    3.8971    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    1.5000    2.5981    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "    0.7500    1.2990    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n" +
+            "  1  2  1  0\n" +
+            "  2  3  1  0\n" +
+            "  2  4  1  0\n" +
+            "  4  5  1  0\n" +
+            "  5  6  1  0\n" +
+            "  6  7  1  0\n" +
+            "  7  8  2  0\n" +
+            "  7  9  1  0\n" +
+            "  9 10  2  0\n" +
+            " 10 11  1  0\n" +
+            " 11 12  2  0\n" +
+            " 12 13  1  0\n" +
+            " 13 14  2  0\n" +
+            " 14 15  1  0\n" +
+            " 15 16  2  0\n" +
+            " 16 17  1  0\n" +
+            " 17 18  2  0\n" +
+            " 18 19  1  0\n" +
+            " 19 20  2  0\n" +
+            " 20 21  1  0\n" +
+            " 20 22  1  0\n" +
+            " 22 23  2  0\n" +
+            " 23 24  1  0\n" +
+            " 24 25  2  0\n" +
+            " 25 26  1  0\n" +
+            " 26 27  2  0\n" +
+            " 27  9  1  0\n" +
+            " 27 13  1  0\n" +
+            " 25 15  1  0\n" +
+            " 24 18  1  0\n" +
+            "M  END\n" +
+            "\n" +
+            "$$$$\n";
+    graphDb.execute("CREATE (n:Entity:Chemical:Compound:Structure { luri: \"test2\", tag:\"~test2~\", preferred_name: \"aabbcc2\", mdlmol:$buggyMolBlock})",
+            Collections.singletonMap("buggyMolBlock", buggyMolBlock));
   }
 }

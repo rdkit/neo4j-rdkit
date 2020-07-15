@@ -232,8 +232,8 @@ public class Converter {
    */
   private NodeParameters createMolBlock(final RWMol rwmol, boolean sanitize) {
     logger.debug("Construct default molBlock fields");
+    rwmol.updatePropertyCache(false);
     final String rdkitSmiles = RDKFuncs.MolToSmiles(rwmol);
-    rwmol.updatePropertyCache(sanitize);
     final String formula = RDKFuncs.calcMolFormula(rwmol);
     final double molecularWeight = RDKFuncs.calcExactMW(rwmol);
     final String inchi = RDKFuncs.MolToInchiKey(rwmol);

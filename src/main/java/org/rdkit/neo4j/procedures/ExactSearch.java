@@ -15,18 +15,25 @@ package org.rdkit.neo4j.procedures;
  * #L%
  */
 
+import org.RDKit.MolSanitizeException;
+import org.neo4j.graphdb.Label;
+import org.neo4j.graphdb.Node;
+import org.neo4j.kernel.configuration.Config;
+import org.neo4j.kernel.internal.GraphDatabaseAPI;
+import org.neo4j.procedure.Description;
+import org.neo4j.procedure.Mode;
+import org.neo4j.procedure.Name;
+import org.neo4j.procedure.Procedure;
+import org.rdkit.neo4j.config.RDKitSettings;
+import org.rdkit.neo4j.handlers.RDKitEventHandler;
+import org.rdkit.neo4j.models.Constants;
+import org.rdkit.neo4j.models.NodeFields;
+import org.rdkit.neo4j.models.NodeParameters;
+import org.rdkit.neo4j.utils.Converter;
+
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import org.neo4j.graphdb.*;
-import org.neo4j.procedure.*;
-
-import org.rdkit.neo4j.handlers.RDKitEventHandler;
-import org.rdkit.neo4j.models.Constants;
-import org.rdkit.neo4j.models.NodeParameters;
-import org.rdkit.neo4j.models.NodeFields;
-import org.rdkit.neo4j.utils.Converter;
 
 /**
  * ExactSearch class
@@ -62,12 +69,28 @@ public class ExactSearch extends BaseProcedure {
    */
   @Procedure(name = "org.rdkit.search.exact.mol", mode = Mode.READ)
   @Description("RDKit exact search on `mdlmol` property")
-  public Stream<NodeWrapper> exactSearchMol(@Name("labels") List<String> labelNames, @Name("mol") String molBlock,
-                                            @Name(value = "sanitize", defaultValue = "true") boolean sanitize) {
+  public Stream<NodeWrapper> exactSearchMol(@Name("labels") List<String> labelNames, @Name("mol") String molBlock) {
     log.info("Exact search mol :: label=%s, molBlock=%s", labelNames, molBlock);
 
-    final String rdkitSmiles = converter.convertMolBlock(molBlock, sanitize).getCanonicalSmiles();
+    Config config = ((GraphDatabaseAPI) db).getDependencyResolver().resolveDependency(Config.class);
+    boolean sanitize = config.get(RDKitSettings.indexSanitize);
+
+    NodeParameters nodeParameters;
+    try {
+      nodeParameters = converter.convertMolBlock(molBlock, true);
+
+    } catch (MolSanitizeException e) {
+      if (sanitize) {
+        throw e;
+      } else  {
+        nodeParameters = converter.convertMolBlock(molBlock, false);
+      }
+    }
+
+    final String rdkitSmiles = nodeParameters.getCanonicalSmiles();
     return findLabeledNodes(labelNames, NodeFields.CanonicalSmiles.getValue(), rdkitSmiles);
+
+
   }
 
   /**

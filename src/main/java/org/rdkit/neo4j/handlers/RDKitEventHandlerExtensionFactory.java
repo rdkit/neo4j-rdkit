@@ -22,8 +22,8 @@ import org.neo4j.kernel.extension.KernelExtensionFactory;
 import org.neo4j.kernel.impl.spi.KernelContext;
 import org.neo4j.kernel.lifecycle.Lifecycle;
 import org.neo4j.kernel.lifecycle.LifecycleAdapter;
+import org.neo4j.logging.Log;
 import org.neo4j.logging.internal.LogService;
-
 import org.rdkit.neo4j.bin.LibraryLoader;
 import org.rdkit.neo4j.bin.LoaderException;
 import org.rdkit.neo4j.config.RDKitSettings;
@@ -53,13 +53,14 @@ public class RDKitEventHandlerExtensionFactory extends KernelExtensionFactory<De
   @Override
   public Lifecycle newInstance(KernelContext kernelContext, final Dependencies dependencies) {
     return new LifecycleAdapter() {
-//      LogService log = dependencies.log();
+      final Log log = dependencies.log().getUserLog(RDKitEventHandlerExtensionFactory.class);
 
       private RDKitEventHandler handler;
 
       @Override
       public void start() {
-        logger.debug("Starting RDKit trigger watcher");
+
+        log.info("Starting RDKit trigger watcher");
         boolean sanitize = dependencies.config().get(RDKitSettings.indexSanitize);
         logger.debug("sanitize = %s", sanitize);
         handler = new RDKitEventHandler(dependencies.getGraphDatabaseService(), sanitize);
@@ -68,7 +69,7 @@ public class RDKitEventHandlerExtensionFactory extends KernelExtensionFactory<De
 
       @Override
       public void shutdown() {
-        logger.debug("Stopping RDKit trigger watcher");
+        log.info("Stopping RDKit trigger watcher");
         if (handler != null)
           dependencies.getGraphDatabaseService().unregisterTransactionEventHandler(handler);
       }

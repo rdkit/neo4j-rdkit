@@ -89,9 +89,9 @@ public class ExactSearchTest extends BaseTest {
 
     graphDb.execute("CREATE (node:Chemical:Structure {mdlmol: $mol})", MapUtil.map("mol", mol));
 
-    final String expectedSmiles = "COC1=CC=CC=C1";
+    final String expectedSmiles = "COc1ccccc1";
     try (Transaction tx = graphDb.beginTx()) {
-      Result result = graphDb.execute("CALL org.rdkit.search.exact.mol($labels, $mol, false)", MapUtil.map("labels", defaultLabels, "mol", mol));
+      Result result = graphDb.execute("CALL org.rdkit.search.exact.mol($labels, $mol)", MapUtil.map("labels", defaultLabels, "mol", mol));
       Map<String, Object> item = result.next();
       String smiles = (String) item.get("canonical_smiles");
       assertEquals(expectedSmiles, smiles);

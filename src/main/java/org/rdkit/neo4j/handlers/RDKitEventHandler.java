@@ -15,25 +15,25 @@ package org.rdkit.neo4j.handlers;
  * #L%
  */
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
+import org.RDKit.MolSanitizeException;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.event.LabelEntry;
 import org.neo4j.graphdb.event.TransactionData;
 import org.neo4j.graphdb.event.TransactionEventHandler;
-
 import org.rdkit.neo4j.models.Constants;
 import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.models.NodeParameters;
 import org.rdkit.neo4j.utils.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * RDKit event handler
@@ -72,8 +72,17 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
 
     for (Node node: nodesMol) {
       final String mol = (String) node.getProperty(NodeFields.MdlMol.getValue());
-      final NodeParameters block = converter.convertMolBlock(mol, sanitize);
 
+      NodeParameters block;
+      try {
+        block = converter.convertMolBlock(mol, true);
+      } catch (MolSanitizeException e) {
+        if (sanitize) {
+          throw e;
+        } else {
+          block = converter.convertMolBlock(mol, false);
+        }
+      }
       addProperties(node, block);
     }
 
@@ -83,8 +92,17 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
 
     for (Node node: nodesSmiles) {
       final String smiles = (String) node.getProperty(NodeFields.Smiles.getValue());
-      final NodeParameters block = converter.convertSmiles(smiles, sanitize);
 
+      NodeParameters block;
+      try {
+        block = converter.convertSmiles(smiles, true);
+      } catch (MolSanitizeException e) {
+        if (sanitize) {
+          throw e;
+        } else {
+          block = converter.convertSmiles(smiles, false);
+        }
+      }
       addProperties(node, block);
     }
 
