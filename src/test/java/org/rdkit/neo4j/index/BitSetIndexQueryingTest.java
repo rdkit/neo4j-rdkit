@@ -16,14 +16,14 @@ package org.rdkit.neo4j.index;
  */
 
 import org.junit.Test;
-import org.neo4j.graphdb.Result;
-import org.neo4j.helpers.collection.MapUtil;
+import org.neo4j.internal.helpers.collection.MapUtil;
 import org.rdkit.neo4j.index.utils.BaseTest;
 import org.rdkit.neo4j.models.LuceneQuery;
 import org.rdkit.neo4j.utils.Converter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +46,7 @@ public class BitSetIndexQueryingTest extends BaseTest {
   @Test
   public void testIndexing() {
 
-    graphDb.execute("CALL db.index.fulltext.createNodeIndex('bitset', ['Molecule'], ['bits'], {analyzer: 'whitespace'} )");
+    graphDb.executeTransactionally("CALL db.index.fulltext.createNodeIndex('bitset', ['Molecule'], ['bits'], {analyzer: 'whitespace'} )");
 
     // build parameter maps
     List<Map<String, Object>> maps = moleculeNameToBitSetMap.entrySet().stream().map(entry -> MapUtil.map(
@@ -55,10 +55,12 @@ public class BitSetIndexQueryingTest extends BaseTest {
         "bits", bitsetStringToPositions(entry.getValue(), " "))).collect(Collectors.toList());
 
     // create test dataset
-    graphDb.execute("UNWIND $maps AS map CREATE (m:Molecule) SET m=map", MapUtil.map("maps", maps));
+    graphDb.executeTransactionally("UNWIND $maps AS map CREATE (m:Molecule) SET m=map", MapUtil.map("maps", maps));
 
-    Result result = graphDb.execute("MATCH (n) RETURN n");
-    logger.info(result.resultAsString());
+    graphDb.executeTransactionally("MATCH (n) RETURN n", Collections.emptyMap(), r -> {
+      logger.info(r.resultAsString());
+      return null;
+    });
 
     // searching for molecule with "0 0 0 1 0 1"
 
@@ -73,22 +75,24 @@ public class BitSetIndexQueryingTest extends BaseTest {
     // distance == 1: the bitset differs in 1 position
     // distance == 2: the bitset differs in 2 position
     // ...
-    result = graphDb.execute("CALL db.index.fulltext.queryNodes('bitset', $query) YIELD node " +
-            "WITH node, split(node.bitsetString, ' ') as bitset, split($queryBitsetString, ' ') as queryBitset " +
-            "WITH node, reduce(delta=0, x in range(0,size(bitset)-1) | case bitset[x]=queryBitset[x] when true then delta else delta+1 end) as distance " +
-            "RETURN node.name, node.bitsetString, node.bits, distance",
-        MapUtil.map("query", queryString, "queryBitsetString", queryBitsetString));
-    logger.info(result.resultAsString());
 
-    graphDb.execute("CALL db.index.fulltext.drop('bitset')"); // otherwise we get an exception on shutdown
+    graphDb.executeTransactionally("CALL db.index.fulltext.queryNodes('bitset', $query) YIELD node " +
+                    "WITH node, split(node.bitsetString, ' ') as bitset, split($queryBitsetString, ' ') as queryBitset " +
+                    "WITH node, reduce(delta=0, x in range(0,size(bitset)-1) | case bitset[x]=queryBitset[x] when true then delta else delta+1 end) as distance " +
+                    "RETURN node.name, node.bitsetString, node.bits, distance",
+            MapUtil.map("query", queryString, "queryBitsetString", queryBitsetString), r -> {
+      logger.info(r.resultAsString());
+      return null;
+    });
 
+    graphDb.executeTransactionally("CALL db.index.fulltext.drop('bitset')"); // otherwise we get an exception on shutdown
   }
 
   @Test
   public void makeSimilarityRequestTest() throws Exception {
     insertChemblRows();
 
-    graphDb.execute("CALL db.index.fulltext.createNodeIndex('bitset', ['Chemical', 'Structure'], ['fp'], {analyzer: 'whitespace'} )");
+    graphDb.executeTransactionally("CALL db.index.fulltext.createNodeIndex('bitset', ['Chemical', 'Structure'], ['fp'], {analyzer: 'whitespace'} )");
 
     final String smiles1 = "COc1ccc(C(=O)NO)cc1";
 
@@ -97,31 +101,48 @@ public class BitSetIndexQueryingTest extends BaseTest {
     final String queryString = query.getLuceneQuery();
     final Set<String> smiles1BitPositions = new HashSet<>(Arrays.asList(queryString.split(query.getDelimiter())));
 
-    List<Map<String, Object>> result = graphDb.execute("CALL db.index.fulltext.queryNodes('bitset', $query) "
+    graphDb.executeTransactionally("CALL db.index.fulltext.queryNodes('bitset', $query) "
                     + "YIELD node "
                     + "RETURN node.smiles, node.fp, node.fp_ones",
-            MapUtil.map("query", queryString))
-            .stream()
-            .map(candidate -> {
-              long counter = 0;
-              for (String position : ((String) candidate.get("node.fp")).split("\\s")) {
-                if (smiles1BitPositions.contains(position)) counter++;
-              }
+            MapUtil.map("query", queryString), result -> {
+              result.stream().map(candidate -> {
+                long counter = 0;
+                for (String position : ((String) candidate.get("node.fp")).split("\\s")) {
+                  if (smiles1BitPositions.contains(position)) counter++;
+                }
 
-              long queryPositiveBits = query.getPositiveBits();
-              long candidatePositiveBits = (Long) candidate.get("node.fp_ones");
-              double similarity = 1.0d * counter / (queryPositiveBits + candidatePositiveBits - counter);
+                long queryPositiveBits = query.getPositiveBits();
+                long candidatePositiveBits = (Long) candidate.get("node.fp_ones");
+                double similarity = 1.0d * counter / (queryPositiveBits + candidatePositiveBits - counter);
 
-              return MapUtil.map("similarity", similarity, "smiles", candidate.get("node.smiles"));
-            })
-            .sorted((m1, m2) -> Double.compare((Double) m2.get("similarity"), (Double) m1.get("similarity")))
-            .collect(Collectors.toList());
+                return MapUtil.map("similarity", similarity, "smiles", candidate.get("node.smiles"));
+              })
+              .sorted((m1, m2) -> Double.compare((Double) m2.get("similarity"), (Double) m1.get("similarity")))
+              .forEach(map -> logger.info("Map={}", map));
+              return null;
+            });
 
-    result.forEach(map -> {
-      logger.info("Map={}", map);
-    });
+    graphDb.executeTransactionally("CALL db.index.fulltext.queryNodes('bitset', $query) YIELD node "
+                    + "RETURN node.smiles, node.fp, node.fp_ones",
+            MapUtil.map("query", queryString), result -> {
+              result.stream().map(candidate -> {
+                long counter = 0;
+                for (String position : ((String) candidate.get("node.fp")).split("\\s")) {
+                  if (smiles1BitPositions.contains(position)) counter++;
+                }
 
-    graphDb.execute("CALL db.index.fulltext.drop('bitset')"); // otherwise we get an exception on shutdown
+                long queryPositiveBits = query.getPositiveBits();
+                long candidatePositiveBits = (Long) candidate.get("node.fp_ones");
+                double similarity = 1.0d * counter / (queryPositiveBits + candidatePositiveBits - counter);
+
+                return MapUtil.map("similarity", similarity, "smiles", candidate.get("node.smiles"));
+              })
+                      .sorted((m1, m2) -> Double.compare((Double) m2.get("similarity"), (Double) m1.get("similarity")))
+                      .forEach(map -> logger.info("Map={}", map));
+              return null;
+            });
+
+    graphDb.executeTransactionally("CALL db.index.fulltext.drop('bitset')"); // otherwise we get an exception on shutdown
   }
 
   /**

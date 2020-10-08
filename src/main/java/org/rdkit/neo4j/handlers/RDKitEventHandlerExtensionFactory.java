@@ -15,11 +15,13 @@ package org.rdkit.neo4j.handlers;
  * #L%
  */
 
+import org.neo4j.configuration.Config;
+import org.neo4j.configuration.GraphDatabaseSettings;
+import org.neo4j.dbms.api.DatabaseManagementService;
 import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.kernel.configuration.Config;
+import org.neo4j.kernel.extension.ExtensionFactory;
 import org.neo4j.kernel.extension.ExtensionType;
-import org.neo4j.kernel.extension.KernelExtensionFactory;
-import org.neo4j.kernel.impl.spi.KernelContext;
+import org.neo4j.kernel.extension.context.ExtensionContext;
 import org.neo4j.kernel.lifecycle.Lifecycle;
 import org.neo4j.kernel.lifecycle.LifecycleAdapter;
 import org.neo4j.logging.Log;
@@ -34,55 +36,62 @@ import org.slf4j.LoggerFactory;
 /**
  * Class enables neo4j kernel to load custom event handler and loads native libraries
  */
-public class RDKitEventHandlerExtensionFactory extends KernelExtensionFactory<Dependencies> {
-  private static final Logger logger = LoggerFactory.getLogger(RDKitEventHandlerExtensionFactory.class);
+public class RDKitEventHandlerExtensionFactory extends ExtensionFactory<Dependencies> {
+    private static final Logger logger = LoggerFactory.getLogger(RDKitEventHandlerExtensionFactory.class);
 
-  /*
-   * Load native libraries here as this factory is retrieved first
-   * todo: what if libraries are not loaded?
-   */
-  static {
-    try {
-      LibraryLoader.loadLibraries();
-    } catch (LoaderException e) {
-      logger.error("Unable to load native libraries: RDKit");
-      e.printStackTrace();
+    /*
+     * Load native libraries here as this factory is retrieved first
+     * todo: what if libraries are not loaded?
+     */
+    static {
+        try {
+            LibraryLoader.loadLibraries();
+        } catch (LoaderException e) {
+            logger.error("Unable to load native libraries: RDKit");
+            e.printStackTrace();
+        }
     }
-  }
 
-  @Override
-  public Lifecycle newInstance(KernelContext kernelContext, final Dependencies dependencies) {
-    return new LifecycleAdapter() {
-      final Log log = dependencies.log().getUserLog(RDKitEventHandlerExtensionFactory.class);
+    @Override
+    public Lifecycle newInstance(ExtensionContext extensionContext, final Dependencies dependencies) {
+        return new LifecycleAdapter() {
+            private final String databaseName = dependencies.graphDatabaseService().databaseName();
+            final Log log = dependencies.log().getUserLog(RDKitEventHandlerExtensionFactory.class);
 
-      private RDKitEventHandler handler;
+            private RDKitEventHandler handler;
 
-      @Override
-      public void start() {
+            @Override
+            public void start() {
 
-        log.info("Starting RDKit trigger watcher");
-        boolean sanitize = dependencies.config().get(RDKitSettings.indexSanitize);
-        logger.debug("sanitize = %s", sanitize);
-        handler = new RDKitEventHandler(dependencies.getGraphDatabaseService(), sanitize);
-        dependencies.getGraphDatabaseService().registerTransactionEventHandler(handler);
-      }
+                if (!databaseName.equals(GraphDatabaseSettings.SYSTEM_DATABASE_NAME)) {
+                    log.info("Starting RDKit trigger watcher");
+                    boolean sanitize = dependencies.config().get(RDKitSettings.indexSanitize);
+                    logger.debug("sanitize = %s", sanitize);
+                    handler = new RDKitEventHandler(sanitize);
+                    dependencies.databaseManagementService().registerTransactionEventListener(dependencies.graphDatabaseService().databaseName(), handler);
+                }
+            }
 
-      @Override
-      public void shutdown() {
-        log.info("Stopping RDKit trigger watcher");
-        if (handler != null)
-          dependencies.getGraphDatabaseService().unregisterTransactionEventHandler(handler);
-      }
-    };
-  }
+            @Override
+            public void shutdown() {
+                log.info("Stopping RDKit trigger watcher");
+                if (handler != null)
+                    dependencies.databaseManagementService().registerTransactionEventListener(dependencies.graphDatabaseService().databaseName(), handler);
+            }
+        };
+    }
 
-  interface Dependencies {
-    GraphDatabaseService getGraphDatabaseService();
-    LogService log();
-    Config config();
-  }
+    interface Dependencies {
+        GraphDatabaseService graphDatabaseService();
 
-  public RDKitEventHandlerExtensionFactory() {
-    super(ExtensionType.DATABASE, "rdkitEventHandler");
-  }
+        DatabaseManagementService databaseManagementService();
+
+        LogService log();
+
+        Config config();
+    }
+
+    public RDKitEventHandlerExtensionFactory() {
+        super(ExtensionType.DATABASE, "rdkitEventHandler");
+    }
 }

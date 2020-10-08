@@ -19,9 +19,10 @@ import org.RDKit.MolSanitizeException;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.event.LabelEntry;
 import org.neo4j.graphdb.event.TransactionData;
-import org.neo4j.graphdb.event.TransactionEventHandler;
+import org.neo4j.graphdb.event.TransactionEventListenerAdapter;
 import org.rdkit.neo4j.models.Constants;
 import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.models.NodeParameters;
@@ -42,17 +43,15 @@ import java.util.stream.StreamSupport;
  *
  * todo: add functionality to track new properties during runtime (similarity search can create new properties)
  */
-public class RDKitEventHandler implements TransactionEventHandler<Object> {
+public class RDKitEventHandler extends TransactionEventListenerAdapter<Object> {
 
   private static final Logger logger = LoggerFactory.getLogger(RDKitEventHandler.class);
 
-  public static GraphDatabaseService db;
   private final List<Label> labels;
   private final Converter converter;
   private final boolean sanitize;
 
-  public RDKitEventHandler(GraphDatabaseService graphDatabaseService, boolean sanitize) {
-    this.db = graphDatabaseService;
+  public RDKitEventHandler(boolean sanitize) {
     this.sanitize = sanitize;
     this.labels = Arrays.asList(Label.label(Constants.Chemical.getValue()), Label.label(Constants.Structure.getValue()));
     this.converter = Converter.createDefault();
@@ -66,7 +65,7 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
    * {@inheritDoc}
    */
   @Override
-  public Object beforeCommit(TransactionData data) throws Exception {
+  public Object beforeCommit(TransactionData data, Transaction transaction, GraphDatabaseService databaseService) throws Exception {
     // Obtain nodes with `mdlmol` property
     Set<Node> nodesMol = getNodes(data, NodeFields.MdlMol.getValue());
 
@@ -107,16 +106,6 @@ public class RDKitEventHandler implements TransactionEventHandler<Object> {
     }
 
     return data;
-  }
-
-  @Override
-  public void afterCommit(TransactionData data, Object state) {
-
-  }
-
-  @Override
-  public void afterRollback(TransactionData data, Object state) {
-
   }
 
   /**

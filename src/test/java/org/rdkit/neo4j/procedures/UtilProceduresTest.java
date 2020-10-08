@@ -21,9 +21,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.neo4j.graphdb.QueryExecutionException;
-import org.neo4j.graphdb.Result;
-import org.neo4j.helpers.collection.Iterators;
-import org.neo4j.helpers.collection.MapUtil;
+import org.neo4j.internal.helpers.collection.Iterators;
+import org.neo4j.internal.helpers.collection.MapUtil;
 import org.rdkit.neo4j.index.utils.BaseTest;
 import org.rdkit.neo4j.index.utils.TestUtils;
 
@@ -44,7 +43,7 @@ public class UtilProceduresTest extends BaseTest {
   public void functionCreateSvgTest() {
     final String smiles = "O=S(=O)(Cc1ccccc1)CS(=O)(=O)Cc1ccccc1";
 
-    Map<String, Object> result = Iterators.single(graphDb.execute("RETURN org.rdkit.utils.svg($smiles) AS svg", Collections.singletonMap("smiles", smiles)));
+    Map<String, Object> result = graphDb.executeTransactionally("RETURN org.rdkit.utils.svg($smiles) AS svg", Collections.singletonMap("smiles", smiles), Iterators::single);
     final String svg = (String) result.get("svg");
 
     Assert.assertTrue(svg.contains("<svg"));
@@ -57,14 +56,14 @@ public class UtilProceduresTest extends BaseTest {
     thrown.expectMessage("MolSanitizeException");
     final String smiles = "Cl[C](C)(C)(C)Br";
 
-    Iterators.single(graphDb.execute("return org.rdkit.utils.svg($smiles) as svg", Collections.singletonMap("smiles", smiles)));
+    graphDb.executeTransactionally("return org.rdkit.utils.svg($smiles) as svg", Collections.singletonMap("smiles", smiles), Iterators::single);
   }
 
   @Test
   public void invalidSmilesWithFlagSvgTest() {
     final String smiles = "Cl[C](C)(C)(C)Br";
 
-    Map<String, Object> result = Iterators.single(graphDb.execute("RETURN org.rdkit.utils.svg($smiles, false) AS svg", Collections.singletonMap("smiles", smiles)));
+    Map<String, Object> result = graphDb.executeTransactionally("RETURN org.rdkit.utils.svg($smiles, false) AS svg", Collections.singletonMap("smiles", smiles), Iterators::single);
     final String svg = (String) result.get("svg");
 
     Assert.assertTrue(svg.contains("<svg"));
@@ -76,11 +75,10 @@ public class UtilProceduresTest extends BaseTest {
     insertChemblRows();
     final String smiles = "CCCC(C(=O)Nc1ccc(S(N)(=O)=O)cc1)C(C)(C)C";
 
-    Result result = graphDb.execute("CALL org.rdkit.search.exact.smiles($labels, $smiles) "
+    Map<String, Object> map = graphDb.executeTransactionally("CALL org.rdkit.search.exact.smiles($labels, $smiles) "
                     + "YIELD canonical_smiles "
                     + "RETURN org.rdkit.utils.svg(canonical_smiles) AS svg",
-            MapUtil.map("labels", defaultLabels, "smiles", smiles));
-    Map<String, Object> map = result.next();
+            MapUtil.map("labels", defaultLabels, "smiles", smiles), Iterators::single);
     final String svg = (String) map.get("svg");
 
     Assert.assertTrue(svg.contains("<svg"));

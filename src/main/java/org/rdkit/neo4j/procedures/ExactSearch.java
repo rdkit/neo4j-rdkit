@@ -16,9 +16,10 @@ package org.rdkit.neo4j.procedures;
  */
 
 import org.RDKit.MolSanitizeException;
+import org.neo4j.configuration.Config;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
-import org.neo4j.kernel.configuration.Config;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.procedure.Description;
 import org.neo4j.procedure.Mode;
@@ -146,10 +147,14 @@ public class ExactSearch extends BaseProcedure {
     final String firstLabel = Constants.Chemical.getValue();
     final List<Label> labels = labelNames.stream().map(Label::label).collect(Collectors.toList());
 
-    return db.findNodes(Label.label(firstLabel), property, value)
-        .stream()
+    Transaction tx = db.beginTx();
+    return tx.findNodes(Label.label(firstLabel), property, value)
+            .stream()
 //        .parallel()
-        .filter(node -> labels.stream().allMatch(node::hasLabel))
-        .map(NodeWrapper::new);
+            .filter(node -> labels.stream().allMatch(node::hasLabel))
+            .map(NodeWrapper::new).onClose(() -> {
+              tx.commit();
+              tx.close();
+            });
   }
 }
