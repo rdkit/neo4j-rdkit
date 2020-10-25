@@ -125,13 +125,11 @@ public class ExactSearch extends BaseProcedure {
    */
   public static class NodeWrapper {
 
-    public String name;
     public String luri;
     public String canonical_smiles;
 
     public NodeWrapper(Node node) {
       this.canonical_smiles = (String) node.getProperty(NodeFields.CanonicalSmiles.getValue());
-      this.name = (String) node.getProperty("preferred_name", null);
       this.luri = (String) node.getProperty("luri", null);
     }
   }
