@@ -15,6 +15,7 @@ package org.rdkit.neo4j.handlers;
  * #L%
  */
 
+import org.RDKit.RDKFuncs;
 import org.neo4j.configuration.Config;
 import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.dbms.api.DatabaseManagementService;
@@ -32,6 +33,9 @@ import org.rdkit.neo4j.config.RDKitSettings;
 import org.rdkit.neo4j.handlers.RDKitEventHandlerExtensionFactory.Dependencies;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.InputStream;
+import java.util.Properties;
 
 /**
  * Class enables neo4j kernel to load custom event handler and loads native libraries
@@ -62,14 +66,29 @@ public class RDKitEventHandlerExtensionFactory extends ExtensionFactory<Dependen
 
             @Override
             public void start() {
-
-                if (!databaseName.equals(GraphDatabaseSettings.SYSTEM_DATABASE_NAME)) {
+                if (databaseName.equals(GraphDatabaseSettings.SYSTEM_DATABASE_NAME)) {
+                    logVersionInfo();
+                } else {
                     log.info("Starting RDKit trigger watcher");
                     boolean sanitize = dependencies.config().get(RDKitSettings.indexSanitize);
                     logger.debug("sanitize = %s", sanitize);
                     handler = new RDKitEventHandler(sanitize);
                     dependencies.databaseManagementService().registerTransactionEventListener(dependencies.graphDatabaseService().databaseName(), handler);
                 }
+            }
+
+            private void logVersionInfo() {
+                String rdkitVersion = null;
+                try {
+                    InputStream inputStream = RDKitEventHandlerExtensionFactory.class.getResourceAsStream("/META-INF/maven/org.neo4j.rdkit/rdkit-index/pom.properties");
+                    Properties props = new Properties();
+                    props.load(inputStream);
+                    rdkitVersion = props.getProperty("version", "n/a");
+                } catch (Exception e) {
+                    // ignore exceptions - when running tests there's no pom.properties
+//                        e.printStackTrace();
+                }
+                log.info("Neo4j rdkit plugin version: " + rdkitVersion + " using rdkit version: " + RDKFuncs.getRdkitVersion() + ", rdkit build: " + RDKFuncs.getRdkitBuild());
             }
 
             @Override
