@@ -50,9 +50,6 @@ public class LibraryLoader {
    * different supported platforms.
    */
   static {
-    LIBRARIES.put(OS_WIN32 + "." + ARCH_X86,
-        new String[]{"boost_serialization-vc140-mt-1_65_1",
-            "GraphMolWrap"});
     LIBRARIES.put(OS_WIN32 + "." + ARCH_X86_64,
         new String[]{"GraphMolWrap"});
     LIBRARIES.put("linux.",

@@ -32,7 +32,7 @@ public class VersionTest {
 
     @Test
     public void testRdKitVersion() {
-        assertEquals("2020.03.1", RDKFuncs.getRdkitVersion());
+        assertEquals("2020.09.1", RDKFuncs.getRdkitVersion());
         assertEquals("Linux|5.3.0-46-generic|UNIX|GNU|64-bit", RDKFuncs.getRdkitBuild());
     }
 
