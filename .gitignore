@@ -9,3 +9,4 @@ neo4j-temp/
 docker-compose.yml
 dependency-reduced-pom.xml
 temp/
+docker_example/plugins/*jar
