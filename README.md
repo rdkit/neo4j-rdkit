@@ -20,7 +20,7 @@ __Mentors:__
 * Christian Pilger  
 * Stefan Armbruster  
 
-## Build
+## Build & run
 
 1) Install `lib/org.RDKit.jar` and `lib/org.RDKitDoc.jar` into your local maven repository  
 ```
@@ -38,6 +38,12 @@ mvn org.apache.maven.plugins:maven-install-plugin:2.3.1:install-file \
 3) Put generated .jar file into `plugins/` folder of your neo4j instance and start the server  
 4) add `rdkit.index.sanitize=false` to `neo4j.conf`if you want to switch of sanitizing for indexing. If not provided `true` is assumed as default.
 5) By executing `CALL dbms.procedures()`, you are expected to see `org.rdkit.*` procedures  
+
+### usage within Docker
+
+The native libraries of rdkit do have a dependency on [libFreetype](https://www.freetype.org/) and [libPng](http://www.libpng.org/pub/png/libpng.html). On desktop Linux systems those are typically installed by default. The [Neo4j docker image](https://hub.docker.com/_/neo4j) is based on `openjdk:11-jdk-slim` which itself is based on a minimal Debian linux image. This does not contain these to libraries. To solve that you need to make sure these packages get installed. 
+
+In [docker_example](docker_example) there's a script [run_docker.sh](docker_example/run_docker.sh) mounting a volume with these debian packages and using an extension script to install these images upon startup of the docker container. Before using that make sure to populate the [plugins](docker_example/plugins) folder with the plugin's jar file.
 
 ## Extension functionality
 
