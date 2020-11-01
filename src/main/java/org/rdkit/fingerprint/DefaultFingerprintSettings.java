@@ -47,9 +47,10 @@ package org.rdkit.fingerprint;
  * #L%
  */
 
+import org.RDKit.RDKFuncs;
+
 import java.util.Map;
 import java.util.logging.Logger;
-import org.RDKit.RDKFuncs;
 
 /**
  * This class is the default implementation of the FingerprintSettings interface.

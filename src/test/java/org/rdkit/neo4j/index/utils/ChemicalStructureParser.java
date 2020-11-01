@@ -15,6 +15,10 @@ package org.rdkit.neo4j.index.utils;
  * #L%
  */
 
+import org.rdkit.neo4j.index.model.ChemblRow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,9 +29,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.rdkit.neo4j.index.model.ChemblRow;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ChemicalStructureParser {
   private static final Logger logger = LoggerFactory.getLogger(ChemicalStructureParser.class);
