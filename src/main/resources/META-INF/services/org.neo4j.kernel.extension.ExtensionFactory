@@ -1,1 +1,2 @@
 org.rdkit.neo4j.handlers.RDKitEventHandlerExtensionFactory
+org.rdkit.neo4j.bin.LibraryLoaderExtensionFactory

@@ -22,8 +22,9 @@ import org.neo4j.graphdb.NotFoundException;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.TransactionFailureException;
 import org.neo4j.internal.helpers.collection.Iterators;
+import org.neo4j.logging.NullLog;
 import org.neo4j.test.TestDatabaseManagementServiceBuilder;
-import org.rdkit.neo4j.bin.LibraryLoader;
+import org.rdkit.neo4j.bin.LibraryLoaderLifecycle;
 import org.rdkit.neo4j.config.RDKitSettings;
 import org.rdkit.neo4j.index.utils.BaseTest;
 
@@ -36,7 +37,7 @@ public class SmilesEventHandlerTest extends BaseTest {
 
     @BeforeClass
     public static void loadLibraries() throws Exception {
-        LibraryLoader.loadLibraries();
+        new LibraryLoaderLifecycle(NullLog.getInstance()).init();
     }
 
     @Override

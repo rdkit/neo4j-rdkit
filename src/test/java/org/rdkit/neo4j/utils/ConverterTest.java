@@ -20,8 +20,9 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.neo4j.logging.NullLog;
 import org.rdkit.fingerprint.FingerprintType;
-import org.rdkit.neo4j.bin.LibraryLoader;
+import org.rdkit.neo4j.bin.LibraryLoaderLifecycle;
 import org.rdkit.neo4j.models.LuceneQuery;
 import org.rdkit.neo4j.models.NodeParameters;
 import org.slf4j.Logger;
@@ -41,7 +42,7 @@ public class ConverterTest {
 
   @BeforeClass
   public static void initializeLibraries() throws Exception {
-    LibraryLoader.loadLibraries();
+    new LibraryLoaderLifecycle(NullLog.getInstance()).init();
   }
 
   @Test

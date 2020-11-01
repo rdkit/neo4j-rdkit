@@ -18,22 +18,22 @@ package org.rdkit.neo4j.utils;
 import org.RDKit.RDKFuncs;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.rdkit.neo4j.bin.LibraryLoader;
-import org.rdkit.neo4j.bin.LoaderException;
+import org.neo4j.logging.NullLog;
+import org.rdkit.neo4j.bin.LibraryLoaderLifecycle;
 
 import static org.junit.Assert.assertEquals;
 
 public class VersionTest {
 
     @BeforeClass
-    public static void loadRdkit() throws LoaderException {
-        LibraryLoader.loadLibraries();
+    public static void loadRdkit() throws Exception {
+        new LibraryLoaderLifecycle(NullLog.getInstance()).init();
     }
 
     @Test
     public void testRdKitVersion() {
         assertEquals("2020.09.1", RDKFuncs.getRdkitVersion());
-        assertEquals("Linux|5.3.0-46-generic|UNIX|GNU|64-bit", RDKFuncs.getRdkitBuild());
+        assertEquals("Linux|5.4.0-51-generic|UNIX|GNU|64-bit", RDKFuncs.getRdkitBuild());
     }
 
 }
