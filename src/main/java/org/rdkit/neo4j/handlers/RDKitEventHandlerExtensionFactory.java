@@ -69,7 +69,9 @@ public class RDKitEventHandlerExtensionFactory extends ExtensionFactory<Dependen
                 try {
                     InputStream inputStream = RDKitEventHandlerExtensionFactory.class.getResourceAsStream("/META-INF/maven/org.neo4j.rdkit/rdkit-index/pom.properties");
                     Properties props = new Properties();
-                    props.load(inputStream);
+                    if (inputStream!=null) {
+                        props.load(inputStream);
+                    }
                     String rdkitVersion = props.getProperty("version", "n/a");
                     log.info("Neo4j rdkit plugin version: " + rdkitVersion + " using rdkit version: " + RDKFuncs.getRdkitVersion() + ", rdkit build: " + RDKFuncs.getRdkitBuild());
                 } catch (Exception e) {
