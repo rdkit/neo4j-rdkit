@@ -46,7 +46,7 @@ public class BitSetIndexQueryingTest extends BaseTest {
   @Test
   public void testIndexing() {
 
-    graphDb.executeTransactionally("CALL db.index.fulltext.createNodeIndex('bitset', ['Molecule'], ['bits'], {analyzer: 'whitespace'} )");
+    graphDb.executeTransactionally("CREATE FULLTEXT INDEX bitset FOR (n:Molecule) ON EACH [n.bits] OPTIONS {indexConfig: {`fulltext.analyzer`: 'whitespace' } }");
 
     // build parameter maps
     List<Map<String, Object>> maps = moleculeNameToBitSetMap.entrySet().stream().map(entry -> MapUtil.map(
@@ -85,14 +85,14 @@ public class BitSetIndexQueryingTest extends BaseTest {
       return null;
     });
 
-    graphDb.executeTransactionally("CALL db.index.fulltext.drop('bitset')"); // otherwise we get an exception on shutdown
+    graphDb.executeTransactionally("DROP INDEX bitset"); // otherwise we get an exception on shutdown
   }
 
   @Test
   public void makeSimilarityRequestTest() throws Exception {
     insertChemblRows();
 
-    graphDb.executeTransactionally("CALL db.index.fulltext.createNodeIndex('bitset', ['Chemical', 'Structure'], ['fp'], {analyzer: 'whitespace'} )");
+    graphDb.executeTransactionally("CREATE FULLTEXT INDEX bitset FOR (n:Chemical|Structure) ON EACH [n.fp] OPTIONS {indexConfig: {`fulltext.analyzer`: 'whitespace' } }");
 
     final String smiles1 = "COc1ccc(C(=O)NO)cc1";
 
@@ -142,7 +142,7 @@ public class BitSetIndexQueryingTest extends BaseTest {
               return null;
             });
 
-    graphDb.executeTransactionally("CALL db.index.fulltext.drop('bitset')"); // otherwise we get an exception on shutdown
+    graphDb.executeTransactionally("DROP INDEX bitset"); // otherwise we get an exception on shutdown
   }
 
   /**

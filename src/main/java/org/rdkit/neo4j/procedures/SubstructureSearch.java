@@ -68,7 +68,7 @@ public class SubstructureSearch extends BaseProcedure {
     log.info("Create whitespace node index on `fp` property");
 
     tx.execute(String.format("DROP INDEX %s_%s IF EXISTS", Constants.Chemical.getValue(), canonicalSmilesProperty));
-    tx.execute("CALL db.index.fulltext.drop($index)", MapUtil.map("index", indexName));
+    tx.execute(String.format("DROP INDEX %s", indexName));
   }
 
   /**

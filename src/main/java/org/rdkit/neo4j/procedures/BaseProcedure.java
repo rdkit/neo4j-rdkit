@@ -86,14 +86,11 @@ public abstract class BaseProcedure {
      * @param properties - properties to set index on top of
      */
     void createFullTextIndex(final String indexName, final List<String> labelNames, final List<String> properties) {
-        Map<String, Object> params = MapUtil.map(
-                "index", indexName,
-                "labels", labelNames,
-                "property", properties
-        );
 
-        tx.execute("CALL db.index.fulltext.createNodeIndex($index, $labels, $property, {analyzer: 'whitespace'} )", params);
-//    tx.execute("CALL db.index.fulltext.createNodeIndex($index, $labels, $property, {analyzer: 'whitespace'} )", params);
+        String property = properties.stream().collect(Collectors.joining("','", "n.", ""));
+    
+        tx.execute(String.format("CREATE FULLTEXT INDEX %s FOR (n:%s) ON EACH [%s] OPTIONS {indexConfig: {`fulltext.analyzer`: 'whitespace' } }", indexName, String.join("|", labelNames), property));
+
     }
 
     /**

@@ -12,3 +12,4 @@ temp/
 docker_example/plugins/*jar
 
 settings.xml
+.vscode

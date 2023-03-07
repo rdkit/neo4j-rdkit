@@ -21,5 +21,5 @@ import org.neo4j.configuration.SettingsDeclaration;
 import org.neo4j.graphdb.config.Setting;
 
 public class RDKitSettings implements SettingsDeclaration {
-    public static final Setting<Boolean> indexSanitize = SettingImpl.newBuilder("rdkit.index.sanitize", SettingValueParsers.BOOL, true).build();
+    public static final Setting<Boolean> indexSanitize = SettingImpl.newBuilder("server.rdkit.index.sanitize", SettingValueParsers.BOOL, true).build();
 }

@@ -66,7 +66,7 @@ public class FingerprintProcedureTest extends BaseTest {
     }
 
     graphDb.executeTransactionally("CALL org.rdkit.search.dropIndex()");
-    graphDb.executeTransactionally("CALL db.index.fulltext.drop($indexName)", MapUtil.map("indexName", propertyName + "_index"));
+    graphDb.executeTransactionally(String.format("DROP INDEX %s", propertyName + "_index"));
   }
 
   @Test(expected = IllegalStateException.class)
@@ -136,6 +136,6 @@ public class FingerprintProcedureTest extends BaseTest {
     });
 
     graphDb.executeTransactionally("CALL org.rdkit.search.dropIndex()");
-    graphDb.executeTransactionally("CALL db.index.fulltext.drop($indexName)", MapUtil.map("indexName", propertyName + "_index"));
+    graphDb.executeTransactionally(String.format("DROP INDEX %s", propertyName + "_index"));
   }
 }
