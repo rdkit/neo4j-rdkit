@@ -15,16 +15,9 @@ package org.rdkit.neo4j.procedures;
  * #L%
  */
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Stream;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Result;
-import org.neo4j.helpers.collection.MapUtil;
+import org.neo4j.internal.helpers.collection.MapUtil;
 import org.neo4j.procedure.Description;
 import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.Name;
@@ -34,6 +27,14 @@ import org.rdkit.neo4j.models.Constants;
 import org.rdkit.neo4j.models.LuceneQuery;
 import org.rdkit.neo4j.models.NodeFields;
 import org.rdkit.neo4j.utils.Converter;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Class FingerprintProcedures
@@ -82,8 +83,9 @@ public class FingerprintProcedures extends BaseProcedure {
 
     // Execute batch (may take a long time)
     executeBatches(nodes, PAGE_SIZE, node -> {
-      final String smiles = (String) node.getProperty(canonicalSmilesProperty);
+      String smiles = null;
       try {
+        smiles = (String) node.getProperty(canonicalSmilesProperty);
         final LuceneQuery fp = converter.getLuceneFingerprint(smiles, sanitize);
         node.setProperty(getPropertyOnes(propertyName), fp.getPositiveBits());
         node.setProperty(getPropertyType(propertyName), fingerprintType.toString());
@@ -145,7 +147,7 @@ public class FingerprintProcedures extends BaseProcedure {
     final long queryPositiveBits = similarityQuery.getPositiveBits();
     final String propertyOnes = getPropertyOnes(propertyName);
 
-    Result result = db.execute("CALL db.index.fulltext.queryNodes($index, $query) "
+    Result result = tx.execute("CALL db.index.fulltext.queryNodes($index, $query) "
             + "YIELD node "
             + String.format("RETURN node.canonical_smiles as smiles, %s as fp, %s as fp_ones, node.preferred_name as name, node.luri as luri",
                 "node." + propertyName, "node." + propertyOnes), // todo: looks bad

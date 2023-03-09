@@ -15,51 +15,45 @@ package org.rdkit.neo4j.index.utils;
  * #L%
  */
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
+import org.neo4j.configuration.GraphDatabaseSettings;
+import org.neo4j.dbms.api.DatabaseManagementService;
 import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.Transaction;
-import org.neo4j.graphdb.factory.GraphDatabaseBuilder;
-import org.neo4j.test.TestGraphDatabaseFactory;
+import org.neo4j.test.TestDatabaseManagementServiceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BaseTest {
-  protected final Logger logger = LoggerFactory.getLogger(getClass());
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-  protected GraphDatabaseService graphDb;
-  protected List<String> defaultLabels = Arrays.asList("Chemical", "Structure");
+public abstract class BaseTest {
+    protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-  @Before
-  public void createTestDatabase() {
-    GraphDatabaseBuilder builder = new TestGraphDatabaseFactory().newImpermanentDatabaseBuilder();
-    prepareDatabase(builder);
-    graphDb = builder.newGraphDatabase();
-  }
+    protected List<String> defaultLabels = Arrays.asList("Chemical", "Structure");
+    private DatabaseManagementService dbms;
+    protected GraphDatabaseService graphDb;
 
-  protected void prepareDatabase(GraphDatabaseBuilder builder) {
-    // intentionally empty, to be overridden in derived classes
-  }
-
-  @After
-  public void destroyTestDatabase() {
-    graphDb.shutdown();
-  }
-
-  protected void insertChemblRows() throws Exception {
-    try (Transaction tx = graphDb.beginTx()) {
-      List<Map<String, Object>> structures = ChemicalStructureParser.getChemicalRows();
-      Map<String, Object> parameters = new HashMap<>();
-
-      parameters.put("rows", structures);
-
-      graphDb.execute("UNWIND {rows} as row MERGE (from:Chemical:Structure {smiles: row.smiles, mol_id: row.mol_id})", parameters);
-
-      tx.success();
+    @Before
+    public void createTestDatabase() {
+        TestDatabaseManagementServiceBuilder builder = new TestDatabaseManagementServiceBuilder().impermanent();
+        prepareDatabase(builder);
+        dbms = builder.build();
+        graphDb = dbms.database(GraphDatabaseSettings.DEFAULT_DATABASE_NAME);
     }
-  }
+
+    protected void prepareDatabase(TestDatabaseManagementServiceBuilder builder) {
+        // intentionally empty, to be overridden in derived classes
+    }
+
+    @After
+    public void destroyTestDatabase() {
+        dbms.shutdown();
+    }
+
+    protected void insertChemblRows() throws Exception {
+        graphDb.executeTransactionally("UNWIND $rows as row MERGE (from:Chemical:Structure {smiles: row.smiles, mol_id: row.mol_id})",
+                Collections.singletonMap("rows", ChemicalStructureParser.getChemicalRows()));
+    }
 }

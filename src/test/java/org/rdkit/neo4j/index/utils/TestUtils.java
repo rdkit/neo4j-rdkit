@@ -15,31 +15,30 @@ package org.rdkit.neo4j.index.utils;
  * #L%
  */
 
+import org.neo4j.exceptions.KernelException;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Result;
-import org.neo4j.internal.kernel.api.exceptions.KernelException;
-import org.neo4j.kernel.impl.proc.Procedures;
+import org.neo4j.kernel.api.procedure.GlobalProcedures;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 
 import java.util.Map;
 
 public class TestUtils {
 
-
-  public static Map<String, Object> getFirstRow(Result result) {
-    return result.next();
-  }
-
-  public static void registerProcedures(GraphDatabaseService db, Class... classes) {
-    Procedures proceduresService = ((GraphDatabaseAPI) db).getDependencyResolver().resolveDependency(Procedures.class);
-    try {
-      for (Class clazz: classes) {
-        proceduresService.registerProcedure(clazz, true);
-        proceduresService.registerFunction(clazz, true);
-      }
-
-    } catch (KernelException e) {
-      throw new RuntimeException(e);
+    public static Map<String, Object> getFirstRow(Result result) {
+        return result.next();
     }
-  }
+
+    public static void registerProcedures(GraphDatabaseService db, Class... classes) {
+        GlobalProcedures proceduresService = ((GraphDatabaseAPI) db).getDependencyResolver().resolveDependency(GlobalProcedures.class);
+        try {
+            for (Class clazz : classes) {
+                proceduresService.registerProcedure(clazz, true);
+                proceduresService.registerFunction(clazz, true);
+                proceduresService.registerAggregationFunction(clazz, true);
+            }
+        } catch (KernelException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

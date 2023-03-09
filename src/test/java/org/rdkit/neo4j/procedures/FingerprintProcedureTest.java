@@ -19,9 +19,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.QueryExecutionException;
-import org.neo4j.graphdb.Result;
 import org.neo4j.graphdb.Transaction;
-import org.neo4j.helpers.collection.MapUtil;
+import org.neo4j.internal.helpers.collection.MapUtil;
 import org.rdkit.fingerprint.FingerprintType;
 import org.rdkit.neo4j.index.utils.BaseTest;
 import org.rdkit.neo4j.index.utils.TestUtils;
@@ -31,13 +30,14 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class FingerprintProcedureTest extends BaseTest {
 
   @Before
   public void registerProcedures() {
     TestUtils.registerProcedures(graphDb, SubstructureSearch.class, FingerprintProcedures.class);
-    graphDb.execute("CALL org.rdkit.search.createIndex($labels)", MapUtil.map("labels", defaultLabels));
+    graphDb.executeTransactionally("CALL org.rdkit.search.createIndex($labels)", MapUtil.map("labels", defaultLabels));
   }
 
   @Test
@@ -46,7 +46,7 @@ public class FingerprintProcedureTest extends BaseTest {
 
     final String propertyName = "torsion_fp";
     final String fptype = FingerprintType.torsion.toString(); // morgan fails
-    graphDb.execute("CALL org.rdkit.fingerprint.create($labels, $fptype, $propertyName)", MapUtil.map(
+    graphDb.executeTransactionally("CALL org.rdkit.fingerprint.create($labels, $fptype, $propertyName)", MapUtil.map(
        "labels", defaultLabels,
         "propertyName", propertyName,
         "fptype", fptype
@@ -55,18 +55,18 @@ public class FingerprintProcedureTest extends BaseTest {
     try (Transaction tx = graphDb.beginTx()) {
       final String positiveBitsAmount = propertyName + "_ones";
       final String fpTypeProperty = propertyName + "_type";
-      graphDb.findNodes(Label.label(defaultLabels.get(0))).stream().allMatch(node -> {
+      tx.findNodes(Label.label(defaultLabels.get(0))).stream().allMatch(node -> {
         assertTrue(node.hasProperty(propertyName));
         assertTrue(node.hasProperty(positiveBitsAmount));
         assertEquals(node.getProperty(fpTypeProperty), fptype);
         return true;
       });
 
-      tx.success();
+      tx.commit();
     }
 
-    graphDb.execute("CALL org.rdkit.search.dropIndex()");
-    graphDb.execute("CALL db.index.fulltext.drop($indexName)", MapUtil.map("indexName", propertyName + "_index"));
+    graphDb.executeTransactionally("CALL org.rdkit.search.dropIndex()");
+    graphDb.executeTransactionally(String.format("DROP INDEX %s", propertyName + "_index"));
   }
 
   @Test(expected = IllegalStateException.class)
@@ -74,11 +74,12 @@ public class FingerprintProcedureTest extends BaseTest {
   public void createReservedPropertyTest() throws Throwable {
     final String propertyName = NodeFields.MdlMol.getValue();
     try {
-      graphDb.execute("CALL org.rdkit.fingerprint.create($labels, $propertyName, $fptype)", MapUtil.map(
+      graphDb.executeTransactionally("CALL org.rdkit.fingerprint.create($labels, $propertyName, $fptype)", MapUtil.map(
           "labels", defaultLabels,
           "propertyName", propertyName,
           "fptype", "morgan"
       ));
+      fail();
     } catch (QueryExecutionException e) {
       // todo: looks terrible
       throw e.getCause().getCause().getCause().getCause(); // get Kernel exception, cypher execution exception, get procedure exception, get procedure invoked exception
@@ -90,11 +91,12 @@ public class FingerprintProcedureTest extends BaseTest {
   public void createInvalidFpTest() throws Throwable {
     final String propertyName = "morgan_fp";
     try {
-      graphDb.execute("CALL org.rdkit.fingerprint.create($labels, $fptype, $propertyName)", MapUtil.map(
+      graphDb.executeTransactionally("CALL org.rdkit.fingerprint.create($labels, $fptype, $propertyName)", MapUtil.map(
           "labels", defaultLabels,
           "propertyName", propertyName,
           "fptype", "<invalid>"
       ));
+      fail();
     } catch (QueryExecutionException e) {
       // todo: looks terrible
       throw e.getCause().getCause().getCause().getCause(); // get Kernel exception, cypher execution exception, get procedure exception, get procedure invoked exception
@@ -109,31 +111,31 @@ public class FingerprintProcedureTest extends BaseTest {
 
     final String propertyName = "torsion_fp";
     final String fptype = FingerprintType.torsion.toString(); // morgan fails
-    graphDb.execute("CALL org.rdkit.fingerprint.create($labels, $fptype, $propertyName)", MapUtil.map(
+    graphDb.executeTransactionally("CALL org.rdkit.fingerprint.create($labels, $fptype, $propertyName)", MapUtil.map(
         "labels", defaultLabels,
         "propertyName", propertyName,
         "fptype", fptype
     ));
 
-    Result result = graphDb.execute("CALL org.rdkit.fingerprint.similarity.smiles($labels, $smiles, $fptype, $propertyName, $threshold)", MapUtil.map(
+    final int items = 2;
+    final double[] similarities = new double[]{1.0d, 0.764d};
+
+    graphDb.executeTransactionally("CALL org.rdkit.fingerprint.similarity.smiles($labels, $smiles, $fptype, $propertyName, $threshold)", MapUtil.map(
             "labels", defaultLabels,
             "smiles", initialSmiles,
             "fptype", fptype,
             "propertyName", propertyName,
             "threshold", 0.7d
-    ));
+    ), result -> {
+      for (int i = 0; i < items; i++) {
+        Map<String, Object> map = result.next();
+        double similarity = (Double) map.get("similarity");
+        assertEquals(similarities[i], similarity, 1e-2);
+      }
+      return null;
+    });
 
-    final int items = 2;
-    final double[] similarities = new double[]{1.0d, 0.764d};
-
-    for (int i = 0; i < items; i++) {
-      Map<String, Object> map = result.next();
-      double similarity = (Double) map.get("similarity");
-      assertEquals(similarities[i], similarity, 1e-2);
-    }
-
-
-    graphDb.execute("CALL org.rdkit.search.dropIndex()");
-    graphDb.execute("CALL db.index.fulltext.drop($indexName)", MapUtil.map("indexName", propertyName + "_index"));
+    graphDb.executeTransactionally("CALL org.rdkit.search.dropIndex()");
+    graphDb.executeTransactionally(String.format("DROP INDEX %s", propertyName + "_index"));
   }
 }

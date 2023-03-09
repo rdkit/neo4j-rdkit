@@ -40,32 +40,32 @@ public class EmbeddedTest extends BaseTest {
 
     // Insert objects
     try (Transaction tx = graphDb.beginTx()) {
-      Result r = graphDb.execute(
-              "UNWIND {rows} AS row "
+      Result r = tx.execute(
+              "UNWIND $rows AS row "
                       + "MERGE (from:Chemical:Structure {smiles: row.smiles, mol_id: row.mol_id}) "
                       + "MERGE (to:Doc{doc_id: row.doc_id}) "
                       + "MERGE (from) -[:PUBLISHED]-> (to)", parameters);
 
       logger.info("{}", r.resultAsString());
-      tx.success();
+      tx.commit();
     }
 
     try (Transaction tx = graphDb.beginTx()) {
-      Result result1 = graphDb.execute("MATCH (c:Doc) RETURN count(*) as docs");
+      Result result1 = tx.execute("MATCH (c:Doc) RETURN count(*) as docs");
       long docsAmount = (Long) TestUtils.getFirstRow(result1).get("docs");
       assertEquals(56L, docsAmount);
 
-      Result result2 = graphDb.execute("MATCH (a:Chemical) RETURN count(*) as chemicals");
+      Result result2 = tx.execute("MATCH (a:Chemical) RETURN count(*) as chemicals");
 
       long chemicalsAmount = (Long) TestUtils.getFirstRow(result2).get("chemicals");
       assertEquals(940L, chemicalsAmount);
 
-      Result result3 = graphDb.execute("MATCH (a:Chemical) -[b:PUBLISHED]-> (c:Doc) RETURN count(*) as relations");
+      Result result3 = tx.execute("MATCH (a:Chemical) -[b:PUBLISHED]-> (c:Doc) RETURN count(*) as relations");
 
       long relationsCount = (Long) TestUtils.getFirstRow(result3).get("relations");
       assertEquals(1111L, relationsCount);
 
-      tx.success();
+      tx.commit();
     }
   }
 }

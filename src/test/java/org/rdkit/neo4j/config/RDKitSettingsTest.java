@@ -16,34 +16,39 @@ package org.rdkit.neo4j.config;
  */
 
 import org.junit.Test;
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.kernel.configuration.Config;
+import org.neo4j.configuration.Config;
+import org.neo4j.configuration.GraphDatabaseSettings;
+import org.neo4j.dbms.api.DatabaseManagementService;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
-import org.neo4j.test.TestGraphDatabaseFactory;
+import org.neo4j.test.TestDatabaseManagementServiceBuilder;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class RDKitSettingsTest {
 
     @Test
     public void testDefaultConfig() {
-        GraphDatabaseService db = new TestGraphDatabaseFactory().newImpermanentDatabaseBuilder()
-                .newGraphDatabase();
+        DatabaseManagementService dbms = new TestDatabaseManagementServiceBuilder().impermanent().build();
+        GraphDatabaseAPI db = (GraphDatabaseAPI) dbms.database(GraphDatabaseSettings.DEFAULT_DATABASE_NAME);
 
-        Config config = ((GraphDatabaseAPI) db).getDependencyResolver().resolveDependency(Config.class);
+        Config config = db.getDependencyResolver().resolveDependency(Config.class);
         assertTrue(config.get(RDKitSettings.indexSanitize));
-        db.shutdown();
+
+        dbms.shutdown();
     }
 
     @Test
     public void testSanitizeFalse() {
-        GraphDatabaseService db = new TestGraphDatabaseFactory().newImpermanentDatabaseBuilder()
-                .setConfig(RDKitSettings.indexSanitize, "false")
-                .newGraphDatabase();
+        DatabaseManagementService dbms = new TestDatabaseManagementServiceBuilder()
+                .setConfig(RDKitSettings.indexSanitize, false)
+                .impermanent().build();
+        GraphDatabaseAPI db = (GraphDatabaseAPI) dbms.database(GraphDatabaseSettings.DEFAULT_DATABASE_NAME);
 
-        Config config = ((GraphDatabaseAPI) db).getDependencyResolver().resolveDependency(Config.class);
+        Config config = db.getDependencyResolver().resolveDependency(Config.class);
         assertFalse(config.get(RDKitSettings.indexSanitize));
-        db.shutdown();
+
+        dbms.shutdown();
     }
 
 }

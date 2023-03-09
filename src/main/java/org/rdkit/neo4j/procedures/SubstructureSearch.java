@@ -20,7 +20,7 @@ import org.RDKit.RWMol;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Result;
-import org.neo4j.helpers.collection.MapUtil;
+import org.neo4j.internal.helpers.collection.MapUtil;
 import org.neo4j.procedure.Description;
 import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.Name;
@@ -55,7 +55,7 @@ public class SubstructureSearch extends BaseProcedure {
   public void createIndex(@Name("label") List<String> labelNames) {
     log.info("Create whitespace node index on `fp` property");
 
-    db.execute(String.format("CREATE INDEX ON :%s(%s)", Constants.Chemical.getValue(), canonicalSmilesProperty));
+    tx.execute(String.format("CREATE INDEX %s_%s IF NOT EXISTS FOR (n:%s) on (n.%s)", Constants.Chemical.getValue(), canonicalSmilesProperty, Constants.Chemical.getValue(), canonicalSmilesProperty));
     createFullTextIndex(indexName, labelNames, Collections.singletonList(fingerprintProperty));
   }
 
@@ -67,8 +67,8 @@ public class SubstructureSearch extends BaseProcedure {
   public void deleteIndex() {
     log.info("Create whitespace node index on `fp` property");
 
-    db.execute(String.format("DROP INDEX ON :%s(%s)", Constants.Chemical.getValue(), canonicalSmilesProperty));
-    db.execute("CALL db.index.fulltext.drop($index)", MapUtil.map("index", indexName));
+    tx.execute(String.format("DROP INDEX %s_%s IF EXISTS", Constants.Chemical.getValue(), canonicalSmilesProperty));
+    tx.execute(String.format("DROP INDEX %s", indexName));
   }
 
   /**
@@ -191,7 +191,7 @@ public class SubstructureSearch extends BaseProcedure {
     final LuceneQuery luceneQuery = converter.getLuceneSSSQuery(query, sanitize);
 
     // added mdlmol as a returned item as sometimes it fails (probably reduces speed)
-    Result result = db.execute("CALL db.index.fulltext.queryNodes($index, $query) "
+    Result result = tx.execute("CALL db.index.fulltext.queryNodes($index, $query) "
             + "YIELD node "
             + "RETURN node.canonical_smiles as canonical_smiles, node.fp_ones as fp_ones, node.preferred_name as name, node.luri as luri",
         MapUtil.map("index", indexName, "query", luceneQuery.getLuceneQuery()));
@@ -203,7 +203,7 @@ public class SubstructureSearch extends BaseProcedure {
             return candidate.hasSubstructMatch(query);
           } catch (Exception e) {
             log.error("Failed to convert object with smiles=%s, convert using mdmol", smiles);
-            final String mdlmol = (String) db.findNode(Label.label("Chemical"), canonicalSmilesProperty, smiles).getProperty("mdlmol"); // cheaper solution, as it is very rare
+            final String mdlmol = (String) tx.findNode(Label.label("Chemical"), canonicalSmilesProperty, smiles).getProperty("mdlmol"); // cheaper solution, as it is very rare
             try (RWMolCloseable molCandidate = RWMolCloseable.from(RWMol.MolFromMolBlock(mdlmol))) { // todo: is there any speed improvements?
               molCandidate.updatePropertyCache(false);
               return molCandidate.hasSubstructMatch(query);

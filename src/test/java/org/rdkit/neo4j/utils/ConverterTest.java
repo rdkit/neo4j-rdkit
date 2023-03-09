@@ -20,8 +20,9 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.neo4j.logging.NullLog;
 import org.rdkit.fingerprint.FingerprintType;
-import org.rdkit.neo4j.bin.LibraryLoader;
+import org.rdkit.neo4j.bin.LibraryLoaderLifecycle;
 import org.rdkit.neo4j.models.LuceneQuery;
 import org.rdkit.neo4j.models.NodeParameters;
 import org.slf4j.Logger;
@@ -41,7 +42,7 @@ public class ConverterTest {
 
   @BeforeClass
   public static void initializeLibraries() throws Exception {
-    LibraryLoader.loadLibraries();
+    new LibraryLoaderLifecycle(NullLog.getInstance()).init();
   }
 
   @Test
@@ -149,13 +150,13 @@ public class ConverterTest {
   }
 
   @Test
-  @Ignore
   public void luceneSimilarityQueryTest() {
-    final String expectedLuceneQuery = "???";
-    final int expectedPositive = -1;
+    final String expectedLuceneQuery = "53 OR 58 OR 249 OR 305 OR 352 OR 470 OR 649 OR 695 OR 728 OR 833 OR 841 OR 875 OR 926 OR 1019 OR 1027 OR 1057 OR 1105 OR 1114 OR 1236 OR 1308 OR 1309 OR 1380 OR 1450 OR 1536 OR 1621 OR 1631 OR 1660 OR 1673 OR 1738 OR 1873 OR 1898 OR 1950 OR 1970";
+
+    final int expectedPositive = 33;
 
     Converter converter = Converter.createConverter(FingerprintType.morgan);
-    LuceneQuery luceneQuery = converter.getLuceneSSSQuery("COc1cc2c(cc1Br)C(C)CNCC2", true); // todo: why fails?
+    LuceneQuery luceneQuery = converter.getLuceneSimilarityQuery("COc1cc2c(cc1Br)C(C)CNCC2", true); // todo: why fails?
 
     assertEquals(expectedPositive, luceneQuery.getPositiveBits());
     assertEquals(expectedLuceneQuery, luceneQuery.getLuceneQuery());

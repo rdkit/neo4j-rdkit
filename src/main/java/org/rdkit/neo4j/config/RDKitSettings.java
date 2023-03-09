@@ -15,13 +15,11 @@ package org.rdkit.neo4j.config;
  * #L%
  */
 
-import org.neo4j.configuration.LoadableConfig;
+import org.neo4j.configuration.SettingImpl;
+import org.neo4j.configuration.SettingValueParsers;
+import org.neo4j.configuration.SettingsDeclaration;
 import org.neo4j.graphdb.config.Setting;
 
-import static org.neo4j.kernel.configuration.Settings.BOOLEAN;
-import static org.neo4j.kernel.configuration.Settings.TRUE;
-import static org.neo4j.kernel.configuration.Settings.setting;
-
-public class RDKitSettings implements LoadableConfig {
-    public static final Setting<Boolean> indexSanitize = setting("rdkit.index.sanitize", BOOLEAN, TRUE);
+public class RDKitSettings implements SettingsDeclaration {
+    public static final Setting<Boolean> indexSanitize = SettingImpl.newBuilder("server.rdkit.index.sanitize", SettingValueParsers.BOOL, true).build();
 }

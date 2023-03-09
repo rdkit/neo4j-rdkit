@@ -20,8 +20,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.neo4j.graphdb.Result;
 import org.neo4j.graphdb.Transaction;
-import org.neo4j.graphdb.factory.GraphDatabaseBuilder;
-import org.neo4j.helpers.collection.MapUtil;
+import org.neo4j.internal.helpers.collection.MapUtil;
+import org.neo4j.test.TestDatabaseManagementServiceBuilder;
 import org.rdkit.neo4j.config.RDKitSettings;
 import org.rdkit.neo4j.index.utils.BaseTest;
 import org.rdkit.neo4j.index.utils.TestUtils;
@@ -38,8 +38,8 @@ public class ExactSearchTest extends BaseTest {
   }
 
   @Override
-  protected void prepareDatabase(GraphDatabaseBuilder builder) {
-    builder.setConfig(RDKitSettings.indexSanitize, "false");
+  protected void prepareDatabase(TestDatabaseManagementServiceBuilder builder) {
+    builder.setConfig(RDKitSettings.indexSanitize, false);
   }
 
   @Test
@@ -48,7 +48,7 @@ public class ExactSearchTest extends BaseTest {
 
     final String expectedSmiles = "COc1cc2c(cc1Br)C(C)CNCC2";
     try (Transaction tx = graphDb.beginTx()) {
-      Result result = graphDb.execute("CALL org.rdkit.search.exact.smiles($labels, $smiles)",
+      Result result = tx.execute("CALL org.rdkit.search.exact.smiles($labels, $smiles)",
               MapUtil.map("labels", defaultLabels, "smiles", expectedSmiles));
 
       final String[] chembls = new String[]{"CHEMBL180815", "CHEMBL182184", "CHEMBL180867"};
@@ -59,7 +59,7 @@ public class ExactSearchTest extends BaseTest {
         assertEquals(expectedSmiles, smiles);
       }
 
-      tx.success();
+      tx.commit();
     }
   }
 
@@ -87,14 +87,15 @@ public class ExactSearchTest extends BaseTest {
         + "  7  8  1  0  0  0  0\n"
         + "M  END\n";
 
-    graphDb.execute("CREATE (node:Chemical:Structure {mdlmol: $mol})", MapUtil.map("mol", mol));
+    graphDb.executeTransactionally("CREATE (node:Chemical:Structure {mdlmol: $mol})", MapUtil.map("mol", mol));
 
     final String expectedSmiles = "COc1ccccc1";
     try (Transaction tx = graphDb.beginTx()) {
-      Result result = graphDb.execute("CALL org.rdkit.search.exact.mol($labels, $mol)", MapUtil.map("labels", defaultLabels, "mol", mol));
+      Result result = tx.execute("CALL org.rdkit.search.exact.mol($labels, $mol)", MapUtil.map("labels", defaultLabels, "mol", mol));
       Map<String, Object> item = result.next();
       String smiles = (String) item.get("canonical_smiles");
       assertEquals(expectedSmiles, smiles);
+      tx.commit();
     }
   }
 }

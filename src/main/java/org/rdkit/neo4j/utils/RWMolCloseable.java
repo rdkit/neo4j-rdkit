@@ -15,10 +15,11 @@ package org.rdkit.neo4j.utils;
  * #L%
  */
 
-import java.io.Closeable;
 import org.RDKit.RWMol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.Closeable;
 
 /**
  * Autocloseable wrapper for {@link RWMol} class

@@ -15,26 +15,31 @@ package org.rdkit.neo4j.procedures;
  * #L%
  */
 
-import static org.neo4j.graphdb.DependencyResolver.SelectionStrategy.FIRST;
-
-import java.util.HashMap;
-import java.util.Map;
+import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.neo4j.graphdb.QueryExecutionException;
 import org.neo4j.graphdb.Result;
 import org.neo4j.graphdb.Transaction;
-import org.neo4j.helpers.collection.MapUtil;
+import org.neo4j.internal.helpers.collection.Iterators;
+import org.neo4j.internal.helpers.collection.MapUtil;
 import org.rdkit.neo4j.index.utils.BaseTest;
 import org.rdkit.neo4j.index.utils.TestUtils;
 
+import java.util.Map;
+
 public class SubstructureSearchTest extends BaseTest {
+
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
 
   @Before
   public void setupTestDatabase() {
     TestUtils.registerProcedures(graphDb, SubstructureSearch.class);
-    graphDb.execute("CALL org.rdkit.search.createIndex($labels)", MapUtil.map("labels", defaultLabels));
+    graphDb.executeTransactionally("CALL org.rdkit.search.createIndex($labels)", MapUtil.map("labels", defaultLabels));
   }
 
   @Test
@@ -44,7 +49,7 @@ public class SubstructureSearchTest extends BaseTest {
     final String sssSmiles = "c1ccccc1";
 
     try (Transaction tx = graphDb.beginTx()) {
-      Result result = graphDb.execute("CALL org.rdkit.search.substructure.smiles($labels, $smiles)", MapUtil.map(
+      Result result = tx.execute("CALL org.rdkit.search.substructure.smiles($labels, $smiles)", MapUtil.map(
           "labels", defaultLabels,
           "smiles", sssSmiles
       ));
@@ -54,24 +59,19 @@ public class SubstructureSearchTest extends BaseTest {
       long score = (Long) row.get("score");
       Assert.assertEquals(63L, score);
       Assert.assertEquals("OB(O)c1ccccc1", smiles);
-
-      tx.success();
     }
 
-    graphDb.execute("CALL org.rdkit.search.dropIndex()");
+    graphDb.executeTransactionally("CALL org.rdkit.search.dropIndex()");
   }
 
   @Test
   public void fingerprintMatchEqualTest() {
     final String smiles = "c1ccccc1";
 
-    try (Transaction tx = graphDb.beginTx()) {
-      graphDb.execute("create (n:Structure:Chemical {smiles: $smiles}) return n", MapUtil.map("smiles", smiles));
-      tx.success();
-    }
+    graphDb.executeTransactionally("create (n:Structure:Chemical {smiles: $smiles}) return n", MapUtil.map("smiles", smiles));
 
     try (Transaction tx = graphDb.beginTx()) {
-      Result result = graphDb.execute("CALL org.rdkit.search.substructure.smiles($labels, $smiles)", MapUtil.map(
+      Result result = tx.execute("CALL org.rdkit.search.substructure.smiles($labels, $smiles)", MapUtil.map(
           "labels", defaultLabels,
           "smiles", smiles
       ));
@@ -82,10 +82,10 @@ public class SubstructureSearchTest extends BaseTest {
       Assert.assertEquals(0, score);
       Assert.assertEquals(canonical, smiles);
 
-      tx.success();
+      tx.commit();
     }
 
-    graphDb.execute("CALL org.rdkit.search.dropIndex()"); // otherwise we get an exception on shutdown
+    graphDb.executeTransactionally("CALL org.rdkit.search.dropIndex()"); // otherwise we get an exception on shutdown
   }
 
   @Test
@@ -114,13 +114,10 @@ public class SubstructureSearchTest extends BaseTest {
 
     final String smiles = "COc1ccccc1";
 
-    try (Transaction tx = graphDb.beginTx()) {
-      graphDb.execute("create (n:Structure:Chemical {smiles: $smiles}) return n", MapUtil.map("smiles", smiles));
-      tx.success();
-    }
+    graphDb.executeTransactionally("create (n:Structure:Chemical {smiles: $smiles}) return n", MapUtil.map("smiles", smiles));
 
     try (Transaction tx = graphDb.beginTx()) {
-      Result result = graphDb.execute("CALL org.rdkit.search.substructure.mol($labels, $mol)", MapUtil.map(
+      Result result = tx.execute("CALL org.rdkit.search.substructure.mol($labels, $mol)", MapUtil.map(
           "labels", defaultLabels,
           "mol", mol
       ));
@@ -131,24 +128,21 @@ public class SubstructureSearchTest extends BaseTest {
       Assert.assertEquals(0, score);
       Assert.assertEquals(canonical, smiles);
 
-      tx.success();
+      tx.commit();
     }
-    graphDb.execute("CALL org.rdkit.search.dropIndex()"); // otherwise we get an exception on shutdown
+    graphDb.executeTransactionally("CALL org.rdkit.search.dropIndex()"); // otherwise we get an exception on shutdown
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void smilesNullRWMolTest() throws Throwable {
+    thrown.expect(QueryExecutionException.class);
+    thrown.expectMessage(CoreMatchers.containsString("Unable to convert specified smiles"));
+
     final String smiles = "[H]C1O[C@@H](C(=O)[O-])[C@H](O)[C@@H](O)[C@H]10";
 
-    try (Transaction tx = graphDb.beginTx()) {
-      graphDb.execute("CALL org.rdkit.search.substructure.smiles($labels, $smiles)", MapUtil.map(
-          "labels", defaultLabels,
-          "smiles", smiles
-      ));
-    } catch (QueryExecutionException e) {
-      // todo: looks terrible
-      throw e.getCause().getCause().getCause().getCause(); // get Kernel exception, cypher execution exception, get procedure exception, get procedure invoked exceptionведь
-    }
+    graphDb.executeTransactionally("CALL org.rdkit.search.substructure.smiles($labels, $smiles)", MapUtil.map(
+            "labels", defaultLabels,
+            "smiles", smiles), Iterators::asList);
   }
 
   @Test
@@ -162,21 +156,26 @@ public class SubstructureSearchTest extends BaseTest {
 
     try (Transaction tx = graphDb.beginTx()) {
       for (String smiles: candidateSmiles)
-        graphDb.execute("CREATE (n:Chemical:Structure {smiles:$smiles})", MapUtil.map("smiles", smiles));
-      tx.success();
+        tx.execute("CREATE (n:Chemical:Structure {smiles:$smiles})", MapUtil.map("smiles", smiles));
+      tx.commit();
     }
 
-    for (int i = 0; i < candidateSmiles.length; i++) {
-      Result result = graphDb.execute(
-          "MATCH (n:Chemical:Structure) WHERE n.smiles = $candidate_smiles RETURN n.smiles as smiles, org.rdkit.search.substructure.is.smiles(n, $query) as bool",
-          MapUtil.map("query", querySmiles, "candidate_smiles", candidateSmiles[i]));
+    try (Transaction tx = graphDb.beginTx()) {
 
-      Map<String, Object> map = result.next();
-      Assert.assertEquals(substructMatches[i], map.get("bool"));
-      Assert.assertEquals(candidateSmiles[i], map.get("smiles"));
+      for (int i = 0; i < candidateSmiles.length; i++) {
+
+        Result result = tx.execute(
+                "MATCH (n:Chemical:Structure) WHERE n.smiles = $candidate_smiles RETURN n.smiles as smiles, org.rdkit.search.substructure.is.smiles(n, $query) as bool",
+                MapUtil.map("query", querySmiles, "candidate_smiles", candidateSmiles[i]));
+
+        Map<String, Object> map = result.next();
+        Assert.assertEquals(substructMatches[i], map.get("bool"));
+        Assert.assertEquals(candidateSmiles[i], map.get("smiles"));
+      }
+      tx.commit();
     }
 
-    graphDb.execute("CALL org.rdkit.search.dropIndex()"); // otherwise we get an exception on shutdown
+    graphDb.executeTransactionally("CALL org.rdkit.search.dropIndex()"); // otherwise we get an exception on shutdown
   }
 
   @Test
@@ -210,21 +209,25 @@ public class SubstructureSearchTest extends BaseTest {
 
     try (Transaction tx = graphDb.beginTx()) {
       for (String smiles: candidateSmiles)
-        graphDb.execute("CREATE (n:Chemical:Structure {smiles:$smiles})", MapUtil.map("smiles", smiles));
-      tx.success();
+        tx.execute("CREATE (n:Chemical:Structure {smiles:$smiles})", MapUtil.map("smiles", smiles));
+      tx.commit();
     }
 
-    for (int i = 0; i < candidateSmiles.length; i++) {
-      Result result = graphDb.execute(
-              "MATCH (n:Chemical:Structure) WHERE n.smiles = $candidate_smiles RETURN n.smiles AS smiles, org.rdkit.search.substructure.is.mol(n, $query) AS bool",
-              MapUtil.map("query", queryMol, "candidate_smiles", candidateSmiles[i]));
 
-      Map<String, Object> map = result.next();
-      Assert.assertEquals(substructMatches[i], map.get("bool"));
-      Assert.assertEquals(candidateSmiles[i], map.get("smiles"));
+    try (Transaction tx = graphDb.beginTx()) {
+      for (int i = 0; i < candidateSmiles.length; i++) {
+        Result result = tx.execute(
+                "MATCH (n:Chemical:Structure) WHERE n.smiles = $candidate_smiles RETURN n.smiles AS smiles, org.rdkit.search.substructure.is.mol(n, $query) AS bool",
+                MapUtil.map("query", queryMol, "candidate_smiles", candidateSmiles[i]));
+
+        Map<String, Object> map = result.next();
+        Assert.assertEquals(substructMatches[i], map.get("bool"));
+        Assert.assertEquals(candidateSmiles[i], map.get("smiles"));
+      }
+      tx.commit();
     }
 
-    graphDb.execute("CALL org.rdkit.search.dropIndex()"); // otherwise we get an exception on shutdown
+    graphDb.executeTransactionally("CALL org.rdkit.search.dropIndex()"); // otherwise we get an exception on shutdown
   }
 
 }
