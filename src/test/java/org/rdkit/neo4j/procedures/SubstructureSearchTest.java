@@ -59,8 +59,6 @@ public class SubstructureSearchTest extends BaseTest {
       long score = (Long) row.get("score");
       Assert.assertEquals(63L, score);
       Assert.assertEquals("OB(O)c1ccccc1", smiles);
-
-      tx.commit();
     }
 
     graphDb.executeTransactionally("CALL org.rdkit.search.dropIndex()");
@@ -70,10 +68,7 @@ public class SubstructureSearchTest extends BaseTest {
   public void fingerprintMatchEqualTest() {
     final String smiles = "c1ccccc1";
 
-    try (Transaction tx = graphDb.beginTx()) {
-      tx.execute("create (n:Structure:Chemical {smiles: $smiles}) return n", MapUtil.map("smiles", smiles));
-      tx.commit();
-    }
+    graphDb.executeTransactionally("create (n:Structure:Chemical {smiles: $smiles}) return n", MapUtil.map("smiles", smiles));
 
     try (Transaction tx = graphDb.beginTx()) {
       Result result = tx.execute("CALL org.rdkit.search.substructure.smiles($labels, $smiles)", MapUtil.map(
@@ -119,10 +114,7 @@ public class SubstructureSearchTest extends BaseTest {
 
     final String smiles = "COc1ccccc1";
 
-    try (Transaction tx = graphDb.beginTx()) {
-      tx.execute("create (n:Structure:Chemical {smiles: $smiles}) return n", MapUtil.map("smiles", smiles));
-      tx.commit();
-    }
+    graphDb.executeTransactionally("create (n:Structure:Chemical {smiles: $smiles}) return n", MapUtil.map("smiles", smiles));
 
     try (Transaction tx = graphDb.beginTx()) {
       Result result = tx.execute("CALL org.rdkit.search.substructure.mol($labels, $mol)", MapUtil.map(
